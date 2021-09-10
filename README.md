@@ -3,4 +3,4 @@ Anvil is a pytorch based library inspired by Stable Baselines 3 and Tonic with t
 
 ## Developer Guide
 1. Run `scripts/setup_dev.sh`
-2. Relax and enjoy how easy that was 
+2. Relax and enjoy how easy that was 😄
