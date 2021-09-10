@@ -76,6 +76,15 @@ class DiscreteQHead(DeterministicBaseHead):
 
 
 class DeterministicPolicyHead(DeterministicBaseHead):
+    """
+    Use this head if you want a deterministic actor.
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param action_shape: the output shape of the network, can be the tuple shape or simplified integer output size
+    :param network_type: the type of network used
+    :param activation_fn: the activation function after each layer
+    """
+
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
@@ -96,14 +105,28 @@ class DeterministicPolicyHead(DeterministicBaseHead):
 
 
 class DiagGaussianPolicyHead(T.nn.Module):
+    """
+    Use this head if you want a policy obeying a diagonal gaussian distribution.
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param action_size: the dimension of the action vector
+    :param mean_network_type: network type of the network calculating the mean
+    :param mean_activation: activation function of the output of the mean network
+    :param log_std_network_type: network type of the network calculating the log std
+    :param log_std_activation: activation function of the output of the log std network
+    :param log_std_init: if a parameter is used for log std, what initial value should it have
+    :param min_log_std: minimum log std of the action distribution
+    :param max_log_std: maximum log std of the action distribution
+    """
+
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
         action_size: int,
         mean_network_type: str = "mlp",
         mean_activation: Type[T.nn.Module] = T.nn.Tanh,
-        log_std_activation: Type[T.nn.Module] = T.nn.Softplus,
         log_std_network_type: str = "parameter",
+        log_std_activation: Type[T.nn.Module] = T.nn.Softplus,
         log_std_init: float = 0.0,
         min_log_std: Optional[float] = None,
         max_log_std: Optional[float] = None,
