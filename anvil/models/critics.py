@@ -2,6 +2,7 @@ from typing import List, Type, Union
 
 import torch as T
 
+from anvil.models.heads import BaseCriticHead
 from anvil.models.utils import get_device
 
 
@@ -18,7 +19,7 @@ class Critic(T.nn.Module):
         self,
         encoder: T.nn.Module,
         torso: T.nn.Module,
-        head: T.nn.Module,
+        head: BaseCriticHead,
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
         lr: float = 1e-3,
         device: Union[T.device, str] = "auto",

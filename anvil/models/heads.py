@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Optional, Tuple, Type, Union
 
 import torch as T
@@ -6,7 +7,7 @@ from anvil.models.torsos import MLP
 from anvil.models.utils import NetworkType, get_mlp_size
 
 
-class DeterministicBaseHead(T.nn.Module):
+class BaseCriticHead(T.nn.Module):
     """The base class for the head network"""
 
     def __init__(self):
@@ -17,7 +18,27 @@ class DeterministicBaseHead(T.nn.Module):
         return self.model(input)
 
 
-class ValueHead(DeterministicBaseHead):
+class BaseActorHead(T.nn.Module, ABC):
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def get_action_distribution(
+        self, input: T.Tensor
+    ) -> Optional[T.distributions.Distribution]:
+        """
+        Get the action distribution given a latent input from the torso
+
+        :param input: torso network output
+        :return: the distribution of the actor, returns None if deterministic
+        """
+
+    def forward(self, input: T.Tensor) -> T.Tensor:
+        distribution = self.get_action_distribution(input)
+        return distribution.sample()
+
+
+class ValueHead(BaseCriticHead):
     """
     Use this head if you want to model the value function or the continuous Q function.
 
@@ -46,7 +67,7 @@ class ValueHead(DeterministicBaseHead):
 ContinuousQHead = ValueHead
 
 
-class DiscreteQHead(DeterministicBaseHead):
+class DiscreteQHead(BaseCriticHead):
     """
     Use this head if you want to model the discrete Q function.
 
@@ -75,7 +96,7 @@ class DiscreteQHead(DeterministicBaseHead):
             raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
 
 
-class DeterministicPolicyHead(DeterministicBaseHead):
+class DeterministicPolicyHead(BaseActorHead):
     """
     Use this head if you want a deterministic actor.
 
@@ -102,6 +123,14 @@ class DeterministicPolicyHead(DeterministicBaseHead):
             )
         else:
             raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
+
+    def get_action_distribution(
+        self, input: T.Tensor
+    ) -> Optional[T.distributions.Distribution]:
+        return None
+
+    def forward(self, input: T.Tensor) -> T.Tensor:
+        return self.model(input)
 
 
 class DiagGaussianPolicyHead(T.nn.Module):
@@ -157,7 +186,9 @@ class DiagGaussianPolicyHead(T.nn.Module):
                 T.ones(action_size) * log_std_init, requires_grad=True
             )
 
-    def get_action_distribution(self, input: T.Tensor) -> T.distributions.Distribution:
+    def get_action_distribution(
+        self, input: T.Tensor
+    ) -> Optional[T.distributions.Distribution]:
         mean = self.mean_network(input)
         if isinstance(self.log_std_network, T.nn.Parameter):
             log_std = self.log_std_network
@@ -165,7 +196,3 @@ class DiagGaussianPolicyHead(T.nn.Module):
             log_std = self.log_std_network(input)
         clipped_log_std = T.clamp(log_std, self.min_log_std, self.max_log_std)
         return T.distributions.Normal(mean, clipped_log_std.exp())
-
-    def forward(self, input: T.Tensor) -> T.Tensor:
-        distribution = self.get_action_distribution(input)
-        return distribution.sample()

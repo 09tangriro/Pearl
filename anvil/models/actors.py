@@ -2,6 +2,7 @@ from typing import List, Type, Union
 
 import torch as T
 
+from anvil.models.heads import BaseActorHead
 from anvil.models.utils import get_device
 
 
@@ -18,7 +19,7 @@ class Actor(T.nn.Module):
         self,
         encoder: T.nn.Module,
         torso: T.nn.Module,
-        head: T.nn.Module,
+        head: BaseActorHead,
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
         lr: float = 1e-3,
         device: Union[T.device, str] = "auto",
@@ -29,6 +30,10 @@ class Actor(T.nn.Module):
         self.torso = torso.to(device)
         self.head = head.to(device)
         self.optimizer = optimizer_class(self.parameters(), lr=lr)
+
+    def get_action_distribution(self, *inputs) -> T.distributions.Distribution:
+        latent_out = self.torso(self.encoder(*inputs))
+        return self.head.get_action_distribution(latent_out)
 
     def forward(self, *inputs) -> List[T.Tensor]:
         out = self.encoder(*inputs)
