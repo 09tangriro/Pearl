@@ -47,16 +47,13 @@ def test_head(head_class, input_shape):
         assert output.shape == (1,)
 
 
-@pytest.mark.parametrize(
-    "heads",
-    [[ValueHead(input_shape=5)], [ValueHead(input_shape=5), ValueHead(input_shape=5)]],
-)
-def test_critic(heads):
+def test_critic():
     input = T.Tensor([1, 1, 1, 1, 1])
     encoder = IdentityEncoder()
     torso = MLP([5, 5])
+    head = ValueHead(input_shape=5)
 
-    critic = Critic(encoder, torso, heads)
+    critic = Critic(encoder, torso, head)
 
-    outputs = critic(input)
-    assert all([output.shape == (1,) for output in outputs])
+    output = critic(input)
+    assert output.shape == (1,)
