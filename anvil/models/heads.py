@@ -6,7 +6,7 @@ from anvil.models.torsos import MLP
 from anvil.models.utils import NetworkType, get_mlp_size
 
 
-class BaseHead(T.nn.Module):
+class DeterministicBaseHead(T.nn.Module):
     """The base class for the head network"""
 
     def __init__(self):
@@ -17,7 +17,7 @@ class BaseHead(T.nn.Module):
         return self.model(input)
 
 
-class ValueHead(BaseHead):
+class ValueHead(DeterministicBaseHead):
     """
     Use this head if you want to model the value function or the continuous Q function.
 
@@ -38,9 +38,7 @@ class ValueHead(BaseHead):
             input_size = get_mlp_size(input_shape)
             self.model = MLP(layer_sizes=[input_size, 1], activation_fn=activation_fn)
         else:
-            raise NotImplementedError(
-                "That type of network hasn't been implemented yet :("
-            )
+            raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
 
 
 # The continuous Q function has the same structure as
@@ -48,7 +46,7 @@ class ValueHead(BaseHead):
 ContinuousQHead = ValueHead
 
 
-class DiscreteQHead(BaseHead):
+class DiscreteQHead(DeterministicBaseHead):
     """
     Use this head if you want to model the discrete Q function.
 
@@ -74,12 +72,10 @@ class DiscreteQHead(BaseHead):
                 layer_sizes=[input_size, output_size], activation_fn=activation_fn
             )
         else:
-            raise NotImplementedError(
-                "That type of network hasn't been implemented yet :("
-            )
+            raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
 
 
-class DeterministicPolicyHead(BaseHead):
+class DeterministicPolicyHead(DeterministicBaseHead):
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
@@ -88,4 +84,65 @@ class DeterministicPolicyHead(BaseHead):
         activation_fn: Optional[Type[T.nn.Module]] = T.nn.ReLU,
     ):
         super().__init__()
-        input_size = get_mlp_size(input_shape)
+        network_type = NetworkType(network_type.lower())
+        if network_type == NetworkType.MLP:
+            input_size = get_mlp_size(input_shape)
+            action_size = get_mlp_size(action_shape)
+            self.model = MLP(
+                layer_sizes=[input_size, action_size], activation_fn=activation_fn
+            )
+        else:
+            raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
+
+
+class DiagGaussianPolicyHead(T.nn.Module):
+    def __init__(
+        self,
+        input_shape: Union[int, Tuple[int]],
+        action_size: int,
+        mean_network_type: str = "mlp",
+        mean_activation: Type[T.nn.Module] = T.nn.Tanh,
+        log_std_activation: Type[T.nn.Module] = T.nn.Softplus,
+        log_std_network_type: str = "parameter",
+        log_std_init: float = 0.0,
+        min_log_std: Optional[float] = None,
+        max_log_std: Optional[float] = None,
+    ):
+        super().__init__()
+        self.min_log_std = min_log_std
+        self.max_log_std = max_log_std
+        mean_network_type = NetworkType(mean_network_type.lower())
+        log_std_network_type = NetworkType(log_std_network_type.lower())
+
+        if mean_network_type == NetworkType.MLP:
+            input_size = get_mlp_size(input_shape)
+            self.mean_network = MLP(
+                layer_sizes=[input_size, action_size], activation_fn=mean_activation
+            )
+        else:
+            raise NotImplementedError(
+                f"{mean_network_type} hasn't been implemented for the mean network yet :("
+            )
+
+        if log_std_network_type == NetworkType.MLP:
+            input_size = get_mlp_size(input_shape)
+            self.log_std_network = MLP(
+                layer_sizes=[input_size, action_size], activation_fn=log_std_activation
+            )
+        elif log_std_network_type == NetworkType.PARAMETER:
+            self.log_std_network = T.nn.Parameter(
+                T.ones(action_size) * log_std_init, requires_grad=True
+            )
+
+    def get_action_distribution(self, input: T.Tensor) -> T.distributions.Distribution:
+        mean = self.mean_network(input)
+        if isinstance(self.log_std_network, T.nn.Parameter):
+            log_std = self.log_std_network
+        else:
+            log_std = self.log_std_network(input)
+        clipped_log_std = T.clamp(log_std, self.min_log_std, self.max_log_std)
+        return T.distributions.Normal(mean, clipped_log_std.exp())
+
+    def forward(self, input: T.Tensor) -> T.Tensor:
+        distribution = self.get_action_distribution(input)
+        return distribution.sample()
