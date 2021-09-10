@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Union
+from typing import Tuple, Union
 
 import torch as T
 
@@ -29,3 +29,17 @@ def get_device(device: Union[T.device, str]) -> T.device:
         return T.device("cpu")
 
     return device
+
+
+def get_mlp_size(data_shape: Union[int, Tuple[int]]) -> int:
+    """
+    Convert the shape of some data into an integer size that defines
+    how many neurons to create in an MLP layer
+
+    :param data_shape: the tuple shape or already converted integer size
+    :return: the integer size
+    """
+
+    if isinstance(data_shape, tuple):
+        data_shape = data_shape[0]
+    return data_shape

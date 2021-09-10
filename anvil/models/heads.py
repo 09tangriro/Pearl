@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Type, Union
 import torch as T
 
 from anvil.models.torsos import MLP
-from anvil.models.utils import NetworkType
+from anvil.models.utils import NetworkType, get_mlp_size
 
 
 class BaseHead(T.nn.Module):
@@ -35,9 +35,8 @@ class ValueHead(BaseHead):
         super().__init__()
         network_type = NetworkType(network_type.lower())
         if network_type == NetworkType.MLP:
-            if isinstance(input_shape, tuple):
-                input_shape = input_shape[0]
-            self.model = MLP(layer_sizes=[input_shape, 1], activation_fn=activation_fn)
+            input_size = get_mlp_size(input_shape)
+            self.model = MLP(layer_sizes=[input_size, 1], activation_fn=activation_fn)
         else:
             raise NotImplementedError(
                 "That type of network hasn't been implemented yet :("
@@ -67,17 +66,26 @@ class DiscreteQHead(BaseHead):
         activation_fn: Optional[Type[T.nn.Module]] = T.nn.ReLU,
     ):
         super().__init__()
-        self.activation_fn = activation_fn
         network_type = NetworkType(network_type.lower())
         if network_type == NetworkType.MLP:
-            if isinstance(input_shape, tuple):
-                input_shape = input_shape[0]
-            if isinstance(output_shape, tuple):
-                output_shape = output_shape[0]
+            input_size = get_mlp_size(input_shape)
+            output_size = get_mlp_size(output_shape)
             self.model = MLP(
-                layer_sizes=[input_shape, output_shape], activation_fn=activation_fn
+                layer_sizes=[input_size, output_size], activation_fn=activation_fn
             )
         else:
             raise NotImplementedError(
                 "That type of network hasn't been implemented yet :("
             )
+
+
+class DeterministicPolicyHead(BaseHead):
+    def __init__(
+        self,
+        input_shape: Union[int, Tuple[int]],
+        action_shape: Union[int, Tuple[int]],
+        network_type: str = "mlp",
+        activation_fn: Optional[Type[T.nn.Module]] = T.nn.ReLU,
+    ):
+        super().__init__()
+        input_size = get_mlp_size(input_shape)
