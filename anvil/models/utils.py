@@ -6,7 +6,7 @@ import torch as T
 
 class NetworkType(Enum):
     MLP = "mlp"
-    IDENTITY = "identity"
+    PARAMETER = "parameter"
 
 
 def get_device(device: Union[T.device, str]) -> T.device:
