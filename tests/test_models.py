@@ -4,9 +4,9 @@ from gym.spaces import Box
 from torch.autograd.grad_mode import F
 
 from anvil.models import Critic
-from anvil.models.critics import ContinuousQHead, DiscreteQHead, ValueHead
 from anvil.models.encoders import CNNEncoder, FlattenEncoder, IdentityEncoder
-from anvil.models.networks import MLP
+from anvil.models.heads import ContinuousQHead, DiscreteQHead, ValueHead
+from anvil.models.torsos import MLP
 
 
 def test_mlp():
