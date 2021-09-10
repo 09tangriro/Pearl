@@ -30,8 +30,8 @@ class Actor(T.nn.Module):
         self.head = head.to(device)
         self.optimizer = optimizer_class(self.parameters(), lr=lr)
 
-    def forward(self, input: T.Tensor) -> List[T.Tensor]:
-        out = self.encoder(input)
+    def forward(self, *inputs) -> List[T.Tensor]:
+        out = self.encoder(*inputs)
         out = self.torso(out)
         out = self.head(out)
         return out
