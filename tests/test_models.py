@@ -1,9 +1,8 @@
 import pytest
 import torch as T
 from gym.spaces import Box
-from torch.autograd.grad_mode import F
 
-from anvil.models import Critic
+from anvil.models import Actor, Critic
 from anvil.models.encoders import CNNEncoder, FlattenEncoder, IdentityEncoder
 from anvil.models.heads import (
     ContinuousQHead,
@@ -78,4 +77,16 @@ def test_critic():
     critic = Critic(encoder, torso, head)
 
     output = critic(input)
+    assert output.shape == (1,)
+
+
+def test_actor():
+    input = T.Tensor([1, 1, 1, 1, 1])
+    encoder = IdentityEncoder()
+    torso = MLP([5, 5])
+    head = DeterministicPolicyHead(input_shape=5, action_shape=1)
+
+    actor = Actor(encoder, torso, head)
+
+    output = actor(input)
     assert output.shape == (1,)
