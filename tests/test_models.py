@@ -5,7 +5,13 @@ from torch.autograd.grad_mode import F
 
 from anvil.models import Critic
 from anvil.models.encoders import CNNEncoder, FlattenEncoder, IdentityEncoder
-from anvil.models.heads import ContinuousQHead, DiscreteQHead, ValueHead
+from anvil.models.heads import (
+    ContinuousQHead,
+    DeterministicPolicyHead,
+    DiagGaussianPolicyHead,
+    DiscreteQHead,
+    ValueHead,
+)
 from anvil.models.torsos import MLP
 
 
@@ -32,7 +38,7 @@ def test_encoder(encoder_class):
 
 @pytest.mark.parametrize("head_class", [ValueHead, ContinuousQHead, DiscreteQHead])
 @pytest.mark.parametrize("input_shape", [5, (5,)])
-def test_head(head_class, input_shape):
+def test_critic_head(head_class, input_shape):
     input = T.Tensor([1, 1, 1, 1, 1])
     if head_class == DiscreteQHead:
         head = head_class(input_shape=input_shape, output_shape=(2,))
@@ -45,6 +51,22 @@ def test_head(head_class, input_shape):
         assert output.shape == (2,)
     else:
         assert output.shape == (1,)
+
+
+@pytest.mark.parametrize(
+    "head_class", [DeterministicPolicyHead, DiagGaussianPolicyHead]
+)
+@pytest.mark.parametrize("input_shape", [5, (5,)])
+def test_actor_head(head_class, input_shape):
+    input = T.Tensor([1, 1, 1, 1, 1])
+    if head_class == DeterministicPolicyHead:
+        head = head_class(input_shape, action_shape=2)
+    elif head_class == DiagGaussianPolicyHead:
+        head = head_class(input_shape, action_size=2)
+
+    output = head(input)
+
+    assert output.shape == (2,)
 
 
 def test_critic():

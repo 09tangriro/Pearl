@@ -133,7 +133,7 @@ class DeterministicPolicyHead(BaseActorHead):
         return self.model(input)
 
 
-class DiagGaussianPolicyHead(T.nn.Module):
+class DiagGaussianPolicyHead(BaseActorHead):
     """
     Use this head if you want a policy obeying a diagonal gaussian distribution.
 
@@ -194,5 +194,6 @@ class DiagGaussianPolicyHead(T.nn.Module):
             log_std = self.log_std_network
         else:
             log_std = self.log_std_network(input)
-        clipped_log_std = T.clamp(log_std, self.min_log_std, self.max_log_std)
-        return T.distributions.Normal(mean, clipped_log_std.exp())
+        if self.min_log_std or self.max_log_std:
+            log_std = T.clamp(log_std, self.min_log_std, self.max_log_std)
+        return T.distributions.Normal(mean, log_std.exp())
