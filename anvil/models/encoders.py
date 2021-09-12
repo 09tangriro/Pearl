@@ -3,7 +3,7 @@ from typing import Optional, Type
 import torch as T
 from gym import spaces
 
-from anvil.utils.preprocessing import is_image_space
+from anvil.models.utils import is_image_space
 
 
 class IdentityEncoder(T.nn.Module):
