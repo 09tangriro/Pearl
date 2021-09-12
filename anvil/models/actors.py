@@ -8,7 +8,7 @@ from anvil.models.utils import get_device
 
 class Actor(T.nn.Module):
     """
-    The actor network which approximates the Q or Value functions.
+    The actor network which determines what actions to take in the environment.
 
     :param encoder: the encoder network
     :param torso: the torso network
