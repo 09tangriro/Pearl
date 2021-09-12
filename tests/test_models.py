@@ -1,8 +1,15 @@
 import pytest
 import torch as T
 from gym.spaces import Box
+from torch.autograd.grad_mode import F
 
-from anvil.models import Actor, Critic
+from anvil.models import (
+    Actor,
+    ActorCritic,
+    ActorCriticWithTarget,
+    Critic,
+    TD3ActorCritic,
+)
 from anvil.models.encoders import CNNEncoder, FlattenEncoder, IdentityEncoder
 from anvil.models.heads import (
     ContinuousQHead,
@@ -12,6 +19,7 @@ from anvil.models.heads import (
     ValueHead,
 )
 from anvil.models.torsos import MLP
+from anvil.models.utils import trainable_variables
 
 
 def test_mlp():
@@ -90,3 +98,45 @@ def test_actor():
 
     output = actor(input)
     assert output.shape == (1,)
+
+
+@pytest.mark.parametrize(
+    "actor_critic_class", [ActorCritic, ActorCriticWithTarget, TD3ActorCritic]
+)
+@pytest.mark.parametrize("share_encoder", [True, False])
+@pytest.mark.parametrize("share_torso", [True, False])
+def test_actor_critic_shared_arch(actor_critic_class, share_encoder, share_torso):
+    input = T.Tensor([1, 1])
+    loss_fn = T.nn.MSELoss()
+    actor = Actor(
+        encoder=IdentityEncoder(),
+        torso=MLP([2, 2]),
+        head=DeterministicPolicyHead(input_shape=2, action_shape=1, activation_fn=None),
+    )
+
+    critic = Critic(
+        encoder=IdentityEncoder(),
+        torso=MLP([2, 2]),
+        head=ValueHead(input_shape=2, activation_fn=None),
+    )
+
+    actor_critic = actor_critic_class(
+        actor=actor, critic=critic, share_encoder=share_encoder, share_torso=share_torso
+    )
+
+    actor_output_before = actor_critic.actor(input)
+    critic_output_before = actor_critic.critic(input)
+    actor_loss = loss_fn(actor_output_before, target=T.Tensor([6]))
+
+    actor_critic.actor.optimizer.zero_grad()
+    actor_loss.backward()
+    actor_critic.actor.optimizer.step()
+
+    actor_output_after = actor_critic.actor(input)
+    critic_output_after = actor_critic.critic(input)
+
+    assert actor_output_after != actor_output_before
+    if share_torso == True:
+        assert critic_output_after != critic_output_before
+    else:
+        assert critic_output_after == critic_output_before

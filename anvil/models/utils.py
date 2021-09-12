@@ -12,7 +12,7 @@ class NetworkType(Enum):
     PARAMETER = "parameter"
 
 
-def trainable_variables(model: T.nn.Module):
+def trainable_variables(model: T.nn.Module) -> list:
     return [p for p in model.parameters() if p.requires_grad]
 
 
