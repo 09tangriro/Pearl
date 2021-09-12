@@ -12,6 +12,10 @@ class NetworkType(Enum):
     PARAMETER = "parameter"
 
 
+def trainable_variables(model: T.nn.Module):
+    return [p for p in model.parameters() if p.requires_grad]
+
+
 def get_device(device: Union[T.device, str]) -> T.device:
     """
     Retrieve PyTorch device.

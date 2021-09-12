@@ -19,7 +19,3 @@ class MLP(T.nn.Module):
 
     def forward(self, inputs):
         return self.model(inputs)
-
-
-def trainable_variables(model: T.nn.Module):
-    return [p for p in model.parameters() if p.requires_grad]
