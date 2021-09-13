@@ -200,6 +200,7 @@ class ActorCritic(T.nn.Module):
             return self.head_critic(out)
 
     def forward(self, *inputs) -> T.Tensor:
+        """The default forward pass retrieves an action prediciton"""
         if not self.share_encoder and not self.share_torso:
             return self.actor(*inputs)
         else:
@@ -263,6 +264,10 @@ class ActorCriticWithTarget(ActorCritic):
         for target in self.target_variables:
             target.requires_grad = False
         self.assign_targets()
+
+    def forward_target(self, *inputs) -> T.Tensor:
+        """Run a forward pass to get the target critic output"""
+        return self.target_critic(*inputs)
 
 
 class TD3ActorCritic(ActorCritic):

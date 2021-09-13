@@ -130,11 +130,10 @@ def test_actor_critic_shared_arch(actor_critic_class, share_encoder, share_torso
         assert not actor_critic.actor and not actor_critic.critic
 
     if actor_critic_class == TD3ActorCritic:
-        print(actor_critic)
         assert actor_critic.forward_critic(input) == (
             actor_critic.target_critic(input),
             actor_critic.target_critic_2(input),
         )
 
     if actor_critic_class == ActorCriticWithTarget:
-        assert actor_critic.forward_critic(input) == actor_critic.target_critic(input)
+        assert actor_critic.forward_critic(input) == actor_critic.forward_target(input)
