@@ -80,10 +80,16 @@ class Critic(T.nn.Module):
 
 class ActorCritic(T.nn.Module):
     """
-    A basic actor critic network
+    A basic actor critic network.
+    This module allows for a shared architecture, which assumes the actor layers
+    should be used as the shared layers if specified. By default, the encoder is
+    shared since we assume an encoder is used that does not have trainable variables
+    (e.g. FlattenEncoder) so it makes sense to save the memory.
 
     :param actor: the actor/policy network
     :param critic: the critic network
+    :param share_encoder: whether to use a shared encoder for both networks
+    :param share_torso: whether to use a shared torso for both networks
     """
 
     def __init__(
@@ -104,7 +110,6 @@ class ActorCritic(T.nn.Module):
         self.torso = None
         self.torso_actor = None
         self.torso_critic = None
-        self.head = None
         self.head_actor = None
         self.head_critic = None
         self.online_variables = None
@@ -208,6 +213,8 @@ class ActorCriticWithTarget(ActorCritic):
 
     :param actor: the actor/policy network
     :param critic: the critic network
+    :param share_encoder: whether to use a shared encoder for both networks
+    :param share_torso: whether to use a shared torso for both networks
     :param polyak_coeff: the polyak update coefficient
     """
 
@@ -215,15 +222,41 @@ class ActorCriticWithTarget(ActorCritic):
         self,
         actor: Actor,
         critic: Critic,
-        share_encoder: bool = False,
+        share_encoder: bool = True,
         share_torso: bool = False,
         polyak_coeff: float = 0.995,
     ) -> None:
         super().__init__(actor, critic, share_encoder, share_torso)
         self.polyak_coeff = polyak_coeff
-        self.target_critic = copy.deepcopy(critic)
 
-        self.online_variables = trainable_variables(self.critic)
+        if not self.share_encoder and not self.share_torso:
+            self.target_critic = copy.deepcopy(critic)
+            self.online_variables = trainable_variables(self.critic)
+        else:
+            # assign encoder variables and target layer
+            if self.share_encoder:
+                target_encoder = copy.deepcopy(self.encoder)
+                self.online_variables = trainable_variables(self.encoder)
+            else:
+                target_encoder = copy.deepcopy(self.encoder_critic)
+                self.online_variables = trainable_variables(self.encoder_critic)
+
+            # assign torso variables and target layer
+            if self.share_torso:
+                target_torso = copy.deepcopy(self.torso)
+                self.online_variables += trainable_variables(self.torso)
+            else:
+                target_torso = copy.deepcopy(self.torso_critic)
+                self.online_variables += trainable_variables(self.torso_critic)
+
+            # assign head variables and target layer
+            target_head = copy.deepcopy(self.head_critic)
+            self.online_variables += trainable_variables(self.head_critic)
+
+            # create target network from above defined target layers
+            self.target_critic = T.nn.Sequential(
+                target_encoder, target_torso, target_head
+            )
         self.target_variables = trainable_variables(self.target_critic)
 
         for target in self.target_variables:
