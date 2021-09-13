@@ -109,6 +109,7 @@ class ActorCritic(T.nn.Module):
         self.head_critic = None
         self.online_variables = None
         self.target_variables = None
+        self.polyak_coeff = None
 
         if share_encoder or share_torso:
             self._build()
