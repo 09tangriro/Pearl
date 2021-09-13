@@ -125,3 +125,7 @@ def test_actor_critic_shared_arch(actor_critic_class, share_encoder, share_torso
 
     else:
         assert not actor_critic.actor and not actor_critic.critic
+
+    if actor_critic_class != ActorCritic:
+        input = T.tensor([1, 1], dtype=T.float32)
+        assert actor_critic.forward_critic(input) == actor_critic.target_critic(input)
