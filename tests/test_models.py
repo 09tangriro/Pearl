@@ -100,7 +100,7 @@ def test_actor():
     assert output.shape == (1,)
 
 
-@pytest.mark.parametrize("actor_critic_class", [ActorCritic])
+@pytest.mark.parametrize("actor_critic_class", [ActorCritic, ActorCriticWithTarget])
 @pytest.mark.parametrize("share_encoder", [True, False])
 @pytest.mark.parametrize("share_torso", [True, False])
 def test_actor_critic_shared_arch(actor_critic_class, share_encoder, share_torso):
