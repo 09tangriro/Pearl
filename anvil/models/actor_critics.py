@@ -146,24 +146,28 @@ class ActorCritic(T.nn.Module):
                 target.data.add_((1 - self.polyak_coeff) * online.data)
 
     def _forward_actor_encoder(self, *inputs) -> T.Tensor:
+        """Given a shared architecture, get the actor encoder output"""
         if self.share_encoder:
             return self.encoder(*inputs)
         else:
             return self.encoder_actor(*inputs)
 
     def _forward_critic_encoder(self, *inputs) -> T.Tensor:
+        """Given a shared architecture, get the critic encoder output"""
         if self.share_encoder:
             return self.encoder(*inputs)
         else:
             return self.encoder_critic(*inputs)
 
     def _forward_actor_torso(self, input: T.Tensor) -> T.Tensor:
+        """Given a shared architecture, get the actor torso output"""
         if self.share_torso:
             return self.torso(input)
         else:
             return self.torso_actor(input)
 
     def _forward_critic_torso(self, input: T.Tensor) -> T.Tensor:
+        """Given a shared architecture, get the critic torso output"""
         if self.share_torso:
             return self.torso(input)
         else:
