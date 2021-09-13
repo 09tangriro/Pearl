@@ -1,5 +1,5 @@
 import copy
-from typing import List, Type, Union
+from typing import List, Optional, Type, Union
 
 import torch as T
 
@@ -32,7 +32,10 @@ class Actor(T.nn.Module):
         self.head = head.to(device)
         self.optimizer = optimizer_class(self.parameters(), lr=lr)
 
-    def get_action_distribution(self, *inputs) -> T.distributions.Distribution:
+    def get_action_distribution(
+        self, *inputs
+    ) -> Optional[T.distributions.Distribution]:
+        """Get the action distribution, returns None if deterministic"""
         latent_out = self.torso(self.encoder(*inputs))
         return self.head.get_action_distribution(latent_out)
 
@@ -111,6 +114,7 @@ class ActorCritic(T.nn.Module):
             self._build()
 
     def _build(self) -> None:
+        """Define the shared layers of the network"""
         if self.share_encoder:
             self.encoder = self.actor.encoder
         else:
@@ -141,32 +145,55 @@ class ActorCritic(T.nn.Module):
                 target.data.mul_(self.polyak_coeff)
                 target.data.add_((1 - self.polyak_coeff) * online.data)
 
+    def _forward_actor_encoder(self, *inputs) -> T.Tensor:
+        if self.share_encoder:
+            return self.encoder(*inputs)
+        else:
+            return self.encoder_actor(*inputs)
+
+    def _forward_critic_encoder(self, *inputs) -> T.Tensor:
+        if self.share_encoder:
+            return self.encoder(*inputs)
+        else:
+            return self.encoder_critic(*inputs)
+
+    def _forward_actor_torso(self, input: T.Tensor) -> T.Tensor:
+        if self.share_torso:
+            return self.torso(input)
+        else:
+            return self.torso_actor(input)
+
+    def _forward_critic_torso(self, input: T.Tensor) -> T.Tensor:
+        if self.share_torso:
+            return self.torso(input)
+        else:
+            return self.torso_critic(input)
+
+    def get_action_distribution(
+        self, *inputs
+    ) -> Optional[T.distributions.Distribution]:
+        """Get the action distribution, returns None if deterministic"""
+        if not self.share_torso and not self.share_encoder:
+            return self.actor.get_action_distribution(*inputs)
+        else:
+            latent_out = self._forward_actor_torso(self._forward_actor_encoder(*inputs))
+            return self.head_actor.get_action_distribution(latent_out)
+
     def forward_critic(self, *inputs) -> T.Tensor:
+        """Run a forward pass to get the critic output"""
         if not self.share_torso and not self.share_encoder:
             return self.critic(*inputs)
         else:
-            if self.share_encoder:
-                out = self.encoder(*inputs)
-            else:
-                out = self.encoder_critic(*inputs)
-            if self.share_torso:
-                out = self.torso(out)
-            else:
-                out = self.torso_critic(out)
+            out = self._forward_critic_encoder(*inputs)
+            out = self._forward_critic_torso(out)
             return self.head_critic(out)
 
     def forward(self, *inputs) -> T.Tensor:
         if not self.share_encoder and not self.share_torso:
             return self.actor(*inputs)
         else:
-            if self.share_encoder:
-                out = self.encoder(*inputs)
-            else:
-                out = self.encoder_actor(*inputs)
-            if self.share_torso:
-                out = self.torso(out)
-            else:
-                out = self.torso_actor(out)
+            out = self._forward_actor_encoder(*inputs)
+            out = self._forward_actor_torso(out)
             return self.head_actor(out)
 
 
