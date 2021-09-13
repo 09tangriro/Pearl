@@ -106,9 +106,8 @@ class ActorCritic(T.nn.Module):
         self.share_torso = share_torso
         self.encoder = None  # encoder if shared encoder
         self.encoder_actor = None  # actor encoder if separate encoders but shared torso
-        self.encoder_critic = (
-            None  # critic encoder if separate encoders but shared torso
-        )
+        # critic encoder if separate encoders but shared torso
+        self.encoder_critic = None
         self.torso = None  # torso if shared torso
         self.torso_actor = None  # actor torso if separate torsos but shared encoder
         self.torso_critic = None  # critic torso if separate torsos but shared encoder
