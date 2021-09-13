@@ -104,14 +104,16 @@ class ActorCritic(T.nn.Module):
         self.critic = critic
         self.share_encoder = share_encoder
         self.share_torso = share_torso
-        self.encoder = None
-        self.encoder_actor = None
-        self.encoder_critic = None
-        self.torso = None
-        self.torso_actor = None
-        self.torso_critic = None
-        self.head_actor = None
-        self.head_critic = None
+        self.encoder = None  # encoder if shared encoder
+        self.encoder_actor = None  # actor encoder if separate encoders but shared torso
+        self.encoder_critic = (
+            None  # critic encoder if separate encoders but shared torso
+        )
+        self.torso = None  # torso if shared torso
+        self.torso_actor = None  # actor torso if separate torsos but shared encoder
+        self.torso_critic = None  # critic torso if separate torsos but shared encoder
+        self.head_actor = None  # actor head if shared layers
+        self.head_critic = None  # critic head if share layers
         self.online_variables = None
         self.target_variables = None
         self.polyak_coeff = None
