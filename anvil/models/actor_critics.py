@@ -1,5 +1,5 @@
 import copy
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 
 import torch as T
 
@@ -284,11 +284,52 @@ class TD3ActorCritic(ActorCritic):
     ) -> None:
         super().__init__(actor, critic, share_encoder, share_torso)
         self.polyak_coeff = polyak_coeff
-        self.critic_2 = copy.deepcopy(critic)
-        self.target_critic = copy.deepcopy(critic)
-        self.target_critic_2 = copy.deepcopy(critic)
+        if not self.share_encoder and not self.share_torso:
+            self.critic_2 = copy.deepcopy(critic)
+            self.target_critic = copy.deepcopy(critic)
+            self.target_critic_2 = copy.deepcopy(critic)
+            self.online_variables = trainable_variables(self.critic)
+            self.online_variables += trainable_variables(self.critic_2)
+        else:
+            # assign encoder variables and target layer
+            if self.share_encoder:
+                encoder_2 = copy.deepcopy(self.encoder)
+                target_encoder = copy.deepcopy(self.encoder)
+                target_encoder_2 = copy.deepcopy(self.encoder)
+                self.online_variables = trainable_variables(self.encoder)
+            else:
+                encoder_2 = copy.deepcopy(self.encoder_critic)
+                target_encoder = copy.deepcopy(self.encoder_critic)
+                target_encoder_2 = copy.deepcopy(self.encoder_critic)
+                self.online_variables = trainable_variables(self.encoder_critic)
 
-        self.online_variables = trainable_variables(self.critic)
+            # assign torso variables and target layer
+            if self.share_torso:
+                torso_2 = copy.deepcopy(self.torso)
+                target_torso = copy.deepcopy(self.torso)
+                target_torso_2 = copy.deepcopy(self.torso)
+                self.online_variables += trainable_variables(self.torso)
+            else:
+                torso_2 = copy.deepcopy(self.torso_critic)
+                target_torso = copy.deepcopy(self.torso_critic)
+                target_torso_2 = copy.deepcopy(self.torso_critic)
+                self.online_variables += trainable_variables(self.torso_critic)
+
+            # assign head variables and target layer
+            head_2 = copy.deepcopy(self.head_critic)
+            target_head = copy.deepcopy(self.head_critic)
+            target_head_2 = copy.deepcopy(self.head_critic)
+            self.online_variables += trainable_variables(self.head_critic)
+
+            # define the other critic networks
+            self.critic_2 = T.nn.Sequential(encoder_2, torso_2, head_2)
+            self.target_critic = T.nn.Sequential(
+                target_encoder, target_torso, target_head
+            )
+            self.target_critic_2 = T.nn.Sequential(
+                target_encoder_2, target_torso_2, target_head_2
+            )
+
         self.online_variables += trainable_variables(self.critic_2)
         self.target_variables = trainable_variables(self.target_critic)
         self.target_variables += trainable_variables(self.target_critic_2)
@@ -296,3 +337,12 @@ class TD3ActorCritic(ActorCritic):
         for target in self.target_variables:
             target.requires_grad = False
         self.assign_targets()
+
+    def forward_critic(self, *inputs) -> Tuple[T.Tensor, T.Tensor]:
+        """Run a forward pass to get the critic outputs"""
+        if not self.share_torso and not self.share_encoder:
+            return self.critic(*inputs), self.critic_2(*inputs)
+        else:
+            out = self._forward_critic_encoder(*inputs)
+            out = self._forward_critic_torso(out)
+            return self.head_critic(out), self.critic_2(*inputs)

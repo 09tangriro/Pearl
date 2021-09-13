@@ -100,10 +100,13 @@ def test_actor():
     assert output.shape == (1,)
 
 
-@pytest.mark.parametrize("actor_critic_class", [ActorCritic, ActorCriticWithTarget])
+@pytest.mark.parametrize(
+    "actor_critic_class", [ActorCritic, ActorCriticWithTarget, TD3ActorCritic]
+)
 @pytest.mark.parametrize("share_encoder", [True, False])
 @pytest.mark.parametrize("share_torso", [True, False])
 def test_actor_critic_shared_arch(actor_critic_class, share_encoder, share_torso):
+    input = T.tensor([1, 1], dtype=T.float32)
     actor = Actor(
         encoder=IdentityEncoder(),
         torso=MLP([2, 3, 2]),
@@ -126,6 +129,12 @@ def test_actor_critic_shared_arch(actor_critic_class, share_encoder, share_torso
     else:
         assert not actor_critic.actor and not actor_critic.critic
 
-    if actor_critic_class != ActorCritic:
-        input = T.tensor([1, 1], dtype=T.float32)
+    if actor_critic_class == TD3ActorCritic:
+        print(actor_critic)
+        assert actor_critic.forward_critic(input) == (
+            actor_critic.target_critic(input),
+            actor_critic.target_critic_2(input),
+        )
+
+    if actor_critic_class == ActorCriticWithTarget:
         assert actor_critic.forward_critic(input) == actor_critic.target_critic(input)
