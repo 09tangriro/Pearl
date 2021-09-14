@@ -1,15 +1,11 @@
-import warnings
 from typing import Union
 
 import numpy as np
-import psutil
 import torch as T
 from gym import Space
 
 from anvil.buffers.base_buffer import BaseBuffer
-from anvil.buffers.utils import get_space_shape
 from anvil.common.type_aliases import Trajectories, TrajectoryType
-from anvil.common.utils import get_device
 
 
 class ReplayBuffer(BaseBuffer):
