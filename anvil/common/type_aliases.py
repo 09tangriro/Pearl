@@ -11,7 +11,8 @@ class TrajectoryType(Enum):
     TORCH = "torch"
 
 
-class Trajectories(dataclass):
+@dataclass
+class Trajectories:
     observations: Union[np.ndarray, T.Tensor]
     actions: Union[np.ndarray, T.Tensor]
     rewards: Union[np.ndarray, T.Tensor]
