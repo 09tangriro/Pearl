@@ -3,8 +3,9 @@ from typing import List, Optional, Tuple, Type, Union
 
 import torch as T
 
+from anvil.common.utils import get_device
 from anvil.models.heads import BaseActorHead, BaseCriticHead
-from anvil.models.utils import get_device, trainable_variables
+from anvil.models.utils import trainable_variables
 
 
 class Actor(T.nn.Module):
