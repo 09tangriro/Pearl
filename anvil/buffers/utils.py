@@ -15,7 +15,7 @@ def get_space_shape(
         return space.shape
     elif isinstance(space, spaces.Discrete):
         # an int
-        return space.shape
+        return (1,)
     elif isinstance(space, spaces.MultiDiscrete):
         # Number of discrete features
         return (int(len(space.nvec)),)

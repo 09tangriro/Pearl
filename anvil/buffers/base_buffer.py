@@ -101,6 +101,26 @@ class BaseBuffer(ABC):
             self.full = True
             self.pos = 0
 
+    def add_batch_trajectories(
+        self,
+        obs: np.ndarray,
+        actions: np.ndarray,
+        rewards: np.ndarray,
+        next_obs: np.ndarray,
+        dones: np.ndarray,
+    ):
+        """
+        Add a batch of trajectories to the buffer
+
+        :param obs: the observations
+        :param action: the actions taken
+        :param reward: the rewards received
+        :param next_obs: the next observations collected
+        :param done: the trajectory done flags
+        """
+        for data in zip(obs, actions, rewards, next_obs, dones):
+            self.add_trajectory(*data)
+
     @abstractmethod
     def sample(
         self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"

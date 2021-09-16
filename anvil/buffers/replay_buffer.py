@@ -49,6 +49,7 @@ class ReplayBuffer(BaseBuffer):
         else:
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
 
+        print(batch_inds)
         obs = self.observations[batch_inds, 0, :]
         actions = self.actions[batch_inds, 0, :]
         rewards = self.rewards[batch_inds]
