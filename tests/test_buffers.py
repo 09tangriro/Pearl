@@ -34,7 +34,11 @@ def test_buffer_add_trajectory_and_sample(buffer_class):
     next_obs, reward, done, _ = env.step(action)
 
     buffer.add_trajectory(
-        obs=obs, action=action, reward=reward, next_obs=next_obs, done=done
+        observation=obs,
+        action=action,
+        reward=reward,
+        next_observation=next_obs,
+        done=done,
     )
     trajectory_numpy = buffer.sample(batch_size=1, dtype="numpy")
     trajectory_torch = buffer.sample(batch_size=1, dtype="torch")
