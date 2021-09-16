@@ -1,11 +1,15 @@
+import warnings
 from typing import Union
 
 import numpy as np
+import psutil
 import torch as T
 from gym import Space
 
 from anvil.buffers.base_buffer import BaseBuffer
+from anvil.buffers.utils import get_space_shape
 from anvil.common.type_aliases import Trajectories, TrajectoryType
+from anvil.common.utils import get_device
 
 
 class ReplayBuffer(BaseBuffer):
@@ -36,6 +40,26 @@ class ReplayBuffer(BaseBuffer):
             infinite_horizon,
             device,
         )
+        self._check_system_memory()
+
+    def add_trajectory(
+        self,
+        obs: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        next_obs: np.ndarray,
+        done: np.ndarray,
+    ) -> None:
+        self.observations[self.pos] = obs
+        self.observations[(self.pos + 1) % self.buffer_size] = next_obs
+        self.actions[self.pos] = action
+        self.rewards[self.pos] = reward
+        self.dones[self.pos] = done
+
+        self.pos += 1
+        if self.pos == self.buffer_size:
+            self.full = True
+            self.pos = 0
 
     def sample(
         self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
@@ -49,7 +73,6 @@ class ReplayBuffer(BaseBuffer):
         else:
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
 
-        print(batch_inds)
         obs = self.observations[batch_inds, 0, :]
         actions = self.actions[batch_inds, 0, :]
         rewards = self.rewards[batch_inds]

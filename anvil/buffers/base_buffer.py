@@ -45,14 +45,13 @@ class BaseBuffer(ABC):
         self.observations = np.zeros(
             (self.buffer_size, self.n_envs) + obs_shape, dtype=observation_space.dtype
         )
+        self.next_observations = None
         self.actions = np.zeros(
             (self.buffer_size, self.n_envs) + action_shape,
             dtype=observation_space.dtype,
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-
-        self._check_system_memory()
 
     def _check_system_memory(self) -> None:
         """Check that the replay buffer can fit into memory"""
@@ -63,6 +62,8 @@ class BaseBuffer(ABC):
             + self.rewards.nbytes
             + self.dones.nbytes
         )
+        if self.next_observations:
+            total_memory_usage += self.next_observations.nbytes
 
         if total_memory_usage > mem_available:
             # Convert to GB
@@ -73,6 +74,7 @@ class BaseBuffer(ABC):
                 f"replay buffer: {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
             )
 
+    @abstractmethod
     def add_trajectory(
         self,
         obs: np.ndarray,
@@ -90,16 +92,6 @@ class BaseBuffer(ABC):
         :param next_obs: the next observation collected
         :param done: the trajectory done flag
         """
-        self.observations[self.pos] = obs
-        self.observations[(self.pos + 1) % self.buffer_size] = next_obs
-        self.actions[self.pos] = action
-        self.rewards[self.pos] = reward
-        self.dones[self.pos] = done
-
-        self.pos += 1
-        if self.pos == self.buffer_size:
-            self.full = True
-            self.pos = 0
 
     def add_batch_trajectories(
         self,
