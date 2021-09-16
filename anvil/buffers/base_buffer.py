@@ -39,11 +39,12 @@ class BaseBuffer(ABC):
         self.full = False
         self.pos = 0
 
-        obs_shape = get_space_shape(observation_space)
+        self.obs_shape = get_space_shape(observation_space)
         action_shape = get_space_shape(action_space)
 
         self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + obs_shape, dtype=observation_space.dtype
+            (self.buffer_size, self.n_envs) + self.obs_shape,
+            dtype=observation_space.dtype,
         )
         self.next_observations = None
         self.actions = np.zeros(
@@ -77,40 +78,40 @@ class BaseBuffer(ABC):
     @abstractmethod
     def add_trajectory(
         self,
-        obs: np.ndarray,
+        observation: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
-        next_obs: np.ndarray,
+        next_observation: np.ndarray,
         done: np.ndarray,
     ) -> None:
         """
         Add a trajectory to the buffer
 
-        :param obs: the observation
+        :param observation: the observation
         :param action: the action taken
         :param reward: the reward received
-        :param next_obs: the next observation collected
+        :param next_observation: the next observation collected
         :param done: the trajectory done flag
         """
 
     def add_batch_trajectories(
         self,
-        obs: np.ndarray,
+        observations: np.ndarray,
         actions: np.ndarray,
         rewards: np.ndarray,
-        next_obs: np.ndarray,
+        next_observations: np.ndarray,
         dones: np.ndarray,
     ):
         """
         Add a batch of trajectories to the buffer
 
-        :param obs: the observations
+        :param observations: the observations
         :param action: the actions taken
         :param reward: the rewards received
-        :param next_obs: the next observations collected
+        :param next_observations: the next observations collected
         :param done: the trajectory done flags
         """
-        for data in zip(obs, actions, rewards, next_obs, dones):
+        for data in zip(observations, actions, rewards, next_observations, dones):
             self.add_trajectory(*data)
 
     @abstractmethod

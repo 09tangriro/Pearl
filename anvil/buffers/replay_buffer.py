@@ -1,15 +1,11 @@
-import warnings
 from typing import Union
 
 import numpy as np
-import psutil
 import torch as T
 from gym import Space
 
 from anvil.buffers.base_buffer import BaseBuffer
-from anvil.buffers.utils import get_space_shape
 from anvil.common.type_aliases import Trajectories, TrajectoryType
-from anvil.common.utils import get_device
 
 
 class ReplayBuffer(BaseBuffer):
@@ -44,14 +40,14 @@ class ReplayBuffer(BaseBuffer):
 
     def add_trajectory(
         self,
-        obs: np.ndarray,
+        observation: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
-        next_obs: np.ndarray,
+        next_observation: np.ndarray,
         done: np.ndarray,
     ) -> None:
-        self.observations[self.pos] = obs
-        self.observations[(self.pos + 1) % self.buffer_size] = next_obs
+        self.observations[self.pos] = observation
+        self.observations[(self.pos + 1) % self.buffer_size] = next_observation
         self.actions[self.pos] = action
         self.rewards[self.pos] = reward
         self.dones[self.pos] = done
@@ -73,24 +69,24 @@ class ReplayBuffer(BaseBuffer):
         else:
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
 
-        obs = self.observations[batch_inds, 0, :]
+        observations = self.observations[batch_inds, 0, :]
         actions = self.actions[batch_inds, 0, :]
         rewards = self.rewards[batch_inds]
-        next_obs = self.observations[(batch_inds + 1) % self.buffer_size, 0, :]
+        next_observations = self.observations[(batch_inds + 1) % self.buffer_size, 0, :]
         dones = self.dones[batch_inds]
 
         # return torch tensors instead of numpy arrays
         if dtype == TrajectoryType.TORCH:
-            obs = T.tensor(obs).to(self.device)
+            observations = T.tensor(observations).to(self.device)
             actions = T.tensor(actions).to(self.device)
             rewards = T.tensor(rewards).to(self.device)
-            next_obs = T.tensor(next_obs).to(self.device)
+            next_observations = T.tensor(next_observations).to(self.device)
             dones = T.tensor(dones).to(self.device)
 
         return Trajectories(
-            observations=obs,
+            observations=observations,
             actions=actions,
             rewards=rewards,
-            next_observations=next_obs,
+            next_observations=next_observations,
             dones=dones,
         )
