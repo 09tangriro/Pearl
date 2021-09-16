@@ -63,7 +63,7 @@ class BaseBuffer(ABC):
             + self.rewards.nbytes
             + self.dones.nbytes
         )
-        if self.next_observations:
+        if self.next_observations is not None:
             total_memory_usage += self.next_observations.nbytes
 
         if total_memory_usage > mem_available:

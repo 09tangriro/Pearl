@@ -4,11 +4,12 @@ import pytest
 import torch as T
 
 from anvil.buffers import ReplayBuffer
+from anvil.buffers.rollout_buffer import RolloutBuffer
 
 env = gym.make("CartPole-v0")
 
 
-@pytest.mark.parametrize("buffer_class", [ReplayBuffer])
+@pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
 def test_buffer_init(buffer_class):
     action_space = env.action_space
     observation_space = env.observation_space
@@ -22,7 +23,7 @@ def test_buffer_init(buffer_class):
     assert buffer.dones.shape == (5, 1)
 
 
-@pytest.mark.parametrize("buffer_class", [ReplayBuffer])
+@pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
 def test_buffer_add_trajectory_and_sample(buffer_class):
     action_space = env.action_space
     observation_space = env.observation_space
@@ -47,7 +48,7 @@ def test_buffer_add_trajectory_and_sample(buffer_class):
     assert isinstance(trajectory_torch.observations, T.Tensor)
 
 
-@pytest.mark.parametrize("buffer_class", [ReplayBuffer])
+@pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
 def test_add_batch_trajectories_and_sample(buffer_class):
     action_space = env.action_space
     observation_space = env.observation_space
