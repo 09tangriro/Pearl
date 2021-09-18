@@ -38,6 +38,15 @@ class PolicyGradient(object):
         advantages: T.Tensor,
         log_probs: Optional[T.Tensor] = None,
     ) -> ActorUpdaterLog:
+        """
+        Perform and optimization step
+
+        :param model: the model on which the optimization should be run
+        :param observations: observations
+        :param actions: actions
+        :param advantages: advantage function
+        :param log_probs: log probability of observing actions given the observations
+        """
         optimizer = self.optimizer_class(model.parameters(), lr=self.lr)
         distributions = model.get_action_distribution(observations)
         new_log_probs = distributions.log_prob(actions).sum(dim=-1)

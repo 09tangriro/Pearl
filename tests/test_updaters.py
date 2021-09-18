@@ -19,15 +19,13 @@ head_actor = DiagGaussianPolicyHead(input_shape=2, action_size=1)
 head_critic = ValueHead(input_shape=2, activation_fn=None)
 actor = Actor(encoder=encoder_actor, torso=torso_actor, head=head_actor)
 critic = Critic(encoder=encoder_critic, torso=torso_critic, head=head_critic)
-actor_critic = ActorCritic(
-    actor=actor, critic=critic, share_encoder=False, share_torso=False
+critic_shared_encoder = Critic(
+    encoder=encoder_actor, torso=torso_critic, head=head_critic
 )
-actor_critic_shared_encoder = ActorCritic(
-    actor=actor, critic=critic, share_encoder=True, share_torso=False
-)
-actor_critic_shared = ActorCritic(
-    actor=actor, critic=critic, share_encoder=True, share_torso=True
-)
+critic_shared = Critic(encoder=encoder_actor, torso=torso_actor, head=head_critic)
+actor_critic = ActorCritic(actor=actor, critic=critic)
+actor_critic_shared_encoder = ActorCritic(actor=actor, critic=critic_shared_encoder)
+actor_critic_shared = ActorCritic(actor=actor, critic=critic_shared)
 
 
 @pytest.mark.parametrize(
@@ -56,7 +54,7 @@ def test_kl_divergence(kl_divergence):
 
 
 @pytest.mark.parametrize(
-    "model", [actor, actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+    "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared]
 )
 def test_policy_gradient(model):
     observation = T.rand(2)

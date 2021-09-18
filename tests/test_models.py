@@ -19,7 +19,6 @@ from anvil.models.heads import (
     ValueHead,
 )
 from anvil.models.torsos import MLP
-from anvil.models.utils import trainable_variables
 
 
 def test_mlp():
@@ -103,31 +102,24 @@ def test_actor():
 @pytest.mark.parametrize(
     "actor_critic_class", [ActorCritic, ActorCriticWithTarget, TD3ActorCritic]
 )
-@pytest.mark.parametrize("share_encoder", [True, False])
-@pytest.mark.parametrize("share_torso", [True, False])
-def test_actor_critic_shared_arch(actor_critic_class, share_encoder, share_torso):
+def test_actor_critic_shared_arch(actor_critic_class):
     input = T.tensor([1, 1], dtype=T.float32)
+    encoder = IdentityEncoder()
     actor = Actor(
-        encoder=IdentityEncoder(),
+        encoder=encoder,
         torso=MLP([2, 3, 2]),
         head=DeterministicPolicyHead(input_shape=2, action_shape=1, activation_fn=None),
     )
 
     critic = Critic(
-        encoder=IdentityEncoder(),
+        encoder=encoder,
         torso=MLP([2, 2]),
         head=ValueHead(input_shape=2, activation_fn=None),
     )
 
-    actor_critic = actor_critic_class(
-        actor=actor, critic=critic, share_encoder=share_encoder, share_torso=share_torso
-    )
+    actor_critic = actor_critic_class(actor=actor, critic=critic)
 
-    if not share_encoder and not share_torso:
-        assert actor_critic.actor and actor_critic.critic
-
-    else:
-        assert not actor_critic.actor and not actor_critic.critic
+    assert actor_critic.actor and actor_critic.critic
 
     if actor_critic_class == TD3ActorCritic:
         assert actor_critic.forward_critic(input) == (
