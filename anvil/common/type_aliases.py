@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import torch as T
@@ -18,3 +18,10 @@ class Trajectories:
     rewards: Union[np.ndarray, T.Tensor]
     next_observations: Union[np.ndarray, T.Tensor]
     dones: Union[np.ndarray, T.Tensor]
+
+
+@dataclass
+class ActorUpdaterLog:
+    loss: T.Tensor
+    kl: Optional[T.Tensor]
+    entropy: T.Tensor

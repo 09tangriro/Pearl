@@ -22,8 +22,6 @@ class Actor(T.nn.Module):
         encoder: T.nn.Module,
         torso: T.nn.Module,
         head: BaseActorHead,
-        optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
-        lr: float = 1e-3,
         device: Union[T.device, str] = "auto",
     ):
         super().__init__()
@@ -31,7 +29,6 @@ class Actor(T.nn.Module):
         self.encoder = encoder.to(device)
         self.torso = torso.to(device)
         self.head = head.to(device)
-        self.optimizer = optimizer_class(self.parameters(), lr=lr)
 
     def get_action_distribution(
         self, *inputs
@@ -61,8 +58,6 @@ class Critic(T.nn.Module):
         encoder: T.nn.Module,
         torso: T.nn.Module,
         head: BaseCriticHead,
-        optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
-        lr: float = 1e-3,
         device: Union[T.device, str] = "auto",
     ):
         super().__init__()
@@ -70,7 +65,6 @@ class Critic(T.nn.Module):
         self.encoder = encoder.to(device)
         self.torso = torso.to(device)
         self.head = head.to(device)
-        self.optimizer = optimizer_class(self.parameters(), lr=lr)
 
     def forward(self, *inputs) -> List[T.Tensor]:
         out = self.encoder(*inputs)
@@ -85,7 +79,8 @@ class ActorCritic(T.nn.Module):
     This module allows for a shared architecture, which assumes the actor layers
     should be used as the shared layers if specified. By default, the encoder is
     shared since we assume an encoder is used that does not have trainable variables
-    (e.g. FlattenEncoder) so it makes sense to save the memory.
+    (e.g. FlattenEncoder) so it makes sense to save the memory. If layers are shared
+    we rebuild the model to allow for easier debugging by printing.
 
     :param actor: the actor/policy network
     :param critic: the critic network
