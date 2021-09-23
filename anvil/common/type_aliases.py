@@ -24,4 +24,4 @@ class Trajectories:
 class ActorUpdaterLog:
     loss: T.Tensor
     kl: Optional[T.Tensor]
-    entropy: T.Tensor
+    entropy: Optional[T.Tensor]
