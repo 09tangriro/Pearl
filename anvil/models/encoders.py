@@ -16,7 +16,7 @@ class IdentityEncoder(T.nn.Module):
         self, observations: T.Tensor, actions: Optional[T.Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        if actions:
+        if actions is not None:
             observations = T.cat([observations, actions], dim=-1)
         return observations
 
@@ -32,7 +32,7 @@ class FlattenEncoder(T.nn.Module):
         self, observations: T.Tensor, actions: Optional[T.Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        if actions:
+        if actions is not None:
             observations = T.cat([observations, actions], dim=-1)
         return self.flatten(observations)
 
