@@ -31,14 +31,14 @@ class Actor(T.nn.Module):
         self.head = head.to(device)
 
     def get_action_distribution(
-        self, *inputs
+        self, observations: T.Tensor
     ) -> Optional[T.distributions.Distribution]:
         """Get the action distribution, returns None if deterministic"""
-        latent_out = self.torso(self.encoder(*inputs))
+        latent_out = self.torso(self.encoder(observations))
         return self.head.get_action_distribution(latent_out)
 
-    def forward(self, *inputs) -> List[T.Tensor]:
-        out = self.encoder(*inputs)
+    def forward(self, observations: T.Tensor) -> List[T.Tensor]:
+        out = self.encoder(observations)
         out = self.torso(out)
         out = self.head(out)
         return out
@@ -66,8 +66,10 @@ class Critic(T.nn.Module):
         self.torso = torso.to(device)
         self.head = head.to(device)
 
-    def forward(self, *inputs) -> List[T.Tensor]:
-        out = self.encoder(*inputs)
+    def forward(
+        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+    ) -> List[T.Tensor]:
+        out = self.encoder(observations, actions)
         out = self.torso(out)
         out = self.head(out)
         return out
@@ -131,18 +133,20 @@ class ActorCritic(T.nn.Module):
                 target.data.add_((1 - self.polyak_coeff) * online.data)
 
     def get_action_distribution(
-        self, *inputs
+        self, observations: T.Tensor
     ) -> Optional[T.distributions.Distribution]:
         """Get the action distribution, returns None if deterministic"""
-        return self.actor.get_action_distribution(*inputs)
+        return self.actor.get_action_distribution(observations)
 
-    def forward_critic(self, *inputs) -> T.Tensor:
+    def forward_critic(
+        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+    ) -> T.Tensor:
         """Run a forward pass to get the critic output"""
-        return self.critic(*inputs)
+        return self.critic(observations, actions)
 
-    def forward(self, *inputs) -> T.Tensor:
+    def forward(self, observations: T.Tensor) -> T.Tensor:
         """The default forward pass retrieves an action prediciton"""
-        return self.actor(*inputs)
+        return self.actor(observations)
 
 
 class ActorCriticWithTarget(ActorCritic):
@@ -173,9 +177,11 @@ class ActorCriticWithTarget(ActorCritic):
             target.requires_grad = False
         self.assign_targets()
 
-    def forward_target(self, *inputs) -> T.Tensor:
+    def forward_target(
+        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+    ) -> T.Tensor:
         """Run a forward pass to get the target critic output"""
-        return self.target_critic(*inputs)
+        return self.target_critic(observations, actions)
 
 
 class TD3ActorCritic(ActorCritic):
@@ -207,6 +213,8 @@ class TD3ActorCritic(ActorCritic):
             target.requires_grad = False
         self.assign_targets()
 
-    def forward_critic(self, *inputs) -> Tuple[T.Tensor, T.Tensor]:
+    def forward_critic(
+        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+    ) -> Tuple[T.Tensor, T.Tensor]:
         """Run a forward pass to get the critic outputs"""
-        return self.critic(*inputs), self.critic_2(*inputs)
+        return self.critic(observations, actions), self.critic_2(observations, actions)
