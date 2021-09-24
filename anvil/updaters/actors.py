@@ -216,6 +216,12 @@ class DeterministicPolicyGradient(object):
 class SoftPolicyGradient(object):
     """
     Policy gradient update used in SAC: https://spinningup.openai.com/en/latest/algorithms/sac.html
+
+    :param optimizer_class: the type of optimizer to use, defaults to Adam
+    :param lr: the learning rate for the optimizer algorithm
+    :param entropy_coeff: entropy weighting coefficient
+    :param squashed_output: whether to squash the actions using tanh, defaults to True
+    :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
     def __init__(
@@ -236,14 +242,15 @@ class SoftPolicyGradient(object):
         self,
         actor: Actor,
         critic1: Critic,
-        critic2: Critic,
+        critic2: Optional[Critic],
         observations: T.Tensor,
     ) -> ActorUpdaterLog:
         """
         Perform an optimization step
 
         :param actor: the actor model or sub-model
-        :param critic: the critic model or sub-model
+        :param critic1: the first critic model or sub-model
+        :param critic2: optional second critic model or sub-model
         :param observations:
         """
         optimizer = self.optimizer_class(actor.parameters(), lr=self.lr)
@@ -253,6 +260,8 @@ class SoftPolicyGradient(object):
             var.requires_grad = False
 
         distributions = actor.get_action_distribution(observations)
+        # use the reparametrization trick for backpropagation
+        # https://gregorygundersen.com/blog/2018/04/29/reparameterization/
         actions = distributions.rsample()
         if self.squashed_output:
             actions = T.tanh(actions)
@@ -260,8 +269,11 @@ class SoftPolicyGradient(object):
         entropy = distributions.entropy().mean()
 
         values1 = critic1(observations, actions)
-        values2 = critic2(observations, actions)
-        values = T.min(values1, values2)
+        if critic2 is not None:
+            values2 = critic2(observations, actions)
+            values = T.min(values1, values2)
+        else:
+            values = values1
 
         loss = (self.entropy_coeff * log_probs - values).mean()
 
