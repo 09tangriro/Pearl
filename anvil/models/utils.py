@@ -1,15 +1,9 @@
 import warnings
-from enum import Enum
 from typing import Tuple, Union
 
 import numpy as np
 import torch as T
 from gym import spaces
-
-
-class NetworkType(Enum):
-    MLP = "mlp"
-    PARAMETER = "parameter"
 
 
 def trainable_variables(model: T.nn.Module) -> list:

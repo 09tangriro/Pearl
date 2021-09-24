@@ -9,7 +9,13 @@ from anvil.updaters.utils import sample_reverse_kl_divergence
 
 
 class BaseActorUpdater(object):
-    """The base class with pre-defined methods for derived classes"""
+    """
+    The base class with pre-defined methods for derived classes
+
+    :param optimizer_class: the type of optimizer to use, defaults to Adam
+    :param lr: the learning rate for the optimizer algorithm
+    :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
+    """
 
     def __init__(
         self,

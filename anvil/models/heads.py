@@ -3,12 +3,15 @@ from typing import Optional, Tuple, Type, Union
 
 import torch as T
 
+from anvil.common.enumerations import NetworkType
 from anvil.models.torsos import MLP
-from anvil.models.utils import NetworkType, get_mlp_size
+from anvil.models.utils import get_mlp_size
+
+################################### BASE CLASSES ###################################
 
 
 class BaseCriticHead(T.nn.Module):
-    """The base class for the head network"""
+    """The base class for the critic head network"""
 
     def __init__(self):
         super().__init__()
@@ -19,6 +22,8 @@ class BaseCriticHead(T.nn.Module):
 
 
 class BaseActorHead(T.nn.Module, ABC):
+    """The base class for the actor head network"""
+
     def __init__(self):
         super().__init__()
 
@@ -36,6 +41,9 @@ class BaseActorHead(T.nn.Module, ABC):
     def forward(self, input: T.Tensor) -> T.Tensor:
         distribution = self.get_action_distribution(input)
         return distribution.sample()
+
+
+################################### CRITIC HEADS ###################################
 
 
 class ValueHead(BaseCriticHead):
@@ -94,6 +102,9 @@ class DiscreteQHead(BaseCriticHead):
             )
         else:
             raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
+
+
+################################### ACTOR HEADS ###################################
 
 
 class DeterministicPolicyHead(BaseActorHead):
@@ -184,6 +195,10 @@ class DiagGaussianPolicyHead(BaseActorHead):
         elif log_std_network_type == NetworkType.PARAMETER:
             self.log_std_network = T.nn.Parameter(
                 T.ones(action_size) * log_std_init, requires_grad=True
+            )
+        else:
+            raise NotImplementedError(
+                f"{log_std_network_type} hasn't been implemented for the log std network yet :("
             )
 
     def get_action_distribution(

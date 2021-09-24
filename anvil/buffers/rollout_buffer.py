@@ -5,7 +5,8 @@ import torch as T
 from gym import Space
 
 from anvil.buffers.base_buffer import BaseBuffer
-from anvil.common.type_aliases import Trajectories, TrajectoryType
+from anvil.common.enumerations import TrajectoryType
+from anvil.common.type_aliases import Trajectories
 
 
 class RolloutBuffer(BaseBuffer):
