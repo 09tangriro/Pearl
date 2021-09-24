@@ -1,6 +1,7 @@
 from typing import Optional, Type, Union
 
 import torch as T
+from numpy import log
 
 from anvil.common.type_aliases import ActorUpdaterLog
 from anvil.models.actor_critics import Actor, ActorCritic, Critic
@@ -210,3 +211,68 @@ class DeterministicPolicyGradient(object):
             var.requires_grad = True
 
         return ActorUpdaterLog(loss=loss)
+
+
+class SoftPolicyGradient(object):
+    """
+    Policy gradient update used in SAC: https://spinningup.openai.com/en/latest/algorithms/sac.html
+    """
+
+    def __init__(
+        self,
+        optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
+        lr: float = 1e-3,
+        entropy_coeff: float = 0.2,
+        squashed_output: bool = True,
+        max_grad: float = 0,
+    ) -> None:
+        self.optimizer_class = optimizer_class
+        self.lr = lr
+        self.entropy_coeff = entropy_coeff
+        self.max_grad = max_grad
+        self.squashed_output = squashed_output
+
+    def __call__(
+        self,
+        actor: Actor,
+        critic1: Critic,
+        critic2: Critic,
+        observations: T.Tensor,
+    ) -> ActorUpdaterLog:
+        """
+        Perform an optimization step
+
+        :param actor: the actor model or sub-model
+        :param critic: the critic model or sub-model
+        :param observations:
+        """
+        optimizer = self.optimizer_class(actor.parameters(), lr=self.lr)
+        # make sure critic isn't updated!
+        critic_variables = critic1.parameters() + critic2.parameters()
+        for var in critic_variables:
+            var.requires_grad = False
+
+        distributions = actor.get_action_distribution(observations)
+        actions = distributions.rsample()
+        if self.squashed_output:
+            actions = T.tanh(actions)
+        log_probs = distributions.log_prob(actions)
+        entropy = distributions.entropy().mean()
+
+        values1 = critic1(observations, actions)
+        values2 = critic2(observations, actions)
+        values = T.min(values1, values2)
+
+        loss = (self.entropy_coeff * log_probs - values).mean()
+
+        optimizer.zero_grad()
+        loss.backward()
+        if self.max_grad > 0:
+            T.nn.utils.clip_grad_norm_(actor.parameters(), self.max_grad)
+        optimizer.step()
+
+        # reset critic parameters
+        for var in critic_variables:
+            var.requires_grad = True
+
+        return ActorUpdaterLog(loss=loss, entropy=entropy)
