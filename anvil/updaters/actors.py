@@ -276,10 +276,10 @@ class SoftPolicyGradient(BaseActorUpdater):
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
         # make sure critic isn't updated!
         if critic2 is not None:
-            critic_variables = critic1.parameters() + critic2.parameters()
+            critic_parameters = critic1.parameters() + critic2.parameters()
         else:
-            critic_variables = critic1.parameters()
-        for var in critic_variables:
+            critic_parameters = critic1.parameters()
+        for var in critic_parameters:
             var.requires_grad = False
 
         distributions = actor.get_action_distribution(observations)
@@ -303,7 +303,7 @@ class SoftPolicyGradient(BaseActorUpdater):
         self.run_optimizer(optimizer, loss, actor_parameters)
 
         # reset critic parameters
-        for var in critic_variables:
+        for var in critic_parameters:
             var.requires_grad = True
 
         return ActorUpdaterLog(loss=loss.detach(), entropy=entropy.detach())
