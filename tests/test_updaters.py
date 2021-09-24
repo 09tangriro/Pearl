@@ -5,7 +5,11 @@ from anvil.models import Actor, ActorCritic, Critic
 from anvil.models.encoders import IdentityEncoder
 from anvil.models.heads import DiagGaussianPolicyHead, ValueHead
 from anvil.models.torsos import MLP
-from anvil.updaters.actors import PolicyGradient
+from anvil.updaters.actors import (
+    DeterministicPolicyGradient,
+    PolicyGradient,
+    ProximalPolicyClip,
+)
 from anvil.updaters.utils import (
     sample_forward_kl_divergence,
     sample_reverse_kl_divergence,
@@ -64,20 +68,45 @@ def test_policy_gradient(model):
             critic_before = model.forward_critic(observation)
 
     updater = PolicyGradient(max_grad=0.5)
-    if model == actor_critic:
-        updater(
-            model=model.actor,
-            observations=observation,
-            actions=T.rand(1),
-            advantages=T.rand(1),
-        )
-    else:
-        updater(
-            model=model,
-            observations=observation,
-            actions=T.rand(1),
-            advantages=T.rand(1),
-        )
+
+    updater(
+        model=model,
+        observations=observation,
+        actions=T.rand(1),
+        advantages=T.rand(1),
+    )
+
+    out_after = model(observation)
+    if model != actor:
+        with T.no_grad():
+            critic_after = model.forward_critic(observation)
+
+    assert out_after != out_before
+    if model == actor_critic or model == actor_critic_shared_encoder:
+        assert critic_after == critic_before
+    if model == actor_critic_shared:
+        assert critic_after != critic_before
+
+
+@pytest.mark.parametrize(
+    "model", [actor, actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+)
+def test_proximal_policy_clip(model):
+    observation = T.rand(2)
+    out_before = model(observation)
+    if model != actor:
+        with T.no_grad():
+            critic_before = model.forward_critic(observation)
+
+    updater = ProximalPolicyClip(max_grad=0.5)
+
+    updater(
+        model=model,
+        observations=observation,
+        actions=T.rand(1),
+        advantages=T.rand(1),
+        old_log_probs=T.rand(1),
+    )
 
     out_after = model(observation)
     if model != actor:
