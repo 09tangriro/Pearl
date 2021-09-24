@@ -222,20 +222,14 @@ class DeterministicPolicyGradient(BaseActorUpdater):
         """
         actor_parameters = actor.parameters()
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        # make sure critic isn't updated!
-        for var in critic.parameters():
-            var.requires_grad = False
 
         actions = actor(observations)
-        values = critic(observations, actions)
+        with T.no_grad():
+            values = critic(observations, actions)
 
         loss = -values.mean()
 
         self.run_optimizer(optimizer, loss, actor_parameters)
-
-        # reset critic parameters
-        for var in critic.parameters():
-            var.requires_grad = True
 
         return ActorUpdaterLog(loss=loss.detach())
 
@@ -280,13 +274,6 @@ class SoftPolicyGradient(BaseActorUpdater):
         """
         actor_parameters = actor.parameters()
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        # make sure critic isn't updated!
-        if critic2 is not None:
-            critic_parameters = critic1.parameters() + critic2.parameters()
-        else:
-            critic_parameters = critic1.parameters()
-        for var in critic_parameters:
-            var.requires_grad = False
 
         distributions = actor.get_action_distribution(observations)
         # use the reparametrization trick for backpropagation
@@ -297,19 +284,16 @@ class SoftPolicyGradient(BaseActorUpdater):
         log_probs = distributions.log_prob(actions)
         entropy = distributions.entropy().mean()
 
-        values1 = critic1(observations, actions)
-        if critic2 is not None:
-            values2 = critic2(observations, actions)
-            values = T.min(values1, values2)
-        else:
-            values = values1
+        with T.no_grad():
+            values1 = critic1(observations, actions)
+            if critic2 is not None:
+                values2 = critic2(observations, actions)
+                values = T.min(values1, values2)
+            else:
+                values = values1
 
         loss = (self.entropy_coeff * log_probs - values).mean()
 
         self.run_optimizer(optimizer, loss, actor_parameters)
-
-        # reset critic parameters
-        for var in critic_parameters:
-            var.requires_grad = True
 
         return ActorUpdaterLog(loss=loss.detach(), entropy=entropy.detach())
