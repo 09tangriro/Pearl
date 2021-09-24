@@ -1,14 +1,50 @@
-from typing import Optional, Type, Union
+from typing import Iterator, Optional, Type, Union
 
 import torch as T
-from numpy import log
+from torch.nn.parameter import Parameter
 
 from anvil.common.type_aliases import ActorUpdaterLog
 from anvil.models.actor_critics import Actor, ActorCritic, Critic
 from anvil.updaters.utils import sample_reverse_kl_divergence
 
 
-class PolicyGradient(object):
+class BaseActorUpdater(object):
+    """The base class with pre-defined methods for derived classes"""
+
+    def __init__(
+        self,
+        optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
+        lr: float = 1e-3,
+        max_grad: float = 0,
+    ) -> None:
+        self.optimizer_class = optimizer_class
+        self.lr = lr
+        self.max_grad = max_grad
+
+    def _get_model_parameters(
+        self, model: Union[Actor, ActorCritic]
+    ) -> Iterator[Parameter]:
+        """Get the actor model parameters"""
+        if isinstance(model, Actor):
+            return model.parameters()
+        else:
+            return model.actor.parameters()
+
+    def run_optimizer(
+        self,
+        optimizer: T.optim.Optimizer,
+        loss: T.Tensor,
+        actor_parameters: Iterator[Parameter],
+    ) -> None:
+        """Run an optimization step"""
+        optimizer.zero_grad()
+        loss.backward()
+        if self.max_grad > 0:
+            T.nn.utils.clip_grad_norm_(actor_parameters, self.max_grad)
+        optimizer.step()
+
+
+class PolicyGradient(BaseActorUpdater):
     """
     Vanilla policy gradient with entropy regulation: https://spinningup.openai.com/en/latest/algorithms/vpg.html
     loss = -E[A(state,action) * log(policy(action|state)) + entropy_coeff * entropy(policy)]
@@ -26,10 +62,8 @@ class PolicyGradient(object):
         entropy_coeff: float = 0.01,
         max_grad: float = 0,
     ) -> None:
+        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.entropy_coeff = entropy_coeff
-        self.max_grad = max_grad
-        self.optimizer_class = optimizer_class
-        self.lr = lr
 
     def __call__(
         self,
@@ -48,7 +82,8 @@ class PolicyGradient(object):
         :param advantages:
         :param old_log_probs:
         """
-        optimizer = self.optimizer_class(model.parameters(), lr=self.lr)
+        actor_parameters = self._get_model_parameters(model)
+        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
         distributions = model.get_action_distribution(observations)
         new_log_probs = distributions.log_prob(actions).sum(dim=-1)
         entropy = distributions.entropy().mean()
@@ -58,11 +93,7 @@ class PolicyGradient(object):
 
         loss = batch_loss + entropy_loss
 
-        optimizer.zero_grad()
-        loss.backward()
-        if self.max_grad > 0:
-            T.nn.utils.clip_grad_norm_(model.parameters(), self.max_grad)
-        optimizer.step()
+        self.run_optimizer(optimizer, loss, actor_parameters)
 
         loss = loss.detach()
         entropy = entropy.detach()
@@ -76,7 +107,7 @@ class PolicyGradient(object):
         return ActorUpdaterLog(loss=loss, kl=kl, entropy=entropy)
 
 
-class ProximalPolicyClip(object):
+class ProximalPolicyClip(BaseActorUpdater):
     """
     PPO-Clip algorithm with entropy regularization: https://spinningup.openai.com/en/latest/algorithms/ppo.html
     loss = E[min(r)]
@@ -98,12 +129,10 @@ class ProximalPolicyClip(object):
         entropy_coeff: float = 0.01,
         max_grad: float = 0,
     ) -> None:
-        self.optimizer_class = optimizer_class
-        self.lr = lr
+        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.ratio_clip = ratio_clip
         self.max_kl = max_kl
         self.entropy_coeff = entropy_coeff
-        self.max_grad = max_grad
 
     def __call__(
         self,
@@ -122,7 +151,8 @@ class ProximalPolicyClip(object):
         :param advantages:
         :param old_log_probs:
         """
-        optimizer = self.optimizer_class(model.parameters(), lr=self.lr)
+        actor_parameters = self._get_model_parameters(model)
+        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
         distributions = model.get_action_distribution(observations)
         new_log_probs = distributions.log_prob(actions).sum(dim=-1)
         entropy = distributions.entropy().mean()
@@ -139,11 +169,7 @@ class ProximalPolicyClip(object):
 
         loss = batch_loss + entropy_loss
 
-        optimizer.zero_grad()
-        loss.backward()
-        if self.max_grad > 0:
-            T.nn.utils.clip_grad_norm_(model.parameters(), self.max_grad)
-        optimizer.step()
+        self.run_optimizer(optimizer, loss, actor_parameters)
 
         loss = loss.detach()
         entropy = entropy.detach()
@@ -157,7 +183,7 @@ class ProximalPolicyClip(object):
         return ActorUpdaterLog(loss=loss, kl=kl, entropy=entropy)
 
 
-class DeterministicPolicyGradient(object):
+class DeterministicPolicyGradient(BaseActorUpdater):
     """
     Deterministic policy gradient used in DDPG: https://spinningup.openai.com/en/latest/algorithms/ddpg.html
     loss = -E[critic(state, actor(state))]
@@ -173,9 +199,7 @@ class DeterministicPolicyGradient(object):
         lr: float = 1e-3,
         max_grad: float = 0,
     ) -> None:
-        self.optimizer_class = optimizer_class
-        self.lr = lr
-        self.max_grad = max_grad
+        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
 
     def __call__(
         self,
@@ -190,7 +214,8 @@ class DeterministicPolicyGradient(object):
         :param critic: the critic model or sub-model
         :param observations:
         """
-        optimizer = self.optimizer_class(actor.parameters(), lr=self.lr)
+        actor_parameters = actor.parameters()
+        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
         # make sure critic isn't updated!
         for var in critic.parameters():
             var.requires_grad = False
@@ -200,20 +225,16 @@ class DeterministicPolicyGradient(object):
 
         loss = -values.mean()
 
-        optimizer.zero_grad()
-        loss.backward()
-        if self.max_grad > 0:
-            T.nn.utils.clip_grad_norm_(actor.parameters(), self.max_grad)
-        optimizer.step()
+        self.run_optimizer(optimizer, loss, actor_parameters)
 
         # reset critic parameters
         for var in critic.parameters():
             var.requires_grad = True
 
-        return ActorUpdaterLog(loss=loss)
+        return ActorUpdaterLog(loss=loss.detach())
 
 
-class SoftPolicyGradient(object):
+class SoftPolicyGradient(BaseActorUpdater):
     """
     Policy gradient update used in SAC: https://spinningup.openai.com/en/latest/algorithms/sac.html
 
@@ -232,10 +253,8 @@ class SoftPolicyGradient(object):
         squashed_output: bool = True,
         max_grad: float = 0,
     ) -> None:
-        self.optimizer_class = optimizer_class
-        self.lr = lr
+        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.entropy_coeff = entropy_coeff
-        self.max_grad = max_grad
         self.squashed_output = squashed_output
 
     def __call__(
@@ -253,9 +272,13 @@ class SoftPolicyGradient(object):
         :param critic2: optional second critic model or sub-model
         :param observations:
         """
-        optimizer = self.optimizer_class(actor.parameters(), lr=self.lr)
+        actor_parameters = actor.parameters()
+        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
         # make sure critic isn't updated!
-        critic_variables = critic1.parameters() + critic2.parameters()
+        if critic2 is not None:
+            critic_variables = critic1.parameters() + critic2.parameters()
+        else:
+            critic_variables = critic1.parameters()
         for var in critic_variables:
             var.requires_grad = False
 
@@ -277,14 +300,10 @@ class SoftPolicyGradient(object):
 
         loss = (self.entropy_coeff * log_probs - values).mean()
 
-        optimizer.zero_grad()
-        loss.backward()
-        if self.max_grad > 0:
-            T.nn.utils.clip_grad_norm_(actor.parameters(), self.max_grad)
-        optimizer.step()
+        self.run_optimizer(optimizer, loss, actor_parameters)
 
         # reset critic parameters
         for var in critic_variables:
             var.requires_grad = True
 
-        return ActorUpdaterLog(loss=loss, entropy=entropy)
+        return ActorUpdaterLog(loss=loss.detach(), entropy=entropy.detach())
