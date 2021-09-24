@@ -25,3 +25,8 @@ class ActorUpdaterLog:
     loss: T.Tensor
     kl: Optional[T.Tensor]
     entropy: Optional[T.Tensor]
+
+
+@dataclass
+class CriticUpdaterLog:
+    loss: T.Tensor
