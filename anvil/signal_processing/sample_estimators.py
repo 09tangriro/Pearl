@@ -62,7 +62,7 @@ def generalized_advantage_estimate(
     :param old_values: value function result with old_state input
     :param new_values: value function result with new_state input
     :param rewards: agent reward of taking actions in the environment
-    :param dones: flag for end of episode
+    :param dones: the done values of each step of the trajectory, indicates whether to bootstrap
     :param gamma: exponential mean discount
     :param gae_lambda: trajectory discount
     """
