@@ -9,6 +9,7 @@ from anvil.updaters.actors import (
     DeterministicPolicyGradient,
     PolicyGradient,
     ProximalPolicyClip,
+    SoftPolicyGradient,
 )
 from anvil.updaters.utils import (
     sample_forward_kl_divergence,
@@ -148,6 +149,36 @@ def test_deterministic_policy_gradient(model):
     updater(
         actor=model.actor,
         critic=model.critic,
+        observations=observation,
+    )
+
+    out_after = model(observation)
+    with T.no_grad():
+        critic_after = model.forward_critic(observation, action)
+
+    assert out_after != out_before
+    if model == continuous_actor_critic:
+        assert critic_after == critic_before
+    if model == continuous_actor_critic_shared:
+        assert critic_after != critic_before
+
+
+@pytest.mark.parametrize(
+    "model", [continuous_actor_critic, continuous_actor_critic_shared]
+)
+def test_soft_policy_gradient(model):
+    observation = T.rand(2)
+    action = T.rand(1)
+    out_before = model(observation)
+    with T.no_grad():
+        critic_before = model.forward_critic(observation, action)
+
+    updater = SoftPolicyGradient(max_grad=0.5)
+
+    updater(
+        actor=model.actor,
+        critic1=model.critic,
+        critic2=None,
         observations=observation,
     )
 
