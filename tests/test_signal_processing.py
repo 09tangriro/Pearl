@@ -1,5 +1,7 @@
+import gym
 import numpy as np
 
+from anvil.signal_processing.normalizers import even_normalizer
 from anvil.signal_processing.sample_estimators import (
     TD_lambda,
     TD_zero,
@@ -46,3 +48,13 @@ def test_generalized_advantage_estimate():
 
     np.equal(actual_advantages, expected_advantages)
     np.equal(actual_returns, expected_returns)
+
+
+def test_even_normalizer():
+    env = gym.make("CartPole-v1")
+    observation_space = env.observation_space
+    observation = observation_space.sample()
+    normalized_observation = even_normalizer(observation, observation_space)
+    np.testing.assert_array_less(
+        abs(normalized_observation), [1.00001, 1.00001, 1.00001, 1.00001]
+    )
