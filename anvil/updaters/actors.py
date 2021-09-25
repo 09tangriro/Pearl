@@ -224,8 +224,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
 
         actions = actor(observations)
-        with T.no_grad():
-            values = critic(observations, actions)
+        values = critic(observations, actions)
 
         loss = -values.mean()
 

@@ -2,7 +2,7 @@ import pytest
 import torch as T
 
 from anvil.models import Actor, ActorCritic, Critic
-from anvil.models.encoders import IdentityEncoder
+from anvil.models.encoders import IdentityEncoder, MLPEncoder
 from anvil.models.heads import DiagGaussianPolicyHead, ValueHead
 from anvil.models.torsos import MLP
 from anvil.updaters.actors import (
@@ -16,20 +16,33 @@ from anvil.updaters.utils import (
 )
 
 encoder_critic = IdentityEncoder()
+encoder_critic_continuous = MLPEncoder(input_size=3, output_size=2)
 encoder_actor = IdentityEncoder()
-torso_critic = MLP([2, 2])
-torso_actor = MLP([2, 2])
+torso_critic = MLP(layer_sizes=[2, 2])
+torso_actor = MLP(layer_sizes=[2, 2])
 head_actor = DiagGaussianPolicyHead(input_shape=2, action_size=1)
 head_critic = ValueHead(input_shape=2, activation_fn=None)
+
 actor = Actor(encoder=encoder_actor, torso=torso_actor, head=head_actor)
 critic = Critic(encoder=encoder_critic, torso=torso_critic, head=head_critic)
+continuous_critic = Critic(
+    encoder=encoder_critic_continuous, torso=torso_critic, head=head_critic
+)
+continuous_critic_shared = Critic(
+    encoder=encoder_critic_continuous, torso=torso_actor, head=head_critic
+)
 critic_shared_encoder = Critic(
     encoder=encoder_actor, torso=torso_critic, head=head_critic
 )
 critic_shared = Critic(encoder=encoder_actor, torso=torso_actor, head=head_critic)
+
 actor_critic = ActorCritic(actor=actor, critic=critic)
 actor_critic_shared_encoder = ActorCritic(actor=actor, critic=critic_shared_encoder)
 actor_critic_shared = ActorCritic(actor=actor, critic=critic_shared)
+continuous_actor_critic = ActorCritic(actor=actor, critic=continuous_critic)
+continuous_actor_critic_shared = ActorCritic(
+    actor=actor, critic=continuous_critic_shared
+)
 
 
 @pytest.mark.parametrize(
@@ -117,4 +130,33 @@ def test_proximal_policy_clip(model):
     if model == actor_critic or model == actor_critic_shared_encoder:
         assert critic_after == critic_before
     if model == actor_critic_shared:
+        assert critic_after != critic_before
+
+
+@pytest.mark.parametrize(
+    "model", [continuous_actor_critic, continuous_actor_critic_shared]
+)
+def test_deterministic_policy_gradient(model):
+    observation = T.rand(2)
+    action = T.rand(1)
+    out_before = model(observation)
+    with T.no_grad():
+        critic_before = model.forward_critic(observation, action)
+
+    updater = DeterministicPolicyGradient(max_grad=0.5)
+
+    updater(
+        actor=model.actor,
+        critic=model.critic,
+        observations=observation,
+    )
+
+    out_after = model(observation)
+    with T.no_grad():
+        critic_after = model.forward_critic(observation, action)
+
+    assert out_after != out_before
+    if model == continuous_actor_critic:
+        assert critic_after == critic_before
+    if model == continuous_actor_critic_shared:
         assert critic_after != critic_before
