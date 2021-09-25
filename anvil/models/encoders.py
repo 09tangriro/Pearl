@@ -37,6 +37,21 @@ class FlattenEncoder(T.nn.Module):
         return self.flatten(observations)
 
 
+class MLPEncoder(T.nn.Module):
+    """This is a single layer MLP encoder"""
+
+    def __init__(self, input_size, output_size):
+        super().__init__()
+        self.model = T.nn.Linear(input_size, output_size)
+
+    def forward(
+        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+    ) -> T.Tensor:
+        if actions is not None:
+            observations = T.cat([observations, actions], dim=-1)
+        return self.model(observations)
+
+
 class CNNEncoder(T.nn.Module):
     """
     CNN from DQN nature paper:

@@ -10,7 +10,7 @@ from anvil.models import (
     Critic,
     TD3ActorCritic,
 )
-from anvil.models.encoders import CNNEncoder, FlattenEncoder, IdentityEncoder
+from anvil.models.encoders import FlattenEncoder, IdentityEncoder, MLPEncoder
 from anvil.models.heads import (
     ContinuousQHead,
     DeterministicPolicyHead,
@@ -28,11 +28,11 @@ def test_mlp():
     assert output.shape == (1,)
 
 
-@pytest.mark.parametrize("encoder_class", [IdentityEncoder, FlattenEncoder])
+@pytest.mark.parametrize("encoder_class", [IdentityEncoder, FlattenEncoder, MLPEncoder])
 def test_encoder(encoder_class):
-    input = T.Tensor([[[2, 2], [2, 2]], [[1, 1], [1, 1]]])
-    if encoder_class == CNNEncoder:
-        encoder = encoder_class(Box)
+    input = T.Tensor([[2, 2], [1, 1]])
+    if encoder_class == MLPEncoder:
+        encoder = encoder_class(input_size=2, output_size=2)
     else:
         encoder = encoder_class()
     output = encoder(input)
