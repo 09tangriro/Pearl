@@ -9,6 +9,8 @@ def _scale_normalizer(
 ) -> np.ndarray:
     if np.all(np.abs(low) == np.abs(high)):
         return data / high
+    else:
+        return (2 * ((data - np.min(data)) / (np.max(data) - np.min(data)))) - 1
 
 
 @jit(nopython=True, parallel=True)
