@@ -26,4 +26,5 @@ def scale_normalizer(data: np.ndarray, space: Space) -> np.ndarray:
 
 
 def mean_std_normalizer(data: np.ndarray) -> np.ndarray:
+    """Standardize data with zero mean and unit std"""
     return _mean_std_normalizer(data, np.mean(data, axis=0), np.std(data, axis=0))
