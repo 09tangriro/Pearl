@@ -1,5 +1,5 @@
 import copy
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Union
 
 import torch as T
 
@@ -201,13 +201,13 @@ class TD3ActorCritic(ActorCritic):
     ) -> None:
         super().__init__(actor, critic)
         self.polyak_coeff = polyak_coeff
-        self.critic_2 = copy.deepcopy(critic)
+        self.critic2 = copy.deepcopy(critic)
         self.target_critic = copy.deepcopy(critic)
-        self.target_critic_2 = copy.deepcopy(critic)
+        self.target_critic2 = copy.deepcopy(critic)
         self.online_variables = trainable_variables(self.critic)
-        self.online_variables += trainable_variables(self.critic_2)
+        self.online_variables += trainable_variables(self.critic2)
         self.target_variables = trainable_variables(self.target_critic)
-        self.target_variables += trainable_variables(self.target_critic_2)
+        self.target_variables += trainable_variables(self.target_critic2)
 
         for target in self.target_variables:
             target.requires_grad = False
@@ -217,4 +217,4 @@ class TD3ActorCritic(ActorCritic):
         self, observations: T.Tensor, actions: Optional[T.Tensor] = None
     ) -> Tuple[T.Tensor, T.Tensor]:
         """Run a forward pass to get the critic outputs"""
-        return self.critic(observations, actions), self.critic_2(observations, actions)
+        return self.critic(observations, actions), self.critic2(observations, actions)

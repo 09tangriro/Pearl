@@ -124,7 +124,7 @@ def test_actor_critic_shared_arch(actor_critic_class):
     if actor_critic_class == TD3ActorCritic:
         assert actor_critic.forward_critic(input) == (
             actor_critic.target_critic(input),
-            actor_critic.target_critic_2(input),
+            actor_critic.target_critic2(input),
         )
 
     if actor_critic_class == ActorCriticWithTarget:

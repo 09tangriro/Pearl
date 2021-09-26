@@ -258,23 +258,19 @@ class SoftPolicyGradient(BaseActorUpdater):
 
     def __call__(
         self,
-        actor: Actor,
-        critic1: Critic,
-        critic2: Optional[Critic],
+        model: ActorCritic,
         observations: T.Tensor,
     ) -> ActorUpdaterLog:
         """
         Perform an optimization step
 
-        :param actor: the actor model or sub-model
-        :param critic1: the first critic model or sub-model
-        :param critic2: optional second critic model or sub-model
+        :param model: an actor critic model with either 1 or 2 critic networks
         :param observations:
         """
-        actor_parameters = actor.parameters()
+        actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
 
-        distributions = actor.get_action_distribution(observations)
+        distributions = model.get_action_distribution(observations)
         # use the reparametrization trick for backpropagation
         # https://gregorygundersen.com/blog/2018/04/29/reparameterization/
         actions = distributions.rsample()
@@ -284,12 +280,11 @@ class SoftPolicyGradient(BaseActorUpdater):
         entropy = distributions.entropy().mean()
 
         with T.no_grad():
-            values1 = critic1(observations, actions)
-            if critic2 is not None:
-                values2 = critic2(observations, actions)
+            if hasattr(model, "critic2"):
+                values1, values2 = model.forward_critic(observations, actions)
                 values = T.min(values1, values2)
             else:
-                values = values1
+                values = model.forward_critic(observations, actions)
 
         loss = (self.entropy_coeff * log_probs - values).mean()
 

@@ -176,9 +176,7 @@ def test_soft_policy_gradient(model):
     updater = SoftPolicyGradient(max_grad=0.5)
 
     updater(
-        actor=model.actor,
-        critic1=model.critic,
-        critic2=None,
+        model=model,
         observations=observation,
     )
 
