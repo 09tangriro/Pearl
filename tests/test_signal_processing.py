@@ -1,11 +1,13 @@
 import gym
 import numpy as np
+from torch.autograd.grad_mode import F
 
 from anvil.signal_processing.normalizers import mean_std_normalizer, scale_normalizer
 from anvil.signal_processing.sample_estimators import (
     TD_lambda,
     TD_zero,
     generalized_advantage_estimate,
+    soft_q_target,
 )
 
 
@@ -48,6 +50,18 @@ def test_generalized_advantage_estimate():
 
     np.equal(actual_advantages, expected_advantages)
     np.equal(actual_returns, expected_returns)
+
+
+def test_soft_q_target():
+    rewards = np.ones(shape=(3,))
+    dones = np.zeros(shape=(3,))
+    q_values = np.ones(shape=(3,))
+    log_probs = np.array([-1, -1, -1], dtype=np.float32)
+
+    actual_target = soft_q_target(rewards, dones, q_values, log_probs, 1, 1)
+    expected_target = np.array([3, 3, 3], dtype=np.float32)
+
+    np.equal(actual_target, expected_target)
 
 
 def test_scale_normalizer():
