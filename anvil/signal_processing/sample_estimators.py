@@ -78,3 +78,15 @@ def generalized_advantage_estimate(
     value_target = advantage[:batch_size] + old_values
 
     return advantage[:batch_size], value_target
+
+
+@jit(nopython=True, parallel=True)
+def soft_q_target(
+    rewards: np.ndarray,
+    dones: np.ndarray,
+    q_values: np.ndarray,
+    log_probs: np.ndarray,
+    alpha: float,
+    gamma: float = 0.99,
+):
+    return rewards + gamma * (1 - dones) * (q_values - (alpha * log_probs))
