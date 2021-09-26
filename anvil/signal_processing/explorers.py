@@ -23,6 +23,7 @@ class BaseExplorer(object):
     ) -> None:
         self.start_steps = start_steps
         self.actor = actor
+        self.action_space = action_space
         self.action_size = action_space.shape[0]
 
     def __call__(self, observations: np.ndarray, steps: int) -> np.ndarray:
@@ -30,7 +31,9 @@ class BaseExplorer(object):
             actions = self.actor(observations)
         else:
             shape = (len(observations), self.action_size)
-            actions = np.random.uniform(low=-1, high=1, shape=shape)
+            actions = np.random.uniform(
+                low=self.action_space.low, high=self.action_space.high, shape=shape
+            )
         return actions
 
 
