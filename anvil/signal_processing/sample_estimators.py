@@ -63,8 +63,8 @@ def generalized_advantage_estimate(
     :param new_values: value function result with new_state input
     :param rewards: agent reward of taking actions in the environment
     :param dones: the done values of each step of the trajectory, indicates whether to bootstrap
-    :param gamma: exponential mean discount
-    :param gae_lambda: trajectory discount
+    :param gamma: trajectory discount
+    :param gae_lambda: exponential mean discount
     """
     dones = 1 - dones
     batch_size = rewards.shape[0]
@@ -88,5 +88,15 @@ def soft_q_target(
     log_probs: np.ndarray,
     alpha: float,
     gamma: float = 0.99,
-):
+) -> np.ndarray:
+    """
+    Calculate the soft Q target: https://spinningup.openai.com/en/latest/algorithms/sac.html#id1
+
+    :param rewards: agent reward of taking actions in the environment
+    :param dones: the done values of each step of the trajectory, indicates whether to bootstrap
+    :param q_values: the q value target network output
+    :param log_probs: the log probability of observing the next action given the next observation
+    :param alpha: entropy weighting coefficient
+    :param gamma: trajectory discount
+    """
     return rewards + gamma * (1 - dones) * (q_values - (alpha * log_probs))
