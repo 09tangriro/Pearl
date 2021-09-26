@@ -209,22 +209,20 @@ class DeterministicPolicyGradient(BaseActorUpdater):
 
     def __call__(
         self,
-        actor: Actor,
-        critic: Critic,
+        model: ActorCritic,
         observations: T.Tensor,
     ) -> ActorUpdaterLog:
         """
         Perform an optimization step
 
-        :param actor: the actor model or sub-model
-        :param critic: the critic model or sub-model
+        :param model: an actor critic model
         :param observations:
         """
-        actor_parameters = actor.parameters()
+        actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
 
-        actions = actor(observations)
-        values = critic(observations, actions)
+        actions = model(observations)
+        values = model.critic(observations, actions)
 
         loss = -values.mean()
 

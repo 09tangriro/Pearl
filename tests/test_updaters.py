@@ -147,8 +147,7 @@ def test_deterministic_policy_gradient(model):
     updater = DeterministicPolicyGradient(max_grad=0.5)
 
     updater(
-        actor=model.actor,
-        critic=model.critic,
+        model=model,
         observations=observation,
     )
 
