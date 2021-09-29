@@ -17,6 +17,8 @@ from anvil.updaters.utils import (
     sample_reverse_kl_divergence,
 )
 
+############################### SET UP MODELS ###############################
+
 encoder_critic = IdentityEncoder()
 encoder_critic_continuous = MLPEncoder(input_size=3, output_size=2)
 encoder_actor = IdentityEncoder()
@@ -54,6 +56,9 @@ def assert_same_distribution(
         return True
     else:
         return False
+
+
+############################### TEST ACTOR UPDATERS ###############################
 
 
 @pytest.mark.parametrize(
@@ -198,6 +203,9 @@ def test_soft_policy_gradient(model):
         assert critic_after == critic_before
     if model == continuous_actor_critic_shared:
         assert critic_after != critic_before
+
+
+############################### TEST CRITIC UPDATERS ###############################
 
 
 @pytest.mark.parametrize(
