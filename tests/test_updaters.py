@@ -11,6 +11,7 @@ from anvil.updaters.actors import (
     ProximalPolicyClip,
     SoftPolicyGradient,
 )
+from anvil.updaters.critics import ValueRegression
 from anvil.updaters.utils import (
     sample_forward_kl_divergence,
     sample_reverse_kl_divergence,
@@ -46,6 +47,15 @@ continuous_actor_critic_shared = ActorCritic(
 )
 
 
+def assert_same_distribution(
+    dist1: T.distributions.Distribution, dist2: T.distributions.Distribution
+) -> bool:
+    if T.equal(dist1.loc, dist2.loc) and T.equal(dist1.scale, dist2.scale):
+        return True
+    else:
+        return False
+
+
 @pytest.mark.parametrize(
     "kl_divergence", [sample_forward_kl_divergence, sample_reverse_kl_divergence]
 )
@@ -76,7 +86,7 @@ def test_kl_divergence(kl_divergence):
 )
 def test_policy_gradient(model):
     observation = T.rand(2)
-    out_before = model(observation)
+    out_before = model.get_action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_before = model.forward_critic(observation)
@@ -90,12 +100,12 @@ def test_policy_gradient(model):
         advantages=T.rand(1),
     )
 
-    out_after = model(observation)
+    out_after = model.get_action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_after = model.forward_critic(observation)
 
-    assert out_after != out_before
+    assert not assert_same_distribution(out_after, out_before)
     if model == actor_critic or model == actor_critic_shared_encoder:
         assert critic_after == critic_before
     if model == actor_critic_shared:
@@ -107,7 +117,7 @@ def test_policy_gradient(model):
 )
 def test_proximal_policy_clip(model):
     observation = T.rand(2)
-    out_before = model(observation)
+    out_before = model.get_action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_before = model.forward_critic(observation)
@@ -122,12 +132,12 @@ def test_proximal_policy_clip(model):
         old_log_probs=T.rand(1),
     )
 
-    out_after = model(observation)
+    out_after = model.get_action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_after = model.forward_critic(observation)
 
-    assert out_after != out_before
+    assert not assert_same_distribution(out_after, out_before)
     if model == actor_critic or model == actor_critic_shared_encoder:
         assert critic_after == critic_before
     if model == actor_critic_shared:
@@ -168,7 +178,7 @@ def test_deterministic_policy_gradient(model):
 def test_soft_policy_gradient(model):
     observation = T.rand(2)
     action = T.rand(1)
-    out_before = model(observation)
+    out_before = model.get_action_distribution(observation)
     with T.no_grad():
         critic_before = model.forward_critic(observation, action)
 
@@ -179,12 +189,37 @@ def test_soft_policy_gradient(model):
         observations=observation,
     )
 
-    out_after = model(observation)
+    out_after = model.get_action_distribution(observation)
     with T.no_grad():
         critic_after = model.forward_critic(observation, action)
 
-    assert out_after != out_before
+    assert not assert_same_distribution(out_after, out_before)
     if model == continuous_actor_critic:
         assert critic_after == critic_before
     if model == continuous_actor_critic_shared:
         assert critic_after != critic_before
+
+
+@pytest.mark.parametrize(
+    "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+)
+def test_value_regression(model):
+    observation = T.rand(2)
+    returns = T.rand(1)
+    out_before = model.forward_critic(observation)
+    with T.no_grad():
+        actor_before = model.get_action_distribution(observation)
+
+    updater = ValueRegression(max_grad=0.5)
+
+    updater(model, observation, returns)
+
+    out_after = model.forward_critic(observation)
+    with T.no_grad():
+        actor_after = model.get_action_distribution(observation)
+
+    assert out_after != out_before
+    if model == actor_critic_shared:
+        assert not assert_same_distribution(actor_before, actor_after)
+    else:
+        assert assert_same_distribution(actor_before, actor_after)

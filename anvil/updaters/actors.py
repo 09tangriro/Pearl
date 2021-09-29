@@ -4,7 +4,7 @@ import torch as T
 from torch.nn.parameter import Parameter
 
 from anvil.common.type_aliases import ActorUpdaterLog
-from anvil.models.actor_critics import Actor, ActorCritic, Critic
+from anvil.models.actor_critics import Actor, ActorCritic
 from anvil.updaters.utils import sample_reverse_kl_divergence
 
 
