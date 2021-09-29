@@ -15,12 +15,7 @@ class Trajectories:
 
 
 @dataclass
-class ActorUpdaterLog:
+class UpdaterLog:
     loss: T.Tensor
     kl: Optional[T.Tensor] = None
     entropy: Optional[T.Tensor] = None
-
-
-@dataclass
-class CriticUpdaterLog:
-    loss: T.Tensor

@@ -3,7 +3,7 @@ from typing import Iterator, Optional, Type, Union
 import torch as T
 from torch.nn.parameter import Parameter
 
-from anvil.common.type_aliases import ActorUpdaterLog
+from anvil.common.type_aliases import UpdaterLog
 from anvil.models.actor_critics import Actor, ActorCritic
 from anvil.updaters.utils import sample_reverse_kl_divergence
 
@@ -78,7 +78,7 @@ class PolicyGradient(BaseActorUpdater):
         actions: T.Tensor,
         advantages: T.Tensor,
         old_log_probs: Optional[T.Tensor] = None,
-    ) -> ActorUpdaterLog:
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
@@ -110,7 +110,7 @@ class PolicyGradient(BaseActorUpdater):
         else:
             kl = None
 
-        return ActorUpdaterLog(loss=loss, kl=kl, entropy=entropy)
+        return UpdaterLog(loss=loss, kl=kl, entropy=entropy)
 
 
 class ProximalPolicyClip(BaseActorUpdater):
@@ -186,7 +186,7 @@ class ProximalPolicyClip(BaseActorUpdater):
         else:
             kl = None
 
-        return ActorUpdaterLog(loss=loss, kl=kl, entropy=entropy)
+        return UpdaterLog(loss=loss, kl=kl, entropy=entropy)
 
 
 class DeterministicPolicyGradient(BaseActorUpdater):
@@ -211,7 +211,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
         self,
         model: ActorCritic,
         observations: T.Tensor,
-    ) -> ActorUpdaterLog:
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
@@ -228,7 +228,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        return ActorUpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach())
 
 
 class SoftPolicyGradient(BaseActorUpdater):
@@ -258,7 +258,7 @@ class SoftPolicyGradient(BaseActorUpdater):
         self,
         model: ActorCritic,
         observations: T.Tensor,
-    ) -> ActorUpdaterLog:
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
@@ -288,4 +288,4 @@ class SoftPolicyGradient(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        return ActorUpdaterLog(loss=loss.detach(), entropy=entropy.detach())
+        return UpdaterLog(loss=loss.detach(), entropy=entropy.detach())

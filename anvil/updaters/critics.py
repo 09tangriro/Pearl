@@ -4,7 +4,7 @@ import numpy as np
 import torch as T
 from torch.nn.parameter import Parameter
 
-from anvil.common.type_aliases import CriticUpdaterLog
+from anvil.common.type_aliases import UpdaterLog
 from anvil.models.actor_critics import ActorCritic, Critic
 from anvil.signal_processing.sample_estimators import soft_q_target
 
@@ -79,7 +79,7 @@ class ValueRegression(BaseCriticUpdater):
         model: Union[Critic, ActorCritic],
         observations: T.Tensor,
         returns: T.Tensor,
-    ) -> CriticUpdaterLog:
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
@@ -99,7 +99,7 @@ class ValueRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return CriticUpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach())
 
 
 class QRegression(BaseCriticUpdater):
@@ -128,7 +128,7 @@ class QRegression(BaseCriticUpdater):
         observations: T.Tensor,
         returns: T.Tensor,
         actions: Optional[T.Tensor] = None,
-    ) -> CriticUpdaterLog:
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
@@ -149,7 +149,7 @@ class QRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return CriticUpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach())
 
 
 class SoftQRegression(BaseCriticUpdater):
@@ -173,7 +173,7 @@ class SoftQRegression(BaseCriticUpdater):
         dones: np.ndarray,
         alpha: float,
         gamma: float = 0.99,
-    ) -> CriticUpdaterLog:
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
@@ -209,4 +209,4 @@ class SoftQRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return CriticUpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach())
