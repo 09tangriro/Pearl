@@ -11,7 +11,7 @@ from anvil.updaters.actors import (
     ProximalPolicyClip,
     SoftPolicyGradient,
 )
-from anvil.updaters.critics import ValueRegression
+from anvil.updaters.critics import QRegression, ValueRegression
 from anvil.updaters.utils import (
     sample_forward_kl_divergence,
     sample_reverse_kl_divergence,
@@ -219,6 +219,31 @@ def test_value_regression(model):
         actor_before = model.get_action_distribution(observation)
 
     updater = ValueRegression(max_grad=0.5)
+
+    updater(model, observation, returns)
+
+    out_after = model.forward_critic(observation)
+    with T.no_grad():
+        actor_after = model.get_action_distribution(observation)
+
+    assert out_after != out_before
+    if model == actor_critic_shared:
+        assert not assert_same_distribution(actor_before, actor_after)
+    else:
+        assert assert_same_distribution(actor_before, actor_after)
+
+
+@pytest.mark.parametrize(
+    "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+)
+def test_q_regression(model):
+    observation = T.rand(2)
+    returns = T.rand(1)
+    out_before = model.forward_critic(observation)
+    with T.no_grad():
+        actor_before = model.get_action_distribution(observation)
+
+    updater = QRegression(max_grad=0.5)
 
     updater(model, observation, returns)
 
