@@ -128,7 +128,7 @@ class QRegression(BaseCriticUpdater):
         model: Union[Critic, ActorCritic],
         observations: Tensor,
         returns: T.Tensor,
-        actions: Optional[T.Tensor] = None,
+        actions: Optional[Tensor] = None,
     ) -> UpdaterLog:
         """
         Perform an optimization step
