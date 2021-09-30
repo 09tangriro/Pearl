@@ -8,7 +8,7 @@ from anvil.models import (
     ActorCritic,
     ActorCriticWithTarget,
     Critic,
-    TD3ActorCritic,
+    TwinActorCritic,
 )
 from anvil.models.encoders import FlattenEncoder, IdentityEncoder, MLPEncoder
 from anvil.models.heads import (
@@ -100,7 +100,7 @@ def test_actor():
 
 
 @pytest.mark.parametrize(
-    "actor_critic_class", [ActorCritic, ActorCriticWithTarget, TD3ActorCritic]
+    "actor_critic_class", [ActorCritic, ActorCriticWithTarget, TwinActorCritic]
 )
 def test_actor_critic_shared_arch(actor_critic_class):
     input = T.tensor([1, 1], dtype=T.float32)
@@ -121,7 +121,7 @@ def test_actor_critic_shared_arch(actor_critic_class):
 
     assert actor_critic.actor and actor_critic.critic
 
-    if actor_critic_class == TD3ActorCritic:
+    if actor_critic_class == TwinActorCritic:
         assert actor_critic.forward_critic(input) == (
             actor_critic.target_critic(input),
             actor_critic.target_critic2(input),

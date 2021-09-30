@@ -184,9 +184,9 @@ class ActorCriticWithTarget(ActorCritic):
         return self.target_critic(observations, actions)
 
 
-class TD3ActorCritic(ActorCritic):
+class TwinActorCritic(ActorCritic):
     """
-    The TD3 actor critic model with 2 critic networks each with their own target
+    The TwinActorCritic actor critic model with 2 critic networks each with their own target
 
     :param actor: the actor/policy network
     :param critic: the critic network

@@ -3,7 +3,7 @@ from anvil.models.actor_critics import (
     ActorCritic,
     ActorCriticWithTarget,
     Critic,
-    TD3ActorCritic,
+    TwinActorCritic,
 )
 
-__all__ = ["Critic", "Actor", "ActorCritic", "ActorCriticWithTarget", "TD3ActorCritic"]
+__all__ = ["Critic", "Actor", "ActorCritic", "ActorCriticWithTarget", "TwinActorCritic"]
