@@ -151,12 +151,10 @@ class ActorCritic(T.nn.Module):
 
 class ActorCriticWithTarget(ActorCritic):
     """
-    An actor critic with target critic network updated via polyak averaging
+    An actor critic with target critic and actor networks updated via polyak averaging
 
     :param actor: the actor/policy network
     :param critic: the critic network
-    :param share_encoder: whether to use a shared encoder for both networks
-    :param share_torso: whether to use a shared torso for both networks
     :param polyak_coeff: the polyak update coefficient
     """
 
@@ -170,18 +168,27 @@ class ActorCriticWithTarget(ActorCritic):
         self.polyak_coeff = polyak_coeff
 
         self.target_critic = copy.deepcopy(critic)
-        self.online_variables = trainable_variables(self.critic)
-        self.target_variables = trainable_variables(self.target_critic)
+        self.target_actor = copy.deepcopy(actor)
+        self.online_variables = trainable_variables(self.critic) + trainable_variables(
+            self.actor
+        )
+        self.target_variables = trainable_variables(
+            self.target_critic
+        ) + trainable_variables(self.target_actor)
 
         for target in self.target_variables:
             target.requires_grad = False
         self.assign_targets()
 
-    def forward_target(
+    def forward_target_critic(
         self, observations: T.Tensor, actions: Optional[T.Tensor] = None
     ) -> T.Tensor:
         """Run a forward pass to get the target critic output"""
         return self.target_critic(observations, actions)
+
+    def forward_target_actor(self, observations: T.Tensor) -> T.Tensor:
+        """Run a forward pass to get the target actor output"""
+        return self.target_actor(observations)
 
 
 class TwinActorCritic(ActorCritic):

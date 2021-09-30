@@ -128,4 +128,7 @@ def test_actor_critic_shared_arch(actor_critic_class):
         )
 
     if actor_critic_class == ActorCriticWithTarget:
-        assert actor_critic.forward_critic(input) == actor_critic.forward_target(input)
+        assert actor_critic.forward_critic(input) == actor_critic.forward_target_critic(
+            input
+        )
+        assert actor_critic(input) == actor_critic.forward_target_actor(input)
