@@ -4,7 +4,8 @@ import numpy as np
 import torch as T
 from torch.nn.parameter import Parameter
 
-from anvil.common.type_aliases import UpdaterLog
+from anvil.common.type_aliases import Tensor, UpdaterLog
+from anvil.common.utils import numpy_to_torch
 from anvil.models.actor_critics import ActorCritic, Critic
 from anvil.signal_processing.sample_estimators import soft_q_target
 
@@ -77,7 +78,7 @@ class ValueRegression(BaseCriticUpdater):
     def __call__(
         self,
         model: Union[Critic, ActorCritic],
-        observations: T.Tensor,
+        observations: Tensor,
         returns: T.Tensor,
     ) -> UpdaterLog:
         """
@@ -125,7 +126,7 @@ class QRegression(BaseCriticUpdater):
     def __call__(
         self,
         model: Union[Critic, ActorCritic],
-        observations: T.Tensor,
+        observations: Tensor,
         returns: T.Tensor,
         actions: Optional[T.Tensor] = None,
     ) -> UpdaterLog:

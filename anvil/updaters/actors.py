@@ -3,7 +3,8 @@ from typing import Iterator, Optional, Type, Union
 import torch as T
 from torch.nn.parameter import Parameter
 
-from anvil.common.type_aliases import UpdaterLog
+from anvil.common.type_aliases import Tensor, UpdaterLog
+from anvil.common.utils import numpy_to_torch
 from anvil.models.actor_critics import Actor, ActorCritic
 from anvil.updaters.utils import sample_reverse_kl_divergence
 
@@ -74,10 +75,10 @@ class PolicyGradient(BaseActorUpdater):
     def __call__(
         self,
         model: Union[ActorCritic, Actor],
-        observations: T.Tensor,
+        observations: Tensor,
         actions: T.Tensor,
         advantages: T.Tensor,
-        old_log_probs: Optional[T.Tensor] = None,
+        old_log_probs: Optional[Tensor] = None,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -104,6 +105,7 @@ class PolicyGradient(BaseActorUpdater):
         loss = loss.detach()
         entropy = entropy.detach()
         if old_log_probs is not None:
+            old_log_probs = numpy_to_torch(old_log_probs)
             kl = sample_reverse_kl_divergence(
                 old_log_probs.exp().detach(), new_log_probs.exp().detach()
             )
@@ -143,7 +145,7 @@ class ProximalPolicyClip(BaseActorUpdater):
     def __call__(
         self,
         model: Union[ActorCritic, Actor],
-        observations: T.Tensor,
+        observations: Tensor,
         actions: T.Tensor,
         advantages: T.Tensor,
         old_log_probs: T.Tensor,
@@ -210,7 +212,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
     def __call__(
         self,
         model: ActorCritic,
-        observations: T.Tensor,
+        observations: Tensor,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -257,7 +259,7 @@ class SoftPolicyGradient(BaseActorUpdater):
     def __call__(
         self,
         model: ActorCritic,
-        observations: T.Tensor,
+        observations: Tensor,
     ) -> UpdaterLog:
         """
         Perform an optimization step
