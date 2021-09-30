@@ -42,8 +42,10 @@ def numpy_to_torch(*data) -> Tuple[T.Tensor]:
             raise RuntimeError(
                 f"{type(el)} is not a recognized data format, it should be a numpy array or torch tensor"
             )
-
-    return tuple(result)
+    if len(data) == 1:
+        return result[0]
+    else:
+        return tuple(result)
 
 
 def torch_to_numpy(*data) -> Tuple[np.ndarray]:
@@ -59,7 +61,10 @@ def torch_to_numpy(*data) -> Tuple[np.ndarray]:
                 f"{type(el)} is not a recognized data format, it should be a numpy array or torch tensor"
             )
 
-    return tuple(result)
+    if len(data) == 1:
+        return result[0]
+    else:
+        return tuple(result)
 
 
 def get_space_shape(
