@@ -1,6 +1,9 @@
 from typing import Tuple
 
 import numpy as np
+import torch as T
+
+from anvil.common.utils import numpy_to_torch
 
 
 def TD_lambda(
@@ -8,7 +11,7 @@ def TD_lambda(
     last_values: np.ndarray,
     last_dones=np.ndarray,
     gamma: float = 0.99,
-) -> np.ndarray:
+) -> T.Tensor:
     """
     TD(lambda) target: https://lilianweng.github.io/lil-log/2018/02/19/a-long-peek-into-reinforcement-learning.html#temporal-difference-learning
 
@@ -27,12 +30,12 @@ def TD_lambda(
 
     returns += (gamma ** td_lambda) * last_values * last_dones
 
-    return returns
+    return numpy_to_torch(returns)
 
 
 def TD_zero(
     rewards: np.ndarray, next_values: np.ndarray, dones: np.ndarray, gamma: float = 0.99
-) -> np.ndarray:
+) -> T.Tensor:
     """
     TD(0) target: https://lilianweng.github.io/lil-log/2018/02/19/a-long-peek-into-reinforcement-learning.html#combining-td-and-mc-learning
 
@@ -41,7 +44,7 @@ def TD_zero(
     :param dones: the done values of each step of the trajectory, indicates whether to bootstrap
     :param gamma: the discount factor of future rewards
     """
-    return rewards + ((1 - dones) * gamma * next_values)
+    return numpy_to_torch(rewards + ((1 - dones) * gamma * next_values))
 
 
 def generalized_advantage_estimate(
@@ -51,7 +54,7 @@ def generalized_advantage_estimate(
     dones: np.ndarray,
     gamma: float = 0.99,
     gae_lambda: float = 0.95,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> Tuple[T.Tensor, T.Tensor]:
     """
     Generalized advantage estimate of a trajectory: https://towardsdatascience.com/generalized-advantage-estimate-maths-and-code-b5d5bd3ce737
 
@@ -73,7 +76,7 @@ def generalized_advantage_estimate(
 
     value_target = advantage[:batch_size] + old_values
 
-    return advantage[:batch_size], value_target
+    return numpy_to_torch(advantage[:batch_size], value_target)
 
 
 def soft_q_target(
@@ -83,7 +86,7 @@ def soft_q_target(
     log_probs: np.ndarray,
     alpha: float,
     gamma: float = 0.99,
-) -> np.ndarray:
+) -> T.Tensor:
     """
     Calculate the soft Q target: https://spinningup.openai.com/en/latest/algorithms/sac.html#id1
 
@@ -94,4 +97,6 @@ def soft_q_target(
     :param alpha: entropy weighting coefficient
     :param gamma: trajectory discount
     """
-    return rewards + gamma * (1 - dones) * (q_values - (alpha * log_probs))
+    return numpy_to_torch(
+        rewards + gamma * (1 - dones) * (q_values - (alpha * log_probs))
+    )
