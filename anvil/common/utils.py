@@ -30,7 +30,7 @@ def get_device(device: Union[T.device, str]) -> T.device:
     return device
 
 
-def numpy_to_torch(*data) -> Tuple[T.Tensor]:
+def numpy_to_torch(*data) -> Union[Tuple[T.Tensor], T.Tensor]:
     """Convert any numpy arrays into torch tensors"""
     result = [None] * len(data)
     for i, el in enumerate(data):
@@ -48,7 +48,7 @@ def numpy_to_torch(*data) -> Tuple[T.Tensor]:
         return tuple(result)
 
 
-def torch_to_numpy(*data) -> Tuple[np.ndarray]:
+def torch_to_numpy(*data) -> Union[Tuple[np.ndarray], np.ndarray]:
     """Convert any torch tensors into numpy arrays"""
     result = [None] * len(data)
     for i, el in enumerate(data):
