@@ -10,6 +10,13 @@ def trainable_variables(model: T.nn.Module) -> list:
     return [p for p in model.parameters() if p.requires_grad]
 
 
+def prod(val):
+    res = 1
+    for ele in val:
+        res *= ele
+    return res
+
+
 def get_mlp_size(data_shape: Union[int, Tuple[int]]) -> int:
     """
     Convert the shape of some data into an integer size that defines
@@ -20,7 +27,7 @@ def get_mlp_size(data_shape: Union[int, Tuple[int]]) -> int:
     """
 
     if isinstance(data_shape, tuple):
-        data_shape = data_shape[0]
+        data_shape = prod(list(data_shape))
     return data_shape
 
 
