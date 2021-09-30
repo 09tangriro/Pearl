@@ -1,10 +1,8 @@
 from typing import Tuple
 
 import numpy as np
-from numba import jit
 
 
-@jit(nopython=True, parallel=True)
 def TD_lambda(
     rewards: np.ndarray,
     last_values: np.ndarray,
@@ -32,7 +30,6 @@ def TD_lambda(
     return returns
 
 
-@jit(nopython=True, parallel=True)
 def TD_zero(
     rewards: np.ndarray, next_values: np.ndarray, dones: np.ndarray, gamma: float = 0.99
 ) -> np.ndarray:
@@ -47,7 +44,6 @@ def TD_zero(
     return rewards + ((1 - dones) * gamma * next_values)
 
 
-@jit(nopython=True, parallel=True)
 def generalized_advantage_estimate(
     rewards: np.ndarray,
     old_values: np.ndarray,
@@ -80,7 +76,6 @@ def generalized_advantage_estimate(
     return advantage[:batch_size], value_target
 
 
-@jit(nopython=True, parallel=True)
 def soft_q_target(
     rewards: np.ndarray,
     dones: np.ndarray,
