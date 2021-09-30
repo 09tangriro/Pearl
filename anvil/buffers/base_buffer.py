@@ -7,10 +7,9 @@ import psutil
 import torch as T
 from gym import Space
 
-from anvil.buffers.utils import get_space_shape
 from anvil.common.enumerations import TrajectoryType
 from anvil.common.type_aliases import Trajectories
-from anvil.common.utils import get_device
+from anvil.common.utils import get_device, get_space_shape
 
 
 class BaseBuffer(ABC):
