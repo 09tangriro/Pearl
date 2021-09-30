@@ -26,11 +26,11 @@ class BaseExplorer(object):
         self.action_space = action_space
         self.action_size = action_space.shape[0]
 
-    def __call__(self, observations: np.ndarray, steps: int) -> np.ndarray:
-        if steps > self.start_steps:
-            actions = self.actor(observations)
+    def __call__(self, observation: np.ndarray, step: int) -> np.ndarray:
+        if step > self.start_steps:
+            actions = self.actor(observation)
         else:
-            shape = (len(observations), self.action_size)
+            shape = (len(observation), self.action_size)
             actions = np.random.uniform(
                 low=self.action_space.low, high=self.action_space.high, shape=shape
             )
@@ -56,9 +56,10 @@ class GaussianExplorer(BaseExplorer):
         super().__init__(actor, action_space, start_steps=start_steps)
         self.scale = scale
 
-    def __call__(self, observations: np.ndarray, steps: int) -> np.ndarray:
-        actions = super().__call__(observations, steps)
-        if steps > self.start_steps:
+    def __call__(self, observation: np.ndarray, step: int) -> np.ndarray:
+        actions = super().__call__(observation, step)
+        if step > self.start_steps:
             noises = np.random.normal(scale=self.scale, size=actions.shape)
             actions = (actions + noises).astype(np.float32)
+            actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return actions
