@@ -32,7 +32,7 @@ class Actor(T.nn.Module):
         self.head = head.to(device)
 
     def get_action_distribution(
-        self, observations: T.Tensor
+        self, observations: Tensor
     ) -> Optional[T.distributions.Distribution]:
         """Get the action distribution, returns None if deterministic"""
         latent_out = self.torso(self.encoder(observations))
@@ -134,7 +134,7 @@ class ActorCritic(T.nn.Module):
                 target.data.add_((1 - self.polyak_coeff) * online.data)
 
     def get_action_distribution(
-        self, observations: T.Tensor
+        self, observations: Tensor
     ) -> Optional[T.distributions.Distribution]:
         """Get the action distribution, returns None if deterministic"""
         return self.actor.get_action_distribution(observations)
