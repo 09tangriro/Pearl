@@ -1,3 +1,5 @@
+from typing import Any, Optional
+
 import numpy as np
 from gym import Space
 from numba import jit
@@ -25,6 +27,6 @@ def scale_normalizer(data: np.ndarray, space: Space) -> np.ndarray:
     return _scale_normalizer(data, space.high, space.low)
 
 
-def mean_std_normalizer(data: np.ndarray) -> np.ndarray:
+def mean_std_normalizer(data: np.ndarray, space: Optional[Any] = None) -> np.ndarray:
     """Standardize data with zero mean and unit std"""
     return _mean_std_normalizer(data, np.mean(data, axis=0), np.std(data, axis=0))
