@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple, Union
 
 import torch as T
 
+from anvil.common.type_aliases import Tensor
 from anvil.common.utils import get_device
 from anvil.models.heads import BaseActorHead, BaseCriticHead
 from anvil.models.utils import trainable_variables
@@ -37,7 +38,7 @@ class Actor(T.nn.Module):
         latent_out = self.torso(self.encoder(observations))
         return self.head.get_action_distribution(latent_out)
 
-    def forward(self, observations: T.Tensor) -> List[T.Tensor]:
+    def forward(self, observations: Tensor) -> T.Tensor:
         out = self.encoder(observations)
         out = self.torso(out)
         out = self.head(out)
@@ -67,7 +68,7 @@ class Critic(T.nn.Module):
         self.head = head.to(device)
 
     def forward(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> List[T.Tensor]:
         out = self.encoder(observations, actions)
         out = self.torso(out)
@@ -139,12 +140,12 @@ class ActorCritic(T.nn.Module):
         return self.actor.get_action_distribution(observations)
 
     def forward_critic(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         """Run a forward pass to get the critic output"""
         return self.critic(observations, actions)
 
-    def forward(self, observations: T.Tensor) -> T.Tensor:
+    def forward(self, observations: Tensor) -> T.Tensor:
         """The default forward pass retrieves an action prediciton"""
         return self.actor(observations)
 
@@ -181,12 +182,12 @@ class ActorCriticWithTarget(ActorCritic):
         self.assign_targets()
 
     def forward_target_critic(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         """Run a forward pass to get the target critic output"""
         return self.target_critic(observations, actions)
 
-    def forward_target_actor(self, observations: T.Tensor) -> T.Tensor:
+    def forward_target_actor(self, observations: Tensor) -> T.Tensor:
         """Run a forward pass to get the target actor output"""
         return self.target_actor(observations)
 
@@ -224,19 +225,19 @@ class TwinActorCritic(ActorCritic):
         self.assign_targets()
 
     def forward_critic(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> Tuple[T.Tensor, T.Tensor]:
         """Run a forward pass to get the critic outputs"""
         return self.critic(observations, actions), self.critic2(observations, actions)
 
     def forward_target_critic(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> Tuple[T.Tensor]:
         """Run a forward pass to get the target critics outputs"""
         return self.target_critic(observations, actions), self.target_critic2(
             observations, actions
         )
 
-    def forward_target_actor(self, observations: T.Tensor) -> T.Tensor:
+    def forward_target_actor(self, observations: Tensor) -> T.Tensor:
         """Run a forward pass to get the target actor output"""
         return self.target_actor(observations)

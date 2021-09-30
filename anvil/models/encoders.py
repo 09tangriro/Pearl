@@ -3,6 +3,8 @@ from typing import Optional, Type
 import torch as T
 from gym import spaces
 
+from anvil.common.type_aliases import Tensor
+from anvil.common.utils import numpy_to_torch
 from anvil.models.utils import is_image_space
 
 
@@ -13,12 +15,12 @@ class IdentityEncoder(T.nn.Module):
         super().__init__()
 
     def forward(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
         if actions is not None:
             observations = T.cat([observations, actions], dim=-1)
-        return observations
+        return numpy_to_torch(observations)
 
 
 class FlattenEncoder(T.nn.Module):
@@ -29,7 +31,7 @@ class FlattenEncoder(T.nn.Module):
         self.flatten = T.nn.Flatten()
 
     def forward(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
         if actions is not None:
@@ -45,7 +47,7 @@ class MLPEncoder(T.nn.Module):
         self.model = T.nn.Linear(input_size, output_size)
 
     def forward(
-        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+        self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         if actions is not None:
             observations = T.cat([observations, actions], dim=-1)
@@ -95,5 +97,5 @@ class CNNEncoder(T.nn.Module):
 
         self.linear = T.nn.Sequential(T.nn.Linear(n_flatten, output_size), T.nn.ReLU())
 
-    def forward(self, observations: T.Tensor) -> T.Tensor:
+    def forward(self, observations: Tensor) -> T.Tensor:
         return self.linear(self.cnn(observations))

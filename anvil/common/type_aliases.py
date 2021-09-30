@@ -4,14 +4,16 @@ from typing import Optional, Union
 import numpy as np
 import torch as T
 
+Tensor = Union[np.ndarray, T.Tensor]
+
 
 @dataclass
 class Trajectories:
-    observations: Union[np.ndarray, T.Tensor]
-    actions: Union[np.ndarray, T.Tensor]
-    rewards: Union[np.ndarray, T.Tensor]
-    next_observations: Union[np.ndarray, T.Tensor]
-    dones: Union[np.ndarray, T.Tensor]
+    observations: Tensor
+    actions: Tensor
+    rewards: Tensor
+    next_observations: Tensor
+    dones: Tensor
 
 
 @dataclass
