@@ -209,12 +209,15 @@ class TwinActorCritic(ActorCritic):
         super().__init__(actor, critic)
         self.polyak_coeff = polyak_coeff
         self.critic2 = copy.deepcopy(critic)
+        self.target_actor = copy.deepcopy(actor)
         self.target_critic = copy.deepcopy(critic)
         self.target_critic2 = copy.deepcopy(critic)
         self.online_variables = trainable_variables(self.critic)
         self.online_variables += trainable_variables(self.critic2)
+        self.online_variables += trainable_variables(self.actor)
         self.target_variables = trainable_variables(self.target_critic)
         self.target_variables += trainable_variables(self.target_critic2)
+        self.target_variables += trainable_variables(self.target_actor)
 
         for target in self.target_variables:
             target.requires_grad = False
@@ -225,3 +228,15 @@ class TwinActorCritic(ActorCritic):
     ) -> Tuple[T.Tensor, T.Tensor]:
         """Run a forward pass to get the critic outputs"""
         return self.critic(observations, actions), self.critic2(observations, actions)
+
+    def forward_target_critic(
+        self, observations: T.Tensor, actions: Optional[T.Tensor] = None
+    ) -> Tuple[T.Tensor]:
+        """Run a forward pass to get the target critics outputs"""
+        return self.target_critic(observations, actions), self.target_critic2(
+            observations, actions
+        )
+
+    def forward_target_actor(self, observations: T.Tensor) -> T.Tensor:
+        """Run a forward pass to get the target actor output"""
+        return self.target_actor(observations)
