@@ -149,7 +149,7 @@ class ProximalPolicyClip(BaseActorUpdater):
         actions: T.Tensor,
         advantages: T.Tensor,
         old_log_probs: T.Tensor,
-    ):
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
