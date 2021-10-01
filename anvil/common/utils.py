@@ -30,14 +30,15 @@ def get_device(device: Union[T.device, str]) -> T.device:
     return device
 
 
-def numpy_to_torch(*data) -> Union[Tuple[T.Tensor], T.Tensor]:
+def numpy_to_torch(*data, **kwargs) -> Union[Tuple[T.Tensor], T.Tensor]:
     """Convert any numpy arrays into torch tensors"""
+    device = get_device(kwargs.pop("device", "auto"))
     result = [None] * len(data)
     for i, el in enumerate(data):
         if isinstance(el, np.ndarray):
-            result[i] = T.Tensor(el)
+            result[i] = T.Tensor(el).to(device)
         elif isinstance(el, T.Tensor):
-            result[i] = el
+            result[i] = el.to(device)
         else:
             raise RuntimeError(
                 f"{type(el)} is not a recognized data format, it should be a numpy array or torch tensor"
