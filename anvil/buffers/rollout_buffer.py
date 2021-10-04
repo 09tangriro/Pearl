@@ -101,3 +101,38 @@ class RolloutBuffer(BaseBuffer):
             next_observations=next_observations,
             dones=dones,
         )
+
+    def last(
+        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+    ) -> Trajectories:
+        if isinstance(dtype, str):
+            dtype = TrajectoryType(dtype.lower())
+        assert batch_size <= self.buffer_size
+
+        start_idx = self.pos - batch_size
+        if start_idx < 0:
+            batch_inds = np.concatenate((np.arange(start_idx, 0), np.arange(self.pos)))
+        else:
+            batch_inds = np.arange(start_idx, self.pos)
+
+        observations = self.observations[batch_inds]
+        actions = self.actions[batch_inds]
+        rewards = self.rewards[batch_inds]
+        next_observations = self.next_observations[batch_inds]
+        dones = self.dones[batch_inds]
+
+        # return torch tensors instead of numpy arrays
+        if dtype == TrajectoryType.TORCH:
+            observations = T.tensor(observations).to(self.device)
+            actions = T.tensor(actions).to(self.device)
+            rewards = T.tensor(rewards).to(self.device)
+            next_observations = T.tensor(next_observations).to(self.device)
+            dones = T.tensor(dones).to(self.device)
+
+        return Trajectories(
+            observations=observations,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            dones=dones,
+        )

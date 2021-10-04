@@ -85,7 +85,7 @@ def test_add_batch_trajectories_and_sample(buffer_class):
     assert isinstance(trajectories_torch.observations, T.Tensor)
 
 
-@pytest.mark.parametrize("buffer_class", [ReplayBuffer])
+@pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
 def test_last(buffer_class):
     num_steps = 10
     action_space = env.action_space
