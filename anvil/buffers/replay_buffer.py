@@ -12,6 +12,11 @@ from anvil.common.type_aliases import Trajectories
 class ReplayBuffer(BaseBuffer):
     """
     Replay buffer handles sample collection and processing for off-policy algorithms.
+    We use a single array to save space in handling observations and next observations
+    rather than using two different arrays. This assumes observations are stored sequentially
+    and that observations can be 'blended' only if done = True since the next_observation
+    in this case is essentially discarded anyway in most objective functions (at the end of
+    the trajectory the value or q function of the terminal state is always 0!).
 
     :param buffer_size: max number of elements in the buffer
     :param observation_space: observation space
@@ -70,10 +75,45 @@ class ReplayBuffer(BaseBuffer):
         else:
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
 
-        observations = self.observations[batch_inds, 0, :]
-        actions = self.actions[batch_inds, 0, :]
+        observations = self.observations[batch_inds]
+        actions = self.actions[batch_inds]
         rewards = self.rewards[batch_inds]
-        next_observations = self.observations[(batch_inds + 1) % self.buffer_size, 0, :]
+        next_observations = self.observations[(batch_inds + 1) % self.buffer_size]
+        dones = self.dones[batch_inds]
+
+        # return torch tensors instead of numpy arrays
+        if dtype == TrajectoryType.TORCH:
+            observations = T.tensor(observations).to(self.device)
+            actions = T.tensor(actions).to(self.device)
+            rewards = T.tensor(rewards).to(self.device)
+            next_observations = T.tensor(next_observations).to(self.device)
+            dones = T.tensor(dones).to(self.device)
+
+        return Trajectories(
+            observations=observations,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            dones=dones,
+        )
+
+    def last(
+        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+    ) -> Trajectories:
+        if isinstance(dtype, str):
+            dtype = TrajectoryType(dtype.lower())
+        assert batch_size <= self.buffer_size - 1
+
+        start_idx = self.pos - batch_size
+        if start_idx < 0:
+            batch_inds = np.concatenate((np.arange(start_idx, 0), np.arange(self.pos)))
+        else:
+            batch_inds = np.arange(start_idx, self.pos)
+
+        observations = self.observations[batch_inds]
+        actions = self.actions[batch_inds]
+        rewards = self.rewards[batch_inds]
+        next_observations = self.observations[(batch_inds + 1) % self.buffer_size]
         dones = self.dones[batch_inds]
 
         # return torch tensors instead of numpy arrays

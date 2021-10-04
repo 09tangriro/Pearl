@@ -125,3 +125,15 @@ class BaseBuffer(ABC):
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: the trajectories
         """
+
+    @abstractmethod
+    def last(
+        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+    ) -> Trajectories:
+        """
+        Get the most recent batch of trajectories stored
+
+        :param batch_size: the batch size
+        :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
+        :return: the trajectories
+        """
