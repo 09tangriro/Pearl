@@ -108,11 +108,11 @@ class PolicyGradient(BaseActorUpdater):
             old_log_probs = numpy_to_torch(old_log_probs)
             kl = sample_reverse_kl_divergence(
                 old_log_probs.exp().detach(), new_log_probs.exp().detach()
-            )
+            ).item()
         else:
             kl = None
 
-        return UpdaterLog(loss=loss, kl=kl, entropy=entropy)
+        return UpdaterLog(loss=loss.item(), kl=kl, entropy=entropy.item())
 
 
 class ProximalPolicyClip(BaseActorUpdater):
@@ -184,11 +184,11 @@ class ProximalPolicyClip(BaseActorUpdater):
         if old_log_probs is not None:
             kl = sample_reverse_kl_divergence(
                 old_log_probs.exp().detach(), new_log_probs.exp().detach()
-            )
+            ).item()
         else:
             kl = None
 
-        return UpdaterLog(loss=loss, kl=kl, entropy=entropy)
+        return UpdaterLog(loss=loss.item(), kl=kl, entropy=entropy.item())
 
 
 class DeterministicPolicyGradient(BaseActorUpdater):
@@ -230,7 +230,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        return UpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach().item())
 
 
 class SoftPolicyGradient(BaseActorUpdater):
@@ -290,4 +290,4 @@ class SoftPolicyGradient(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        return UpdaterLog(loss=loss.detach(), entropy=entropy.detach())
+        return UpdaterLog(loss=loss.detach().item(), entropy=entropy.detach().item())

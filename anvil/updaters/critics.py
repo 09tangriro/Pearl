@@ -100,7 +100,7 @@ class ValueRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return UpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach().item())
 
 
 class QRegression(BaseCriticUpdater):
@@ -150,7 +150,7 @@ class QRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return UpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach().item())
 
 
 class SoftQRegression(BaseCriticUpdater):
@@ -210,4 +210,4 @@ class SoftQRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return UpdaterLog(loss=loss.detach())
+        return UpdaterLog(loss=loss.detach().item())

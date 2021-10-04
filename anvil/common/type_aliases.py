@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Optional, Type, Union
 
 import numpy as np
 import torch as T
+from torch.optim.optimizer import Optimizer
 
 Tensor = Union[np.ndarray, T.Tensor]
 
@@ -18,6 +19,22 @@ class Trajectories:
 
 @dataclass
 class UpdaterLog:
-    loss: T.Tensor
-    kl: Optional[T.Tensor] = None
-    entropy: Optional[T.Tensor] = None
+    loss: float
+    kl: Optional[float] = None
+    entropy: Optional[float] = None
+
+
+@dataclass
+class Log:
+    reward: float
+    actor_loss: float
+    critic_loss: float
+    kl_divergence: Optional[float] = None
+    entropy: Optional[float] = None
+
+
+@dataclass
+class OptimizerSettings:
+    optimizer_class: Type[Optimizer] = T.optim.Adam
+    learning_rate: float = 1e-3
+    max_grad: float = 0.5
