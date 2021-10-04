@@ -20,7 +20,7 @@ class Trajectories:
 @dataclass
 class UpdaterLog:
     loss: float
-    kl: Optional[float] = None
+    kl_divergence: Optional[float] = None
     entropy: Optional[float] = None
 
 
