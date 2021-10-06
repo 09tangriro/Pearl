@@ -114,7 +114,7 @@ class BaseAgent(ABC):
         """
         for _ in range(num_steps):
             if self.action_explorer is not None:
-                action = self.action_explorer(observation, self.step)
+                action = self.action_explorer(self.model, observation, self.step)
             else:
                 action = self.model(observation)
             numpy_action = torch_to_numpy(action)

@@ -21,18 +21,18 @@ class BaseExplorer(object):
 
     def __init__(
         self,
-        actor: Union[Actor, ActorCritic],
         action_space: spaces.Space,
         start_steps: int = 20000,
     ) -> None:
         self.start_steps = start_steps
-        self.actor = actor
         self.action_space = action_space
         self.action_size = get_mlp_size(get_space_shape(action_space))
         self.low = numpy_to_torch(action_space.low)
         self.high = numpy_to_torch(action_space.high)
 
-    def __call__(self, observation: Tensor, step: int) -> T.Tensor:
+    def __call__(
+        self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
+    ) -> T.Tensor:
         if step >= self.start_steps:
             action = self.actor(observation)
             if isinstance(self.action_space, spaces.Box):

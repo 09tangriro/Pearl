@@ -11,7 +11,6 @@ from anvil.models.actor_critics import Actor, ActorCritic
 class GaussianExplorer(BaseExplorer):
     def __init__(
         self,
-        actor: Union[Actor, ActorCritic],
         action_space: spaces.Space,
         scale: float = 0.1,
         start_steps: int = 20000,
@@ -24,10 +23,12 @@ class GaussianExplorer(BaseExplorer):
         :param scale: std of the Gaussian noise
         :param start_steps: the fist n steps to uniformally sample actions
         """
-        super().__init__(actor, action_space, start_steps=start_steps)
+        super().__init__(action_space, start_steps=start_steps)
         self.scale = scale
 
-    def __call__(self, observation: Tensor, step: int) -> T.Tensor:
+    def __call__(
+        self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
+    ) -> T.Tensor:
         actions = super().__call__(observation, step)
         if step >= self.start_steps:
             noises = T.normal(mean=0.0, std=self.scale, size=self.action_space.shape)
