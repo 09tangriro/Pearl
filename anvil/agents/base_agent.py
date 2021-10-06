@@ -123,7 +123,14 @@ class BaseAgent(ABC):
     def _fit(
         self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1
     ) -> Log:
-        """Train the agent in the environment"""
+        """
+        Train the agent in the environment
+
+        :param batch_size: minibatch size to make a single gradient descent step on
+        :param actor_epochs: how many times to update the actor network in each training step
+        :param critic_epochs: how many times to update the critic network in each training step
+        :return: a Log object with training diagnostic info
+        """
 
     def fit(
         self,

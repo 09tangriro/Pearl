@@ -26,9 +26,9 @@ class UpdaterLog:
 
 @dataclass
 class Log:
-    reward: float
     actor_loss: float
     critic_loss: float
+    reward: float = 0
     kl_divergence: Optional[float] = None
     entropy: Optional[float] = None
 
