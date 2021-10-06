@@ -59,7 +59,7 @@ class ValueHead(BaseCriticHead):
         self,
         input_shape: Union[int, Tuple[int]],
         network_type: str = "mlp",
-        activation_fn: Optional[Type[T.nn.Module]] = T.nn.ReLU,
+        activation_fn: Optional[Type[T.nn.Module]] = None,
     ):
         super().__init__()
         network_type = NetworkType(network_type.lower())
@@ -90,7 +90,7 @@ class DiscreteQHead(BaseCriticHead):
         input_shape: Union[int, Tuple[int]],
         output_shape: Union[int, Tuple[int]],
         network_type: str = "mlp",
-        activation_fn: Optional[Type[T.nn.Module]] = T.nn.ReLU,
+        activation_fn: Optional[Type[T.nn.Module]] = None,
     ):
         super().__init__()
         network_type = NetworkType(network_type.lower())
@@ -122,7 +122,7 @@ class DeterministicPolicyHead(BaseActorHead):
         input_shape: Union[int, Tuple[int]],
         action_shape: Union[int, Tuple[int]],
         network_type: str = "mlp",
-        activation_fn: Optional[Type[T.nn.Module]] = T.nn.ReLU,
+        activation_fn: Optional[Type[T.nn.Module]] = None,
     ):
         super().__init__()
         network_type = NetworkType(network_type.lower())
