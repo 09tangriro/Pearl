@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 
 from gym import Env
 
-from anvil.agents import BaseAgent
 from anvil.models.actor_critics import ActorCritic
 
 

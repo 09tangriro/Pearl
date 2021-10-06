@@ -5,7 +5,7 @@ from gym import spaces
 
 from anvil.common.type_aliases import Tensor
 from anvil.common.utils import numpy_to_torch
-from anvil.models.utils import is_image_space
+from anvil.models.utils import concat_obs_actions, is_image_space
 
 
 class IdentityEncoder(T.nn.Module):
@@ -18,8 +18,7 @@ class IdentityEncoder(T.nn.Module):
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        if actions is not None:
-            observations = T.cat([observations, actions], dim=-1)
+        observations = concat_obs_actions(observations, actions)
         return numpy_to_torch(observations)
 
 
@@ -34,8 +33,7 @@ class FlattenEncoder(T.nn.Module):
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        if actions is not None:
-            observations = T.cat([observations, actions], dim=-1)
+        observations = concat_obs_actions(observations, actions)
         return self.flatten(observations)
 
 
@@ -49,8 +47,7 @@ class MLPEncoder(T.nn.Module):
     def forward(
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
-        if actions is not None:
-            observations = T.cat([observations, actions], dim=-1)
+        observations = concat_obs_actions(observations, actions)
         return self.model(observations)
 
 

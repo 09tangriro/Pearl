@@ -1,9 +1,12 @@
 import warnings
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import torch as T
 from gym import spaces
+
+from anvil.common.type_aliases import Tensor
+from anvil.common.utils import numpy_to_torch
 
 
 def trainable_variables(model: T.nn.Module) -> list:
@@ -82,3 +85,10 @@ def is_image_space(
         # RGB, RGBD, GrayScale
         return n_channels in [1, 3, 4]
     return False
+
+
+def concat_obs_actions(observations: Tensor, actions: Optional[Tensor]) -> Tensor:
+    if actions is not None:
+        observations, actions = numpy_to_torch(observations, actions)
+        return T.cat([observations, actions], dim=-1)
+    return observations

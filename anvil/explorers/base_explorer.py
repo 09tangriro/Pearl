@@ -33,10 +33,10 @@ class BaseExplorer(object):
         self.high = numpy_to_torch(action_space.high)
 
     def __call__(self, observation: Tensor, step: int) -> T.Tensor:
-        if step > self.start_steps:
+        if step >= self.start_steps:
             action = self.actor(observation)
             if isinstance(self.action_space, spaces.Box):
-                action = T.clip(action, self.low, self.high)
+                action = T.clip(action, self.low.item(), self.high.item())
         else:
             action = numpy_to_torch(
                 np.random.uniform(

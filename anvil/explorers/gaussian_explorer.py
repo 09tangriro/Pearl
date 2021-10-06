@@ -29,8 +29,8 @@ class GaussianExplorer(BaseExplorer):
 
     def __call__(self, observation: Tensor, step: int) -> T.Tensor:
         actions = super().__call__(observation, step)
-        if step > self.start_steps:
+        if step >= self.start_steps:
             noises = T.normal(mean=0.0, std=self.scale, size=self.action_space.shape)
             actions = actions + noises
-            actions = T.clip(actions, self.low, self.high)
+            actions = T.clip(actions, self.low.item(), self.high.item())
         return actions

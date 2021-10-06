@@ -11,12 +11,9 @@ from torch.utils.tensorboard import SummaryWriter
 from anvil.buffers.base_buffer import BaseBuffer
 from anvil.buffers.rollout_buffer import RolloutBuffer
 from anvil.callbacks.base_callback import BaseCallback
-from anvil.common.type_aliases import Log, OptimizerSettings, Tensor
+from anvil.common.type_aliases import Log, Tensor
 from anvil.common.utils import get_device, torch_to_numpy
-from anvil.explorers import BaseExplorer
 from anvil.models.actor_critics import ActorCritic
-from anvil.updaters.actors import BaseActorUpdater
-from anvil.updaters.critics import BaseCriticUpdater
 
 
 class BaseAgent(ABC):
@@ -24,13 +21,8 @@ class BaseAgent(ABC):
         self,
         env: Env,
         model: ActorCritic,
-        actor_updater_class: Type[BaseActorUpdater],
-        critic_updater_class: Type[BaseCriticUpdater],
         buffer_class: Type[BaseBuffer],
         buffer_size: int,
-        actor_optimizer_settings: OptimizerSettings = OptimizerSettings(),
-        critic_optimizer_settings: OptimizerSettings = OptimizerSettings(),
-        action_explorer_class: Optional[Type[BaseExplorer]] = None,
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         device: Union[T.device, str] = "auto",
         verbose: bool = True,
@@ -44,7 +36,10 @@ class BaseAgent(ABC):
         self.model_path = model_path
         self.n_envs = n_envs
         self.buffer_size = buffer_size
+        self.callbacks = callbacks
+        self.action_explorer = None
         self.device = get_device(device)
+        self.step = 0
 
         self.buffer = buffer_class(
             buffer_size=buffer_size,
@@ -119,17 +114,19 @@ class BaseAgent(ABC):
         """
         for _ in range(num_steps):
             if self.action_explorer is not None:
-                action = self.action_explorer(observation)
+                action = self.action_explorer(observation, self.step)
             else:
                 action = self.model(observation)
-            reward, next_observation, done, _ = self.env.step()
+            numpy_action = torch_to_numpy(action)
+            next_observation, reward, done, _ = self.env.step(numpy_action)
             self.buffer.add_trajectory(
-                observation, torch_to_numpy(action), reward, next_observation, done
+                observation, numpy_action, reward, next_observation, done
             )
             if done:
                 observation = self.env.reset()
             else:
                 observation = next_observation
+            self.step += 1
         return observation
 
     @abstractmethod
@@ -156,7 +153,6 @@ class BaseAgent(ABC):
         Train the agent in the environment
 
         :param num_steps: total number of environment steps to train over
-        :param samples_to_collect: the total number of samples to add to the buffer before a training step
         :param batch_size: minibatch size to make a single gradient descent step on
         :param actor_epochs: how many times to update the actor network in each training step
         :param critic_epochs: how many times to update the critic network in each training step

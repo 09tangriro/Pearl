@@ -54,7 +54,7 @@ def torch_to_numpy(*data) -> Union[Tuple[np.ndarray], np.ndarray]:
     result = [None] * len(data)
     for i, el in enumerate(data):
         if isinstance(el, T.Tensor):
-            result[i] = el.numpy()
+            result[i] = el.detach().numpy()
         elif isinstance(el, np.ndarray):
             result[i] = el
         else:
