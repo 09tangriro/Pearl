@@ -34,7 +34,7 @@ class BaseExplorer(object):
         self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
     ) -> T.Tensor:
         if step >= self.start_steps:
-            action = self.actor(observation)
+            action = actor(observation)
             if isinstance(self.action_space, spaces.Box):
                 action = T.clip(action, self.low.item(), self.high.item())
         else:
