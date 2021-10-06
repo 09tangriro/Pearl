@@ -44,7 +44,11 @@ def TD_zero(
     :param dones: the done values of each step of the trajectory, indicates whether to bootstrap
     :param gamma: the discount factor of future rewards
     """
-    return numpy_to_torch(rewards + ((1 - dones) * gamma * next_values))
+    returns = rewards + ((1 - dones) * gamma * next_values)
+    assert (
+        returns.shape == next_values.shape
+    ), f"The TD returns' shape should be {next_values.shape}, instead it is {returns.shape}."
+    return numpy_to_torch(returns)
 
 
 def generalized_advantage_estimate(
@@ -76,6 +80,13 @@ def generalized_advantage_estimate(
 
     value_target = advantage[:batch_size] + old_values
 
+    assert (
+        advantage[:batch_size].shape == old_values.shape
+    ), f"The advantage's shape should be {old_values.shape}, instead it is {advantage[:batch_size].shape}."
+    assert (
+        value_target.shape == old_values.shape
+    ), f"The returns' shape should be {old_values.shape}, instead it is {value_target.shape}."
+
     return numpy_to_torch(advantage[:batch_size], value_target)
 
 
@@ -97,6 +108,8 @@ def soft_q_target(
     :param alpha: entropy weighting coefficient
     :param gamma: trajectory discount
     """
-    return numpy_to_torch(
-        rewards + gamma * (1 - dones) * (q_values - (alpha * log_probs))
-    )
+    returns = rewards + gamma * (1 - dones) * (q_values - (alpha * log_probs))
+    assert (
+        returns.shape == q_values.shape
+    ), f"The advantage's shape should be {q_values.shape}, instead it is {returns.shape}."
+    return numpy_to_torch(returns)

@@ -21,12 +21,12 @@ def test_base_explorer(explorer_class):
         input_shape=10, action_shape=env.action_space.shape, activation_fn=None
     )
     actor = Actor(encoder=encoder, torso=torso, head=head)
-    explorer = explorer_class(actor=actor, action_space=env.action_space)
+    explorer = explorer_class(action_space=env.action_space)
 
     # uniform exploration
     for _ in range(num_steps):
-        action = explorer(observation=observation, step=0)
+        action = explorer(actor=actor, observation=observation, step=0)
         assert abs(action[0]) <= 1
 
-    action = explorer(observation=observation, step=50e3)
+    action = explorer(actor=actor, observation=observation, step=50e3)
     assert abs(action[0]) <= 1
