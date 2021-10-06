@@ -29,7 +29,7 @@ class GaussianExplorer(BaseExplorer):
     def __call__(
         self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
     ) -> T.Tensor:
-        actions = super().__call__(observation, step)
+        actions = super().__call__(actor, observation, step)
         if step >= self.start_steps:
             noises = T.normal(mean=0.0, std=self.scale, size=self.action_space.shape)
             actions = actions + noises
