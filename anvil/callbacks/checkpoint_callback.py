@@ -23,6 +23,5 @@ class CheckpointCallback(BaseCallback):
             path = os.path.join(
                 self.save_path, f"{self.name_prefix}_{self.n_calls}_steps"
             )
-            if self.verbose:
-                self.logger.info(f"Saving model to {path}")
+            self.agent.save(path)
         return True

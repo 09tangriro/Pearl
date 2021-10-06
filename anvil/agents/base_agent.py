@@ -82,6 +82,7 @@ class BaseAgent(ABC):
                 )
 
     def _write_log(self, log: Log, step: int) -> None:
+        """Write a log to tensorboard and python logging"""
         self.writer.add_scalar("reward", log.reward, step)
         self.writer.add_scalar("actor_loss", log.actor_loss, step)
         self.writer.add_scalar("critic_loss", log.critic_loss, step)
@@ -93,17 +94,29 @@ class BaseAgent(ABC):
         self.logger.info(f"{step}: {log}")
 
     def predict(self, observations: Tensor) -> T.Tensor:
+        """Run the agent actor model"""
         return self.model(observations)
 
     def get_action_distribution(
         self, observations: Tensor
     ) -> T.distributions.Distribution:
+        """Get the policy distribution given an observation"""
         return self.model.get_action_distribution(observations)
 
-    def critic(self, observations: Tensor, actions: Tensor) -> T.Tensor:
+    def critic(
+        self, observations: Tensor, actions: Optional[Tensor] = None
+    ) -> T.Tensor:
+        """Run the agent critic model"""
         return self.model.critic(observations, actions)
 
     def step_env(self, observation: np.ndarray, num_steps: int = 1) -> np.ndarray:
+        """
+        Step the agent in the environment
+
+        :param observation: the starting observation to step from
+        :param num_steps: how many steps to take
+        :return: the final observation after all steps have been done
+        """
         for _ in range(num_steps):
             if self.action_explorer is not None:
                 action = self.action_explorer(observation)
