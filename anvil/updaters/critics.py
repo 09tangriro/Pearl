@@ -129,6 +129,7 @@ class QRegression(BaseCriticUpdater):
         observations: Tensor,
         returns: T.Tensor,
         actions: Optional[Tensor] = None,
+        actions_index: Optional[T.Tensor] = None,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -137,6 +138,8 @@ class QRegression(BaseCriticUpdater):
         :param observations: observation inputs
         :param returns: the target to regress to (e.g. TD Values, Monte-Carlo Values)
         :param actions: optional action inputs, defaults to None, needed for continuous Q function modelling
+        :param actions_index: optional discrete action values to use as indices, defaults to None. Needed to
+            filter the Q values for actions experienced.
         """
         critic_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(critic_parameters, lr=self.lr)
@@ -145,6 +148,8 @@ class QRegression(BaseCriticUpdater):
             q_values = model(observations, actions)
         else:
             q_values = model.forward_critic(observations, actions)
+        if actions_index is not None:
+            q_values = T.gather(q_values, dim=1, index=actions_index.long())
 
         loss = self.loss_class(q_values, returns)
 

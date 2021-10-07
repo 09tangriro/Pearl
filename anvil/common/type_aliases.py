@@ -26,8 +26,8 @@ class UpdaterLog:
 
 @dataclass
 class Log:
-    actor_loss: float
-    critic_loss: float
+    actor_loss: float = 0
+    critic_loss: float = 0
     reward: float = 0
     kl_divergence: Optional[float] = None
     entropy: Optional[float] = None
