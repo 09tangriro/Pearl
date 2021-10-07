@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from gym import Env
 
+from anvil.agents import base_agent
 from anvil.models.actor_critics import ActorCritic
 
 
@@ -18,7 +19,7 @@ class BaseCallback(ABC):
         self.n_calls = 0
 
     # Type hint as string to avoid circular import
-    def init(self, agent: "BaseAgent") -> None:
+    def init(self, agent: "base_agent.BaseAgent") -> None:
         self.logger = agent.logger
         self.agent = agent
 
