@@ -1,6 +1,6 @@
-from typing import Any, Optional, Union
+from typing import Union
 
-import torch as T
+import numpy as np
 from gym import spaces
 
 from anvil.common.type_aliases import Tensor
@@ -28,10 +28,10 @@ class GaussianExplorer(BaseExplorer):
 
     def __call__(
         self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
-    ) -> T.Tensor:
+    ) -> np.ndarray:
         actions = super().__call__(actor, observation, step)
         if step >= self.start_steps:
-            noises = T.normal(mean=0.0, std=self.scale, size=self.action_space.shape)
+            noises = np.random.normal(loc=0.0, scale=self.scale, size=self.action_size)
             actions = actions + noises
-            actions = T.clip(actions, self.low.item(), self.high.item())
+            actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return actions
