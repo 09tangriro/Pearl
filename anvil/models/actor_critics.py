@@ -45,6 +45,37 @@ class Actor(T.nn.Module):
         return out
 
 
+class EpsilonGreedyActor(Actor):
+    """Epsilon greedy actor used in DQN"""
+
+    def __init__(
+        self,
+        start_epsilon: float = 1,
+        encoder: T.nn.Module = T.nn.ReLU,
+        torso: T.nn.Module = T.nn.ReLU,
+        head: BaseActorHead = BaseActorHead(),
+        device: Union[T.device, str] = "auto",
+    ):
+        super().__init__(encoder, torso, head, device=device)
+        self.epsilon = start_epsilon
+
+    def forward(self, q_values: Tensor) -> T.Tensor:
+        action_size = q_values.shape[-1]
+        trigger = T.rand(1).item()
+
+        if trigger <= self.epsilon:
+            actions = T.randint(
+                low=0, high=action_size, size=q_values.shape[:-1] + (1,)
+            )
+        else:
+            _, actions = T.max(q_values, dim=-1)
+            actions = actions.reshape(-1, 1)
+            while len(q_values.shape) != len(actions.shape):
+                actions = actions.unsqueeze(0)
+
+        return actions
+
+
 class Critic(T.nn.Module):
     """
     The critic network which approximates the Q or Value functions.
