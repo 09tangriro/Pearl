@@ -38,3 +38,9 @@ class OptimizerSettings:
     optimizer_class: Type[Optimizer] = T.optim.Adam
     learning_rate: float = 1e-3
     max_grad: float = 0.5
+
+
+@dataclass
+class ExplorerSettings:
+    start_steps: int = 1000
+    scale: Optional[float] = None
