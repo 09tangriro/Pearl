@@ -46,11 +46,22 @@ class Actor(T.nn.Module):
 
 
 class EpsilonGreedyActor(Actor):
-    """Epsilon greedy actor used in DQN"""
+    """
+    Epsilon greedy strategy used in DQN
+
+    :param start_epsilon: epsilon start value, generally set high to promp random exploration
+    :param epsilon_decay: epsilon decay value, epsilon = epsilon * epsilon_decay
+    :param min_epsilon: the minimum epsilon value allowed
+    :param encoder:
+    :param torso:
+    :param head:
+    """
 
     def __init__(
         self,
         start_epsilon: float = 1,
+        epsilon_decay: float = 0.999,
+        min_epsilon: float = 0,
         encoder: T.nn.Module = T.nn.ReLU,
         torso: T.nn.Module = T.nn.ReLU,
         head: BaseActorHead = BaseActorHead(),
@@ -58,6 +69,12 @@ class EpsilonGreedyActor(Actor):
     ):
         super().__init__(encoder, torso, head, device=device)
         self.epsilon = start_epsilon
+        self.epsilon_decay = epsilon_decay
+        self.min_epsilon = min_epsilon
+
+    def update_epsilon(self) -> None:
+        """Update epsilon via epsilon decay"""
+        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
     def forward(self, q_values: Tensor) -> T.Tensor:
         action_size = q_values.shape[-1]
