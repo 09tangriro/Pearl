@@ -2,7 +2,6 @@ import gym
 import numpy as np
 import pytest
 import torch as T
-from numpy.ma.core import concatenate
 
 from anvil.buffers import ReplayBuffer
 from anvil.buffers.rollout_buffer import RolloutBuffer
@@ -21,8 +20,8 @@ def test_buffer_init(buffer_class):
 
     assert buffer.observations.shape == (5, 1, 4)
     assert buffer.actions.shape == (5, 1, 1)
-    assert buffer.rewards.shape == (5, 1)
-    assert buffer.dones.shape == (5, 1)
+    assert buffer.rewards.shape == (5, 1, 1)
+    assert buffer.dones.shape == (5, 1, 1)
 
 
 @pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
@@ -45,6 +44,10 @@ def test_buffer_add_trajectory_and_sample(buffer_class):
     )
     trajectory_numpy = buffer.sample(batch_size=1, dtype="numpy")
     trajectory_torch = buffer.sample(batch_size=1, dtype="torch")
+
+    for field in trajectory_numpy.__dataclass_fields__:
+        value = getattr(trajectory_numpy, field)
+        assert len(value.shape) == 3
 
     assert isinstance(trajectory_numpy.observations, np.ndarray)
     assert isinstance(trajectory_torch.observations, T.Tensor)
@@ -102,9 +105,9 @@ def test_last(buffer_class):
         trajectory = Trajectories(
             observations=obs[np.newaxis, np.newaxis, :],
             actions=np.array([[[action]]], dtype=np.float32),
-            rewards=np.array([[reward]]),
+            rewards=np.array([[[reward]]]),
             next_observations=next_obs[np.newaxis, np.newaxis, :],
-            dones=np.array([[done]], dtype=np.float32),
+            dones=np.array([[[done]]], dtype=np.float32),
         )
 
         buffer.add_trajectory(
@@ -143,9 +146,9 @@ def test_last(buffer_class):
                 trajectories = Trajectories(
                     observations=obs[np.newaxis, np.newaxis, :],
                     actions=np.array([[[action]]], dtype=np.float32),
-                    rewards=np.array([[reward]]),
+                    rewards=np.array([[[reward]]]),
                     next_observations=next_obs[np.newaxis, np.newaxis, :],
-                    dones=np.array([[done]], dtype=np.float32),
+                    dones=np.array([[[done]]], dtype=np.float32),
                 )
             else:
                 trajectories.observations = np.concatenate(
@@ -155,7 +158,7 @@ def test_last(buffer_class):
                     (trajectories.actions, np.array([[[action]]], dtype=np.float32))
                 )
                 trajectories.rewards = np.concatenate(
-                    (trajectories.rewards, np.array([[reward]]))
+                    (trajectories.rewards, np.array([[[reward]]]))
                 )
                 trajectories.next_observations = np.concatenate(
                     (
@@ -164,7 +167,7 @@ def test_last(buffer_class):
                     )
                 )
                 trajectories.dones = np.concatenate(
-                    (trajectories.dones, np.array([[done]], dtype=np.float32))
+                    (trajectories.dones, np.array([[[done]]], dtype=np.float32))
                 )
             buffer.add_trajectory(
                 observation=obs,

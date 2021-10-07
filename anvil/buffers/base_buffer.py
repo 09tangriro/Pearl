@@ -51,8 +51,9 @@ class BaseBuffer(ABC):
             (self.buffer_size, self.n_envs) + action_shape,
             dtype=observation_space.dtype,
         )
-        self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        # Use 3 dims for easier calculations without having to think about broadcasting
+        self.rewards = np.zeros((self.buffer_size, self.n_envs, 1), dtype=np.float32)
+        self.dones = np.zeros((self.buffer_size, self.n_envs, 1), dtype=np.float32)
 
     def _check_system_memory(self) -> None:
         """Check that the replay buffer can fit into memory"""
