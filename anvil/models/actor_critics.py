@@ -90,6 +90,7 @@ class EpsilonGreedyActor(Actor):
             while len(q_values.shape) != len(actions.shape):
                 actions = actions.unsqueeze(0)
 
+        self.update_epsilon()
         return actions
 
 
