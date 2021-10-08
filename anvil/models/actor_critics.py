@@ -50,25 +50,25 @@ class EpsilonGreedyActor(Actor):
     Epsilon greedy strategy used in DQN
     Epsilon represents the probability of choosing a random action in the environment
 
+    :param critic_encoder: encoder of the critic network
+    :param critic_torso: torso of the critic network
+    :param critic_head: head of the critic network
     :param start_epsilon: epsilon start value, generally set high to promp random exploration
     :param epsilon_decay: epsilon decay value, epsilon = epsilon * epsilon_decay
     :param min_epsilon: the minimum epsilon value allowed
-    :param encoder:
-    :param torso:
-    :param head:
     """
 
     def __init__(
         self,
+        critic_encoder: T.nn.Module,
+        critic_torso: T.nn.Module,
+        critic_head: BaseCriticHead,
         start_epsilon: float = 1,
         epsilon_decay: float = 0.999,
         min_epsilon: float = 0,
-        encoder: T.nn.Module = T.nn.ReLU,
-        torso: T.nn.Module = T.nn.ReLU,
-        head: BaseActorHead = T.nn.ReLU,
         device: Union[T.device, str] = "auto",
     ):
-        super().__init__(encoder, torso, head, device=device)
+        super().__init__(critic_encoder, critic_torso, critic_head, device=device)
         self.epsilon = start_epsilon
         self.epsilon_decay = epsilon_decay
         self.min_epsilon = min_epsilon
@@ -77,7 +77,8 @@ class EpsilonGreedyActor(Actor):
         """Update epsilon via epsilon decay"""
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
-    def forward(self, q_values: Tensor) -> T.Tensor:
+    def forward(self, observations: Tensor) -> T.Tensor:
+        q_values = super().forward(observations)
         action_size = q_values.shape[-1]
         trigger = T.rand(1).item()
 
