@@ -35,10 +35,6 @@ class BaseExplorer(object):
             if isinstance(self.action_space, spaces.Box):
                 action = np.clip(action, self.action_space.low, self.action_space.high)
         else:
-            action = np.random.uniform(
-                low=self.action_space.low,
-                high=self.action_space.high,
-                size=self.action_size,
-            )
+            action = self.action_space.sample()
 
         return action
