@@ -129,7 +129,7 @@ class QRegression(BaseCriticUpdater):
         observations: Tensor,
         returns: T.Tensor,
         actions: Optional[Tensor] = None,
-        actions_index: Optional[T.Tensor] = None,
+        actions_index: Optional[Tensor] = None,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -149,7 +149,10 @@ class QRegression(BaseCriticUpdater):
         else:
             q_values = model.forward_critic(observations, actions)
         if actions_index is not None:
-            q_values = T.gather(q_values, dim=1, index=actions_index.long())
+            actions_index = numpy_to_torch(actions_index)
+            print(q_values)
+            q_values = T.gather(q_values, dim=-1, index=actions_index.long())
+            print(q_values)
 
         loss = self.loss_class(q_values, returns)
 
