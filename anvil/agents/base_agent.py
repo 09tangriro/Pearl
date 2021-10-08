@@ -23,14 +23,36 @@ class BaseAgent(ABC):
         model: ActorCritic,
         buffer_class: Type[BaseBuffer],
         buffer_size: int,
+        n_envs: int = 1,
         callbacks: Optional[List[Type[BaseCallback]]] = None,
-        device: Union[T.device, str] = "auto",
-        verbose: bool = True,
         model_path: Optional[str] = None,
+        device: Union[str, T.device] = "auto",
         tensorboard_log_path: Optional[str] = None,
         log_level: str = "",
-        n_envs: int = 1,
+        verbose: bool = True,
     ) -> None:
+        """
+        The BaseAgent class is given to handle all the stuff around the actual RL algorithm.
+        It's recommended to inherit this class when implementing your own agents. You'll need
+        to implement the _fit() abstract method and override the __init__ to add the actor and
+        critic updaters and their settings as well as the action explorer with its settings.
+
+        See the example algorithms already done for guidance and common/type_aliases.py for
+        settings objects that can be used.
+
+        :param env: the gym-like environment to be used
+        :param model: the neural network model
+        :param buffer_class: the buffer class to use
+        :param buffer_size: the size of the buffer
+        :param n_envs: number of parallel environments to train on (ONLY SUPPORTS 1 FOR NOW!)
+        :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
+        :param model_path: optional model path to load from
+        :param device: device to run on, accepts "auto", "cuda" or "cpu"
+        :param tensorboard_log_path: path to store the tensorboard log
+        :param log_level: the log level to display
+        :param verbose: whether to display at all or not
+        """
+
         self.env = env
         self.model = model
         self.verbose = verbose
@@ -39,9 +61,12 @@ class BaseAgent(ABC):
         self.buffer_size = buffer_size
         self.callbacks = callbacks
         self.action_explorer = None
-        self.device = get_device(device)
         self.step = 0
         self.episode = 0
+        self.logger = self.get_logger()
+
+        device = get_device(device)
+        self.logger.info(f"Using device {device}")
 
         self.buffer = buffer_class(
             buffer_size=buffer_size,
@@ -51,7 +76,6 @@ class BaseAgent(ABC):
             device=device,
         )
         self._reset_episode_log()
-        self.logger = self.get_logger()
         self.writer = SummaryWriter(tensorboard_log_path)
         # Load the model if a path is given
         if self.model_path is not None:
