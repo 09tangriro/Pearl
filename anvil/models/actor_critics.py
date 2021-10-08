@@ -48,6 +48,7 @@ class Actor(T.nn.Module):
 class EpsilonGreedyActor(Actor):
     """
     Epsilon greedy strategy used in DQN
+    Epsilon represents the probability of choosing a random action in the environment
 
     :param start_epsilon: epsilon start value, generally set high to promp random exploration
     :param epsilon_decay: epsilon decay value, epsilon = epsilon * epsilon_decay
@@ -64,7 +65,7 @@ class EpsilonGreedyActor(Actor):
         min_epsilon: float = 0,
         encoder: T.nn.Module = T.nn.ReLU,
         torso: T.nn.Module = T.nn.ReLU,
-        head: BaseActorHead = BaseActorHead(),
+        head: BaseActorHead = T.nn.ReLU,
         device: Union[T.device, str] = "auto",
     ):
         super().__init__(encoder, torso, head, device=device)
