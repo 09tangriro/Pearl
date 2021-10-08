@@ -89,8 +89,6 @@ class EpsilonGreedyActor(Actor):
         else:
             _, actions = T.max(q_values, dim=-1)
             actions = actions.reshape(-1, 1)
-            while len(q_values.shape) != len(actions.shape):
-                actions = actions.unsqueeze(0)
 
         self.update_epsilon()
         return actions
@@ -201,7 +199,7 @@ class ActorCritic(T.nn.Module):
         return self.actor(observations)
 
 
-class ActorCriticWithTarget(ActorCritic):
+class ActorCriticWithTargets(ActorCritic):
     """
     An actor critic with target critic and actor networks updated via polyak averaging
 

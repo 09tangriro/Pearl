@@ -6,7 +6,7 @@ from torch.autograd.grad_mode import F
 from anvil.models import (
     Actor,
     ActorCritic,
-    ActorCriticWithTarget,
+    ActorCriticWithTargets,
     Critic,
     TwinActorCritic,
 )
@@ -100,7 +100,7 @@ def test_actor():
 
 
 @pytest.mark.parametrize(
-    "actor_critic_class", [ActorCritic, ActorCriticWithTarget, TwinActorCritic]
+    "actor_critic_class", [ActorCritic, ActorCriticWithTargets, TwinActorCritic]
 )
 def test_actor_critic_shared_arch(actor_critic_class):
     input = T.tensor([1, 1], dtype=T.float32)
@@ -128,7 +128,7 @@ def test_actor_critic_shared_arch(actor_critic_class):
         )
         assert actor_critic(input) == actor_critic.forward_target_actor(input)
 
-    if actor_critic_class == ActorCriticWithTarget:
+    if actor_critic_class == ActorCriticWithTargets:
         assert actor_critic.forward_critic(input) == actor_critic.forward_target_critic(
             input
         )

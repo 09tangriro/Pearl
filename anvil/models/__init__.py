@@ -1,9 +1,15 @@
 from anvil.models.actor_critics import (
     Actor,
     ActorCritic,
-    ActorCriticWithTarget,
+    ActorCriticWithTargets,
     Critic,
     TwinActorCritic,
 )
 
-__all__ = ["Critic", "Actor", "ActorCritic", "ActorCriticWithTarget", "TwinActorCritic"]
+__all__ = [
+    "Critic",
+    "Actor",
+    "ActorCritic",
+    "ActorCriticWithTargets",
+    "TwinActorCritic",
+]
