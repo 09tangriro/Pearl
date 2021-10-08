@@ -150,9 +150,7 @@ class QRegression(BaseCriticUpdater):
             q_values = model.forward_critic(observations, actions)
         if actions_index is not None:
             actions_index = numpy_to_torch(actions_index)
-            print(q_values)
             q_values = T.gather(q_values, dim=-1, index=actions_index.long())
-            print(q_values)
 
         loss = self.loss_class(q_values, returns)
 
