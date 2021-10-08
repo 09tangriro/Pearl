@@ -199,6 +199,41 @@ class ActorCritic(T.nn.Module):
         return self.actor(observations)
 
 
+class ActorCriticWithCriticTarget(ActorCritic):
+    """
+    An actor critic with target critic network updated via polyak averaging
+
+    :param actor: the actor/policy network
+    :param critic: the critic network
+    :param polyak_coeff: the polyak update coefficient
+    """
+
+    def __init__(
+        self,
+        actor: Actor,
+        critic: Critic,
+        polyak_coeff: float = 0.995,
+    ) -> None:
+        super().__init__(actor, critic)
+        self.polyak_coeff = polyak_coeff
+
+        self.target_critic = copy.deepcopy(critic)
+        self.online_variables = trainable_variables(self.critic) + trainable_variables(
+            self.actor
+        )
+        self.target_variables = trainable_variables(self.target_critic)
+
+        for target in self.target_variables:
+            target.requires_grad = False
+        self.assign_targets()
+
+    def forward_target_critic(
+        self, observations: Tensor, actions: Optional[Tensor] = None
+    ) -> T.Tensor:
+        """Run a forward pass to get the target critic output"""
+        return self.target_critic(observations, actions)
+
+
 class ActorCriticWithTargets(ActorCritic):
     """
     An actor critic with target critic and actor networks updated via polyak averaging
