@@ -1,3 +1,5 @@
+<img src="docs/images/logo.png" align="right" width="50%"/>
+
 # Anvil
 Anvil is a pytorch based library with the goal of being excellent for rapid prototyping of new algorithms and ideas over benchmarking. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas.
 
