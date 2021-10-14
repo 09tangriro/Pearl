@@ -1,3 +1,6 @@
+![pipeline status](https://github.com/LondonNode/Anvil/actions/workflows/ci.yaml/badge.svg)
+[![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 <img src="docs/images/logo.png" align="right" width="50%"/>
 
 # Anvil
