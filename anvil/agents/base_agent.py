@@ -66,7 +66,8 @@ class BaseAgent(ABC):
         self.logger = self.get_logger()
 
         device = get_device(device)
-        self.logger.info(f"Using device {device}")
+        if verbose:
+            self.logger.info(f"Using device {device}")
 
         self.buffer = buffer_class(
             buffer_size=buffer_size,
