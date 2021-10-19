@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as T
@@ -11,6 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 from anvil.buffers.base_buffer import BaseBuffer
 from anvil.buffers.rollout_buffer import RolloutBuffer
 from anvil.callbacks.base_callback import BaseCallback
+from anvil.common.enumerations import TrainFrequencyType
 from anvil.common.type_aliases import Log, Tensor
 from anvil.common.utils import get_device
 from anvil.models.actor_critics import ActorCritic
@@ -29,6 +30,7 @@ class BaseAgent(ABC):
         device: Union[str, T.device] = "auto",
         tensorboard_log_path: Optional[str] = None,
         verbose: bool = True,
+        render: bool = False,
     ) -> None:
         """
         The BaseAgent class is given to handle all the stuff around the actual RL algorithm.
@@ -49,6 +51,7 @@ class BaseAgent(ABC):
         :param device: device to run on, accepts "auto", "cuda" or "cpu"
         :param tensorboard_log_path: path to store the tensorboard log
         :param verbose: whether to display at all or not
+        :param render: whether to render the environment or not
         """
 
         self.env = env
@@ -58,9 +61,11 @@ class BaseAgent(ABC):
         self.n_envs = n_envs
         self.buffer_size = buffer_size
         self.callbacks = callbacks
+        self.render = render
         self.action_explorer = None
         self.step = 0
         self.episode = 0
+        self.done = False
         self.logger = self.get_logger()
 
         device = get_device(device)
@@ -160,6 +165,8 @@ class BaseAgent(ABC):
         :return: the final observation after all steps have been done
         """
         for _ in range(num_steps):
+            if self.render:
+                self.env.render()
             action = self.action_explorer(self.model, observation, self.step)
             if isinstance(self.env.action_space, spaces.Discrete) and not isinstance(
                 action, int
@@ -177,6 +184,7 @@ class BaseAgent(ABC):
             )
 
             if done:
+                self.done = True
                 observation = self.env.reset()
                 episode_log = Log(
                     reward=np.sum(self.episode_rewards),
@@ -216,6 +224,7 @@ class BaseAgent(ABC):
         batch_size: int,
         actor_epochs: int = 1,
         critic_epochs: int = 1,
+        train_frequency: Tuple[str, int] = ("step", 1),
     ) -> None:
         """
         Train the agent in the environment
@@ -224,10 +233,17 @@ class BaseAgent(ABC):
         :param batch_size: minibatch size to make a single gradient descent step on
         :param actor_epochs: how many times to update the actor network in each training step
         :param critic_epochs: how many times to update the critic network in each training step
+        :param train_frequency: the number of steps or episodes to run before running a training step.
+            To run every n episodes, use `("episode", n)`.
+            To run every n steps, use `("step", n)`.
         """
-        # Assume RolloutBuffer is used with on-policy agents, so translate env steps to training steps
-        if isinstance(self.buffer, RolloutBuffer):
-            num_steps = num_steps // self.buffer_size
+        train_frequency = (
+            TrainFrequencyType(train_frequency[0].lower()),
+            train_frequency[1],
+        )
+        # We can pre-calculate how many training steps to run if train_frequency is in steps rather than episodes
+        if train_frequency[0] == TrainFrequencyType.STEP:
+            num_steps = num_steps // train_frequency[1]
 
         observation = self.env.reset()
         for step in range(num_steps):
@@ -236,14 +252,17 @@ class BaseAgent(ABC):
                 observation = self.step_env(
                     observation=observation, num_steps=batch_size
                 )
-            # For on-policy, fill buffer and get minibatch samples over epochs
-            elif isinstance(self.buffer, RolloutBuffer):
+            elif train_frequency[0] == TrainFrequencyType.STEP:
                 observation = self.step_env(
-                    observation=observation, num_steps=self.buffer_size
+                    observation=observation, num_steps=train_frequency[1]
                 )
-            # For off-policy only a single step is done since old samples can be reused
-            else:
-                observation = self.step_env(observation=observation)
+            elif train_frequency[0] == TrainFrequencyType.EPISODE:
+                start_episode = self.episode
+                end_episode = start_episode + train_frequency[1]
+                while self.episode != end_episode:
+                    observation = self.step_env(observation=observation)
+                if self.step >= num_steps:
+                    break
 
             train_log = self._fit(
                 batch_size=batch_size,

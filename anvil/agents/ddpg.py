@@ -65,6 +65,7 @@ class DDPG(BaseAgent):
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         device: Union[T.device, str] = "auto",
         verbose: bool = True,
+        render: bool = False,
         model_path: Optional[str] = None,
         tensorboard_log_path: Optional[str] = None,
         n_envs: int = 1,
@@ -81,6 +82,7 @@ class DDPG(BaseAgent):
             model_path=model_path,
             tensorboard_log_path=tensorboard_log_path,
             n_envs=n_envs,
+            render=render,
         )
         self.actor_updater = actor_updater_class(
             optimizer_class=actor_optimizer_settings.optimizer_class,

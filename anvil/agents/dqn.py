@@ -56,6 +56,7 @@ class DQN(BaseAgent):
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         device: Union[T.device, str] = "auto",
         verbose: bool = True,
+        render: bool = False,
         model_path: Optional[str] = None,
         tensorboard_log_path: Optional[str] = None,
         log_level: str = "",
@@ -74,6 +75,7 @@ class DQN(BaseAgent):
             tensorboard_log_path=tensorboard_log_path,
             log_level=log_level,
             n_envs=n_envs,
+            render=render,
         )
 
         self.updater = updater_class(

@@ -9,3 +9,8 @@ class NetworkType(Enum):
 class TrajectoryType(Enum):
     NUMPY = "numpy"
     TORCH = "torch"
+
+
+class TrainFrequencyType(Enum):
+    EPISODE = "episode"
+    STEP = "step"
