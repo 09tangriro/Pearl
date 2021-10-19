@@ -65,7 +65,6 @@ class BaseAgent(ABC):
         self.action_explorer = None
         self.step = 0
         self.episode = 0
-        self.done = False
         self.logger = self.get_logger()
 
         device = get_device(device)
@@ -184,7 +183,6 @@ class BaseAgent(ABC):
             )
 
             if done:
-                self.done = True
                 observation = self.env.reset()
                 episode_log = Log(
                     reward=np.sum(self.episode_rewards),
