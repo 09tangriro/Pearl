@@ -9,7 +9,6 @@ from gym import Env, spaces
 from torch.utils.tensorboard import SummaryWriter
 
 from anvil.buffers.base_buffer import BaseBuffer
-from anvil.buffers.rollout_buffer import RolloutBuffer
 from anvil.callbacks.base_callback import BaseCallback
 from anvil.common.enumerations import TrainFrequencyType
 from anvil.common.type_aliases import Log, Tensor
@@ -128,13 +127,13 @@ class BaseAgent(ABC):
 
     def _write_log(self, log: Log, step: int) -> None:
         """Write a log to tensorboard and python logging"""
-        self.writer.add_scalar("reward", log.reward, step)
-        self.writer.add_scalar("actor_loss", log.actor_loss, step)
-        self.writer.add_scalar("critic_loss", log.critic_loss, step)
+        self.writer.add_scalar("Reward/episode_reward", log.reward, step)
+        self.writer.add_scalar("Loss/actor_loss", log.actor_loss, step)
+        self.writer.add_scalar("Loss/critic_loss", log.critic_loss, step)
         if log.kl_divergence is not None:
-            self.writer.add_scalar("kl_divergence", log.kl_divergence, step)
+            self.writer.add_scalar("Metrics/kl_divergence", log.kl_divergence, step)
         if log.entropy is not None:
-            self.writer.add_scalar("entropy", log.entropy, step)
+            self.writer.add_scalar("Metrics/entropy", log.entropy, step)
 
         if self.verbose:
             self.logger.info(f"{step}: {log}")
@@ -250,10 +249,12 @@ class BaseAgent(ABC):
                 observation = self.step_env(
                     observation=observation, num_steps=batch_size
                 )
+            # Step for number of steps specified
             elif train_frequency[0] == TrainFrequencyType.STEP:
                 observation = self.step_env(
                     observation=observation, num_steps=train_frequency[1]
                 )
+            # Step for number of episodes specified
             elif train_frequency[0] == TrainFrequencyType.EPISODE:
                 start_episode = self.episode
                 end_episode = start_episode + train_frequency[1]
