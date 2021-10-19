@@ -28,7 +28,6 @@ class BaseAgent(ABC):
         model_path: Optional[str] = None,
         device: Union[str, T.device] = "auto",
         tensorboard_log_path: Optional[str] = None,
-        log_level: str = "",
         verbose: bool = True,
     ) -> None:
         """
@@ -49,7 +48,6 @@ class BaseAgent(ABC):
         :param model_path: optional model path to load from
         :param device: device to run on, accepts "auto", "cuda" or "cpu"
         :param tensorboard_log_path: path to store the tensorboard log
-        :param log_level: the log level to display
         :param verbose: whether to display at all or not
         """
 
@@ -246,6 +244,7 @@ class BaseAgent(ABC):
             # For off-policy only a single step is done since old samples can be reused
             else:
                 observation = self.step_env(observation=observation)
+
             train_log = self._fit(
                 batch_size=batch_size,
                 actor_epochs=actor_epochs,
