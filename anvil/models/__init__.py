@@ -4,6 +4,7 @@ from anvil.models.actor_critics import (
     ActorCriticWithCriticTarget,
     ActorCriticWithTargets,
     Critic,
+    EpsilonGreedyActor,
     TwinActorCritic,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "ActorCritic",
     "ActorCriticWithCriticTarget",
     "ActorCriticWithTargets",
+    "EpsilonGreedyActor",
     "TwinActorCritic",
 ]

@@ -8,6 +8,7 @@ from anvil.models import (
     ActorCritic,
     ActorCriticWithTargets,
     Critic,
+    EpsilonGreedyActor,
     TwinActorCritic,
 )
 from anvil.models.encoders import FlattenEncoder, IdentityEncoder, MLPEncoder
@@ -133,3 +134,28 @@ def test_actor_critic_shared_arch(actor_critic_class):
             input
         )
         assert actor_critic(input) == actor_critic.forward_target_actor(input)
+
+
+def test_epsilon_greedy_actor():
+    action_size = 2
+    observation_size = 2
+
+    encoder = IdentityEncoder()
+    torso = MLP(layer_sizes=[observation_size, 16, 16], activation_fn=T.nn.ReLU)
+    head = DiscreteQHead(input_shape=16, output_shape=action_size)
+
+    actor = EpsilonGreedyActor(
+        critic_encoder=encoder, critic_torso=torso, critic_head=head
+    )
+
+    input = T.tensor([[1, 1], [2, 2]], dtype=T.float32)
+
+    random_output = actor(input)
+
+    actor = EpsilonGreedyActor(
+        critic_encoder=encoder, critic_torso=torso, critic_head=head, start_epsilon=0
+    )
+
+    max_q_output = actor(input)
+
+    assert random_output.shape == max_q_output.shape
