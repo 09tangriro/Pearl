@@ -20,7 +20,6 @@ class BaseBuffer(ABC):
     :param observation_space: observation space
     :param action_space: action space
     :param n_envs: number of parallel environments
-    :param infinite_horizon: whether environment is episodic or not
     """
 
     def __init__(
@@ -29,12 +28,10 @@ class BaseBuffer(ABC):
         observation_space: Space,
         action_space: Space,
         n_envs: int = 1,
-        infinite_horizon: bool = False,
         device: Union[str, T.device] = "auto",
     ) -> None:
         self.buffer_size = buffer_size
         self.n_envs = n_envs
-        self.infinite_horizon = infinite_horizon
         self.device = get_device(device)
         self.full = False
         self.pos = 0

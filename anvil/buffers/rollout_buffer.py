@@ -17,7 +17,6 @@ class RolloutBuffer(BaseBuffer):
     :param observation_space: observation space
     :param action_space: action space
     :param n_envs: number of parallel environments
-    :param infinite_horizon: whether environment is episodic or not
     """
 
     def __init__(
@@ -26,7 +25,6 @@ class RolloutBuffer(BaseBuffer):
         observation_space: Space,
         action_space: Space,
         n_envs: int = 1,
-        infinite_horizon: bool = False,
         device: Union[str, T.device] = "auto",
     ) -> None:
         super().__init__(
@@ -34,7 +32,6 @@ class RolloutBuffer(BaseBuffer):
             observation_space,
             action_space,
             n_envs,
-            infinite_horizon,
             device,
         )
         self.next_observations = np.zeros(
