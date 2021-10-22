@@ -16,7 +16,9 @@ class TrainFrequencyType(Enum):
     STEP = "step"
 
 
-class HERGoalStrategy(Enum):
+class GoalSelectionStrategy(Enum):
+    """Goal selection strategy for HER Replay Buffer"""
+
     FINAL = "final"
     FUTURE = "future"
     EPISODE = "episode"
