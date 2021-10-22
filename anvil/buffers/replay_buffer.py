@@ -44,10 +44,10 @@ class ReplayBuffer(BaseBuffer):
     def add_trajectory(
         self,
         observation: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
+        action: Union[np.ndarray, int],
+        reward: float,
         next_observation: np.ndarray,
-        done: np.ndarray,
+        done: bool,
     ) -> None:
         self.observations[self.pos] = observation
         self.observations[(self.pos + 1) % self.buffer_size] = next_observation

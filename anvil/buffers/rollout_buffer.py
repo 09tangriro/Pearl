@@ -43,10 +43,10 @@ class RolloutBuffer(BaseBuffer):
     def add_trajectory(
         self,
         observation: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
+        action: Union[np.ndarray, int],
+        reward: float,
         next_observation: np.ndarray,
-        done: np.ndarray,
+        done: bool,
     ) -> None:
         self.observations[self.pos] = observation
         self.rewards[self.pos] = reward

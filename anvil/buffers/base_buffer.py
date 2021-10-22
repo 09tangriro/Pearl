@@ -77,10 +77,10 @@ class BaseBuffer(ABC):
     def add_trajectory(
         self,
         observation: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
+        action: Union[np.ndarray, int],
+        reward: float,
         next_observation: np.ndarray,
-        done: np.ndarray,
+        done: bool,
     ) -> None:
         """
         Add a trajectory to the buffer
