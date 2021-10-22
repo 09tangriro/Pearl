@@ -43,7 +43,6 @@ class BaseBuffer(ABC):
             (self.buffer_size, self.n_envs) + self.obs_shape,
             dtype=observation_space.dtype,
         )
-        self.next_observations = None
         self.actions = np.zeros(
             (self.buffer_size, self.n_envs) + action_shape,
             dtype=observation_space.dtype,
