@@ -14,3 +14,10 @@ class TrajectoryType(Enum):
 class TrainFrequencyType(Enum):
     EPISODE = "episode"
     STEP = "step"
+
+
+class HERGoalStrategy(Enum):
+    FINAL = "final"
+    FUTURE = "future"
+    EPISODE = "episode"
+    RANDOM = "random"
