@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import List, Union
 
 import numpy as np
 import psutil
@@ -52,17 +52,11 @@ class BaseBuffer(ABC):
         self.rewards = np.zeros((self.buffer_size, self.n_envs, 1), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs, 1), dtype=np.float32)
 
-    def _check_system_memory(self) -> None:
+    @staticmethod
+    def _check_system_memory(*buffers) -> None:
         """Check that the replay buffer can fit into memory"""
         mem_available = psutil.virtual_memory().available
-        total_memory_usage = (
-            self.observations.nbytes
-            + self.actions.nbytes
-            + self.rewards.nbytes
-            + self.dones.nbytes
-        )
-        if self.next_observations is not None:
-            total_memory_usage += self.next_observations.nbytes
+        total_memory_usage = sum([buffer.nbytes for buffer in buffers])
 
         if total_memory_usage > mem_available:
             # Convert to GB

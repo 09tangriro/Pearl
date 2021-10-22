@@ -39,7 +39,9 @@ class ReplayBuffer(BaseBuffer):
             n_envs,
             device,
         )
-        self._check_system_memory()
+        self._check_system_memory(
+            self.observations, self.actions, self.rewards, self.dones
+        )
 
     def add_trajectory(
         self,

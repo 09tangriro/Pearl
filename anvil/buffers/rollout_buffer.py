@@ -38,7 +38,13 @@ class RolloutBuffer(BaseBuffer):
             (self.buffer_size, self.n_envs) + self.obs_shape,
             dtype=observation_space.dtype,
         )
-        self._check_system_memory()
+        self._check_system_memory(
+            self.observations,
+            self.actions,
+            self.rewards,
+            self.dones,
+            self.next_observations,
+        )
 
     def add_trajectory(
         self,
