@@ -22,4 +22,3 @@ class GoalSelectionStrategy(Enum):
     FINAL = "final"
     FUTURE = "future"
     EPISODE = "episode"
-    RANDOM = "random"
