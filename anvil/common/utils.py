@@ -70,7 +70,7 @@ def torch_to_numpy(*data) -> Union[Tuple[np.ndarray], np.ndarray]:
 
 def get_space_shape(
     space: spaces.Space,
-) -> Union[Tuple[int, ...], Dict[str, Tuple[int, ...]]]:
+) -> Tuple[int, ...]:
     """
     Get the shape of a space (useful for the buffers).
     :param space:
@@ -88,9 +88,7 @@ def get_space_shape(
         # Number of binary features
         return (int(space.n),)
     elif isinstance(space, spaces.Dict):
-        return {
-            key: get_space_shape(subspace) for (key, subspace) in space.spaces.items()
-        }
+        return get_space_shape(space["observation"])
 
     else:
         raise NotImplementedError(f"{space} observation space is not supported")

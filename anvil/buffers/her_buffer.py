@@ -168,6 +168,14 @@ class HERBuffer(BaseBuffer):
         )
         dones = self.dones[batch_inds]
 
+        # return torch tensors instead of numpy arrays
+        if dtype == TrajectoryType.TORCH:
+            observations = T.tensor(observations).to(self.device)
+            actions = T.tensor(actions).to(self.device)
+            rewards = T.tensor(rewards).to(self.device)
+            next_observations = T.tensor(next_observations).to(self.device)
+            dones = T.tensor(dones).to(self.device)
+
         return Trajectories(
             observations=observations,
             actions=actions,
