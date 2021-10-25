@@ -6,7 +6,7 @@ from torch.nn.parameter import Parameter
 from anvil.common.type_aliases import Tensor, UpdaterLog
 from anvil.common.utils import numpy_to_torch
 from anvil.models.actor_critics import Actor, ActorCritic
-from anvil.updaters.utils import sample_reverse_kl_divergence
+from anvil.signal_processing.sample_estimators import sample_reverse_kl_divergence
 
 
 class BaseActorUpdater(object):

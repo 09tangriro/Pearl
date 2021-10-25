@@ -94,3 +94,7 @@ def get_space_shape(
 
     else:
         raise NotImplementedError(f"{space} observation space is not supported")
+
+
+def extend_shape(original_shape: Tuple, new_size: int, axis: int = 0):
+    """Extend a dimension of a shape tuple"""
