@@ -11,7 +11,25 @@ from anvil.common.type_aliases import Trajectories
 
 
 class HERBuffer(BaseBuffer):
-    """Hindsight Exprience Replay (HER) Buffer"""
+    """
+    Hindsight Exprience Replay (HER) Buffer: https://arxiv.org/abs/1707.01495
+    The HER buffer uses the same trick as the standard `ReplayBuffer` using
+    a single array to handle the observations. Instead of sampling and storing
+    goals every time we add transitions, instead we do it all at once when
+    sampling for vectorized (fast) processing.
+
+    NOTE: this buffer only works with `GoalEnv` type environments!
+    TODO: more testing for multiple environments
+
+    :param env: the environment
+    :param buffer_size: max number of elements in the buffer
+    :param observation_space: observation space
+    :param action_space: action space
+    :param n_envs: number of parallel environments
+    :param goal_selection_strategy: the goal selection strategy to be used, defaults to future
+    :param n_sampled_goal: ratio of HER data to data coming from normal experience replay
+    :param device: if return torch tensors on sampling, the device to attach to
+    """
 
     def __init__(
         self,
@@ -38,10 +56,10 @@ class HERBuffer(BaseBuffer):
         )
 
         # Keep track of where in the data structure episodes end
-        # and which transitions belong to which episodes.
         self.episode_end_indices = np.zeros(
             (self.buffer_size, self.n_envs), dtype=np.int8
         )
+        # Keep track of which transitions belong to which episodes.
         self.index_episode_map = np.zeros(
             (self.buffer_size, self.n_envs), dtype=np.int8
         )
@@ -65,10 +83,6 @@ class HERBuffer(BaseBuffer):
             self.goal_section_strategy = goal_selection_strategy
 
         self.her_ratio = 1 - (1.0 / (n_sampled_goal + 1))
-
-    def _select_goal(self) -> np.ndarray:
-        if self.goal_section_strategy == GoalSelectionStrategy.FINAL:
-            return self.next_observations[self.pos]
 
     def add_trajectory(
         self,
@@ -102,6 +116,12 @@ class HERBuffer(BaseBuffer):
             self.pos = 0
 
     def _sample_goals(self, her_inds: np.ndarray) -> np.ndarray:
+        """
+        Sample new episode goals to calculate rewards from
+
+        :param her_inds: the batch indices designated for new goal sampling
+        :return: the new episode goals
+        """
         her_episodes = self.index_episode_map[her_inds]
         episode_end_indices = self.episode_end_indices[her_episodes].reshape(
             her_episodes.shape
@@ -113,7 +133,8 @@ class HERBuffer(BaseBuffer):
 
         # Goal is a random state in the same episode observed after current transition
         elif self.goal_section_strategy == GoalSelectionStrategy.FUTURE:
-            # Need to expand her_inds to account for multiple environments
+            # Need to expand her_inds to account for multiple environments, advised to
+            # expand dim before calling `np.tile`
             her_inds = her_inds.reshape([-1, 1])
             her_inds = np.tile(her_inds, (1, self.n_envs))  # (batch_size, n_envs)
             # FAILURE MODE: if episode overlaps from end to beginning of buffer
@@ -137,6 +158,13 @@ class HERBuffer(BaseBuffer):
     def _sample_trajectories(
         self, batch_size: int, batch_inds: np.ndarray, dtype: Union[str, TrajectoryType]
     ) -> Trajectories:
+        """
+        Get the trajectories based on batch indices calculated
+
+        :param batch_size: number of elements to sample, included to reduce processing instead of using `len(batch_inds)`
+        :param batch_inds: the indices of the elements to sample
+        :param dtype: :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
+        """
         her_batch_size = int(batch_size * self.her_ratio)
 
         # Separate HER and replay batch indices
