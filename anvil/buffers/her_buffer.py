@@ -28,15 +28,7 @@ class HERBuffer(BaseBuffer):
             buffer_size, observation_space, action_space, n_envs=n_envs, device=device
         )
         self.env = env
-        self.next_observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
-        )
         self.desired_goals = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
-        )
-        self.achieved_goals = np.zeros(
             (self.buffer_size, self.n_envs) + self.obs_shape,
             dtype=observation_space.dtype,
         )
@@ -44,14 +36,15 @@ class HERBuffer(BaseBuffer):
             (self.buffer_size, self.n_envs) + self.obs_shape,
             dtype=observation_space.dtype,
         )
-        self.her_rewards = np.zeros(
-            (self.buffer_size, self.n_envs, 1), dtype=np.float32
-        )
 
         # Keep track of where in the data structure episodes end
         # Declare as np array to sacrifice memory for performance
-        self.episode_end_indices = np.zeros((self.buffer_size, self.n_envs))
-        self.index_episode_map = np.zeros((self.buffer_size, self.n_envs))
+        self.episode_end_indices = np.zeros(
+            (self.buffer_size, self.n_envs), dtype=np.int8
+        )
+        self.index_episode_map = np.zeros(
+            (self.buffer_size, self.n_envs), dtype=np.int8
+        )
         self.episode = 0
 
         self._check_system_memory(
@@ -59,11 +52,8 @@ class HERBuffer(BaseBuffer):
             self.actions,
             self.rewards,
             self.dones,
-            self.next_observations,
             self.desired_goals,
-            self.achieved_goals,
             self.next_achieved_goals,
-            self.her_rewards,
             self.episode_end_indices,
             self.index_episode_map,
         )
@@ -90,11 +80,12 @@ class HERBuffer(BaseBuffer):
         done: bool,
     ) -> None:
         self.observations[self.pos] = observation["observation"]
-        self.achieved_goals[self.pos] = observation["achieved_goal"]
         self.desired_goals[self.pos] = observation["desired_goal"]
         self.rewards[self.pos] = reward
         self.actions[self.pos] = action
-        self.next_observations[self.pos] = next_observation["observation"]
+        self.observations[(self.pos + 1) % self.buffer_size] = next_observation[
+            "observation"
+        ]
         self.next_achieved_goals[self.pos] = next_observation["achieved_goal"]
         self.dones[self.pos] = done
         self.index_episode_map[self.pos] = self.episode
@@ -111,44 +102,44 @@ class HERBuffer(BaseBuffer):
             self.full = True
             self.pos = 0
 
-    def _sample_goals(self, her_batch_inds: np.ndarray) -> np.ndarray:
-        her_episodes = self.index_episode_map[her_batch_inds]
-        episode_end_indices = self.episode_end_indices[her_episodes]
+    def _sample_goals(self, her_inds: np.ndarray) -> np.ndarray:
+        her_episodes = self.index_episode_map[her_inds]
+        episode_end_indices = self.episode_end_indices[her_episodes].reshape(
+            her_episodes.shape
+        )
 
         # Goal is the last state in the episode
         if self.goal_section_strategy == GoalSelectionStrategy.FINAL:
-            goal_indices = self.next_observations[episode_end_indices]
+            goal_indices = episode_end_indices
 
         # Goal is a random state in the same episode observed after current transition
         elif self.goal_section_strategy == GoalSelectionStrategy.FUTURE:
-            goal_indices = np.random.randint(her_batch_inds, episode_end_indices + 1)
+            # Need to expand her_inds to account for multiple environments
+            her_inds = her_inds.reshape([-1, 1])
+            her_inds = np.tile(her_inds, (1, self.n_envs))  # (batch_size, n_envs)
+            goal_indices = np.random.randint(
+                her_inds.reshape([-1, 1]), episode_end_indices + 1
+            )
 
         else:
             raise ValueError(
                 f"Strategy {self.goal_section_strategy} for samping goals not supported."
             )
 
-        return self.achieved_goals[goal_indices]
+        return self.next_achieved_goals[goal_indices].reshape(
+            goal_indices.shape + self.obs_shape
+        )
 
-    def sample(
-        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+    def _sample_trajectories(
+        self, batch_size: int, batch_inds: np.ndarray, dtype: Union[str, TrajectoryType]
     ) -> Trajectories:
-        if isinstance(dtype, str):
-            dtype = TrajectoryType(dtype.lower())
         her_batch_size = int(batch_size * self.her_ratio)
 
-        # Sample batch indices
-        if self.full:
-            batch_inds = (
-                np.random.randint(1, self.buffer_size, size=batch_size) + self.pos
-            ) % self.buffer_size
-        else:
-            batch_inds = np.random.randint(0, self.pos, size=batch_size)
-        # Reserve HER goal indices
-        her_batch_inds = batch_inds[:her_batch_size]
+        # Separate HER and replay batch indices
+        her_inds = batch_inds[:her_batch_size]
         replay_inds = batch_inds[her_batch_size:]
 
-        her_goals = self._sample_goals(her_batch_inds)
+        her_goals = self._sample_goals(her_inds)
         # the new state depends on the previous state and action
         # s_{t+1} = f(s_t, a_t)
         # so the next_achieved_goal depends also on the previous state and action
@@ -156,16 +147,19 @@ class HERBuffer(BaseBuffer):
         # r_t = reward(s_t, a_t) = reward(next_achieved_goal, desired_goal)
         # therefore we have to use "next_achieved_goal" and not "achieved_goal"
         her_rewards = self.env.compute_reward(
-            self.next_achieved_goals[her_batch_inds], her_goals, {}
-        )
+            self.next_achieved_goals[her_inds], her_goals, {}
+        ).reshape(len(her_goals), self.n_envs, 1)
 
         desired_goals = np.concatenate([her_goals, self.desired_goals[replay_inds]])
-        rewards = np.concatenate([her_rewards, self.rewards[batch_inds[replay_inds]]])
-        observations = np.concatenate([self.observations, desired_goals], axis=2)
-        actions = self.actions[batch_inds]
-        next_observations = np.concatenate(
-            [self.next_observations, desired_goals], axis=2
+        rewards = np.concatenate([her_rewards, self.rewards[replay_inds]])
+        observations = np.concatenate(
+            [self.observations[batch_inds], desired_goals], axis=2
         )
+        next_observations = np.concatenate(
+            [self.observations[(batch_inds + 1) % self.buffer_size], desired_goals],
+            axis=2,
+        )
+        actions = self.actions[batch_inds]
         dones = self.dones[batch_inds]
 
         # return torch tensors instead of numpy arrays
@@ -183,6 +177,21 @@ class HERBuffer(BaseBuffer):
             next_observations=next_observations,
             dones=dones,
         )
+
+    def sample(
+        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+    ) -> Trajectories:
+        if isinstance(dtype, str):
+            dtype = TrajectoryType(dtype.lower())
+
+        if self.full:
+            batch_inds = (
+                np.random.randint(1, self.buffer_size, size=batch_size) + self.pos
+            ) % self.buffer_size
+        else:
+            batch_inds = np.random.randint(0, self.pos, size=batch_size)
+
+        return self._sample_trajectories(batch_size, batch_inds, dtype)
 
     def last(self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"):
         if isinstance(dtype, str):

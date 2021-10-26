@@ -1,7 +1,10 @@
+import enum
 from collections import OrderedDict
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
+import pytest
+import torch as T
 from gym import GoalEnv, spaces
 from gym.envs.registration import EnvSpec
 
@@ -211,33 +214,32 @@ class BitFlippingEnv(GoalEnv):
         pass
 
 
-NUM_BITS = 10
+NUM_BITS = 5
 env = BitFlippingEnv(NUM_BITS)
 
 
 def test_her_init():
+    BUFFER_SIZE = int(1e6)
     buffer = HERBuffer(
         env=env,
-        buffer_size=10,
+        buffer_size=BUFFER_SIZE,
         observation_space=env.observation_space,
         action_space=env.action_space,
         goal_selection_strategy="final",
     )
 
-    assert buffer.observations.shape == (10, 1, NUM_BITS)
-    assert buffer.next_observations.shape == (10, 1, NUM_BITS)
-    assert buffer.actions.shape == (10, 1, 1)
-    assert buffer.rewards.shape == (10, 1, 1)
-    assert buffer.dones.shape == (10, 1, 1)
-    assert buffer.desired_goals.shape == (10, 1, NUM_BITS)
-    assert buffer.achieved_goals.shape == (10, 1, NUM_BITS)
-    assert buffer.next_achieved_goals.shape == (10, 1, NUM_BITS)
+    assert buffer.observations.shape == (BUFFER_SIZE, 1, NUM_BITS)
+    assert buffer.actions.shape == (BUFFER_SIZE, 1, 1)
+    assert buffer.rewards.shape == (BUFFER_SIZE, 1, 1)
+    assert buffer.dones.shape == (BUFFER_SIZE, 1, 1)
+    assert buffer.desired_goals.shape == (BUFFER_SIZE, 1, NUM_BITS)
+    assert buffer.next_achieved_goals.shape == (BUFFER_SIZE, 1, NUM_BITS)
 
 
 def test_her_add_trajectory():
     buffer = HERBuffer(
         env=env,
-        buffer_size=1,
+        buffer_size=2,
         observation_space=env.observation_space,
         action_space=env.action_space,
         goal_selection_strategy="final",
@@ -250,16 +252,66 @@ def test_her_add_trajectory():
     buffer.add_trajectory(observation, action, reward, next_obs, done)
 
     np.testing.assert_array_equal(buffer.observations[0][0], observation["observation"])
-    np.testing.assert_array_equal(
-        buffer.next_observations[0][0], next_obs["observation"]
-    )
-    assert buffer.actions.item() == action
-    assert buffer.rewards.item() == reward
-    assert buffer.dones.item() == done
-    np.testing.assert_array_equal(
-        buffer.achieved_goals[0][0], observation["achieved_goal"]
-    )
+    np.testing.assert_array_equal(buffer.observations[1][0], next_obs["observation"])
+    assert buffer.actions[0][0] == action
+    assert buffer.rewards[0][0] == reward
+    assert buffer.dones[0][0] == done
     np.testing.assert_array_equal(buffer.desired_goals[0][0], env.desired_goal)
     np.testing.assert_array_equal(
         buffer.next_achieved_goals[0][0], next_obs["achieved_goal"]
     )
+
+
+@pytest.mark.parametrize("goal_selection_strategy", ["final", "future"])
+@pytest.mark.parametrize("buffer_size", [15, 4])
+def test_her_sample(goal_selection_strategy, buffer_size):
+    NUM_EPISODES = 2
+    OBSERVATION_BUFFER_SIZE = 15
+    buffer = HERBuffer(
+        env=env,
+        buffer_size=buffer_size,
+        observation_space=env.observation_space,
+        action_space=env.action_space,
+        goal_selection_strategy=goal_selection_strategy,
+        n_sampled_goal=1,
+    )
+    # HER final goals
+    her_goals = np.zeros((NUM_EPISODES, NUM_BITS))
+    observations = np.zeros((OBSERVATION_BUFFER_SIZE, NUM_BITS))
+    next_observations = np.zeros((OBSERVATION_BUFFER_SIZE, NUM_BITS))
+
+    episode = 0
+    pos = 0
+    obs = env.reset()
+    while episode != NUM_EPISODES:
+        action = env.action_space.sample()
+        next_obs, reward, done, _ = env.step(action)
+        buffer.add_trajectory(obs, action, reward, next_obs, done)
+        observations[pos] = obs["observation"]
+        next_observations[pos] = next_obs["observation"]
+        obs = next_obs
+        pos += 1
+
+        if done:
+            her_goals[episode] = next_obs["achieved_goal"]
+            episode += 1
+            obs = env.reset()
+    observations[pos] = next_observations[pos - 1]
+
+    trajectories = buffer.sample(4)
+    sampled_observations = trajectories.observations.reshape(4, NUM_BITS * 2)[
+        :, :NUM_BITS
+    ]
+    sampled_next_observations = trajectories.next_observations.reshape(4, NUM_BITS * 2)[
+        :, :NUM_BITS
+    ]
+    her_sampled_goals = trajectories.observations.reshape(4, NUM_BITS * 2)[:, NUM_BITS:]
+    # Check if sampled next observations are actually the next observations
+    for i, obs in enumerate(sampled_observations):
+        array_idx = np.where(observations == obs)[0]
+        possible_next_obs = next_observations[array_idx]
+        assert sampled_next_observations[i] in possible_next_obs
+    # Check if sampled goals are correct
+    if goal_selection_strategy == "final":
+        for goal in her_sampled_goals:
+            assert goal in her_goals
