@@ -18,7 +18,6 @@ class HERBuffer(BaseBuffer):
     goals every time we add transitions, instead we do it all at once when
     sampling for vectorized (fast) processing.
 
-    NOTE: this buffer only works with `GoalEnv` type environments!
     TODO: more testing for multiple environments
 
     :param env: the environment
