@@ -89,12 +89,10 @@ class HERBuffer(BaseBuffer):
         self.dones[self.pos] = done
         self.index_episode_map[self.pos] = self.episode
         self.pos += 1
-        print("INDEX EPISODE INDICES: \n", self.index_episode_map)
 
         if done:
             self.episode_end_indices[self.episode] = self.pos
             self.episode += 1
-            print("EPISODE END INDICES: \n", self.episode_end_indices)
 
             if self.episode == self.buffer_size:
                 self.episode = 0
@@ -108,9 +106,6 @@ class HERBuffer(BaseBuffer):
         episode_end_indices = self.episode_end_indices[her_episodes].reshape(
             her_episodes.shape
         )
-        print("HER batch inds:\n", her_inds)
-        # print("HER episodes:\n", her_episodes)
-        print("HER episode ends:\n", episode_end_indices)
 
         # Goal is the last state in the episode
         if self.goal_section_strategy == GoalSelectionStrategy.FINAL:
