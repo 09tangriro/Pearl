@@ -49,6 +49,22 @@ def test_buffer_add_trajectory_and_sample(buffer_class):
         value = getattr(trajectory_numpy, field)
         assert len(value.shape) == 3
 
+    np.testing.assert_array_almost_equal(
+        obs,
+        trajectory_numpy.observations.reshape(
+            4,
+        ),
+    )
+    np.testing.assert_array_almost_equal(
+        next_obs,
+        trajectory_numpy.next_observations.reshape(
+            4,
+        ),
+    )
+    assert reward == trajectory_numpy.rewards.item()
+    assert done == trajectory_numpy.dones.item()
+    assert action == trajectory_numpy.actions.item()
+
     assert isinstance(trajectory_numpy.observations, np.ndarray)
     assert isinstance(trajectory_torch.observations, T.Tensor)
 
@@ -83,6 +99,12 @@ def test_add_batch_trajectories_and_sample(buffer_class):
 
     trajectories_numpy = buffer.sample(batch_size=2, dtype="numpy")
     trajectories_torch = buffer.sample(batch_size=2, dtype="torch")
+
+    if buffer_class == ReplayBuffer:
+        np.testing.assert_array_almost_equal(
+            buffer.observations.reshape(5, 4),
+            np.concatenate([[next_observations[-1]], next_observations[:-1]]),
+        )
 
     assert isinstance(trajectories_numpy.observations, np.ndarray)
     assert isinstance(trajectories_torch.observations, T.Tensor)
