@@ -318,13 +318,14 @@ def test_her_sample(goal_selection_strategy, buffer_size):
             assert goal in her_goals
 
 
+@pytest.mark.parametrize("buffer_size", [15, 4])
 @pytest.mark.parametrize("goal_selection_strategy", ["final", "future"])
-def test_her_last(goal_selection_strategy):
+def test_her_last(buffer_size, goal_selection_strategy):
     NUM_EPISODES = 2
     OBSERVATION_BUFFER_SIZE = 15
     buffer = HERBuffer(
         env=env,
-        buffer_size=15,
+        buffer_size=buffer_size,
         observation_space=env.observation_space,
         action_space=env.action_space,
         goal_selection_strategy=goal_selection_strategy,

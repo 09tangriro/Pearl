@@ -108,6 +108,9 @@ class HERBuffer(BaseBuffer):
         episode_end_indices = self.episode_end_indices[her_episodes].reshape(
             her_episodes.shape
         )
+        print("HER batch inds:\n", her_inds)
+        # print("HER episodes:\n", her_episodes)
+        print("HER episode ends:\n", episode_end_indices)
 
         # Goal is the last state in the episode
         if self.goal_section_strategy == GoalSelectionStrategy.FINAL:
@@ -118,7 +121,14 @@ class HERBuffer(BaseBuffer):
             # Need to expand her_inds to account for multiple environments
             her_inds = her_inds.reshape([-1, 1])
             her_inds = np.tile(her_inds, (1, self.n_envs))  # (batch_size, n_envs)
-            goal_indices = np.random.randint(her_inds, episode_end_indices)
+            # FAILURE MODE: if episode overlaps from end to beginning of buffer
+            # then the randint method will likely fail due to low > high.
+            # This will only happen at the overlapping episodes so quick
+            # fix is to simply revert to final goal strategy in this case.
+            if any(episode_end_indices < her_inds):
+                goal_indices = episode_end_indices - 1
+            else:
+                goal_indices = np.random.randint(her_inds, episode_end_indices)
 
         else:
             raise ValueError(
