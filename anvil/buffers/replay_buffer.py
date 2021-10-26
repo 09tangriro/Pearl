@@ -101,7 +101,7 @@ class ReplayBuffer(BaseBuffer):
     ) -> Trajectories:
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
-        assert batch_size <= self.buffer_size - 1
+        assert batch_size < self.buffer_size
 
         start_idx = self.pos - batch_size
         if start_idx < 0:

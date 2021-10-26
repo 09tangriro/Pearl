@@ -9,6 +9,7 @@ from gym import GoalEnv, spaces
 from gym.envs.registration import EnvSpec
 
 from anvil.buffers import HERBuffer
+from anvil.common.type_aliases import Trajectories
 
 
 class BitFlippingEnv(GoalEnv):
@@ -315,3 +316,61 @@ def test_her_sample(goal_selection_strategy, buffer_size):
     if goal_selection_strategy == "final":
         for goal in her_sampled_goals:
             assert goal in her_goals
+
+
+@pytest.mark.parametrize("goal_selection_strategy", ["final", "future"])
+def test_her_last(goal_selection_strategy):
+    NUM_EPISODES = 2
+    OBSERVATION_BUFFER_SIZE = 15
+    buffer = HERBuffer(
+        env=env,
+        buffer_size=15,
+        observation_space=env.observation_space,
+        action_space=env.action_space,
+        goal_selection_strategy=goal_selection_strategy,
+        n_sampled_goal=1,
+    )
+    observations = np.zeros((OBSERVATION_BUFFER_SIZE, 1, NUM_BITS))
+    next_observations = np.zeros((OBSERVATION_BUFFER_SIZE, 1, NUM_BITS))
+    actions = np.zeros((OBSERVATION_BUFFER_SIZE, 1, 1))
+    dones = np.zeros((OBSERVATION_BUFFER_SIZE, 1, 1))
+
+    episode = 0
+    pos = 0
+    last_episode_pos = 0
+    obs = env.reset()
+    while episode != NUM_EPISODES:
+        action = env.action_space.sample()
+        next_obs, reward, done, _ = env.step(action)
+        buffer.add_trajectory(obs, action, reward, next_obs, done)
+        observations[pos] = obs["observation"]
+        next_observations[pos] = next_obs["observation"]
+        actions[pos] = action
+        dones[pos] = done
+        obs = next_obs
+        pos += 1
+
+        if done:
+            last_episode_pos = pos - 1
+            episode += 1
+            obs = env.reset()
+
+    most_recent = buffer.last(batch_size=2)
+
+    # Don't assert rewards since these can change with HER sampled goals
+    np.testing.assert_array_almost_equal(
+        most_recent.observations[:, :, :NUM_BITS],
+        observations[last_episode_pos - 1 : last_episode_pos + 1],
+    )
+    np.testing.assert_array_almost_equal(
+        most_recent.actions, actions[last_episode_pos - 1 : last_episode_pos + 1]
+    )
+    np.testing.assert_array_almost_equal(
+        most_recent.next_observations[:, :, :NUM_BITS],
+        next_observations[last_episode_pos - 1 : last_episode_pos + 1],
+    )
+    np.testing.assert_array_almost_equal(
+        most_recent.dones, dones[last_episode_pos - 1 : last_episode_pos + 1]
+    )
+    # Make sure we got the right number of samples
+    assert len(most_recent.dones) == 2

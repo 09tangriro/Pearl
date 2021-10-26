@@ -38,7 +38,7 @@ class HERBuffer(BaseBuffer):
         )
 
         # Keep track of where in the data structure episodes end
-        # Declare as np array to sacrifice memory for performance
+        # and which transitions belong to which episodes.
         self.episode_end_indices = np.zeros(
             (self.buffer_size, self.n_envs), dtype=np.int8
         )
@@ -54,7 +54,6 @@ class HERBuffer(BaseBuffer):
             self.dones,
             self.desired_goals,
             self.next_achieved_goals,
-            self.episode_end_indices,
             self.index_episode_map,
         )
 
@@ -89,15 +88,17 @@ class HERBuffer(BaseBuffer):
         self.next_achieved_goals[self.pos] = next_observation["achieved_goal"]
         self.dones[self.pos] = done
         self.index_episode_map[self.pos] = self.episode
+        self.pos += 1
+        print("INDEX EPISODE INDICES: \n", self.index_episode_map)
 
         if done:
             self.episode_end_indices[self.episode] = self.pos
             self.episode += 1
+            print("EPISODE END INDICES: \n", self.episode_end_indices)
 
             if self.episode == self.buffer_size:
                 self.episode = 0
 
-        self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True
             self.pos = 0
@@ -110,16 +111,14 @@ class HERBuffer(BaseBuffer):
 
         # Goal is the last state in the episode
         if self.goal_section_strategy == GoalSelectionStrategy.FINAL:
-            goal_indices = episode_end_indices
+            goal_indices = episode_end_indices - 1
 
         # Goal is a random state in the same episode observed after current transition
         elif self.goal_section_strategy == GoalSelectionStrategy.FUTURE:
             # Need to expand her_inds to account for multiple environments
             her_inds = her_inds.reshape([-1, 1])
             her_inds = np.tile(her_inds, (1, self.n_envs))  # (batch_size, n_envs)
-            goal_indices = np.random.randint(
-                her_inds.reshape([-1, 1]), episode_end_indices + 1
-            )
+            goal_indices = np.random.randint(her_inds, episode_end_indices)
 
         else:
             raise ValueError(
@@ -179,49 +178,44 @@ class HERBuffer(BaseBuffer):
         )
 
     def sample(
+        self,
+        batch_size: int,
+        online: bool = False,
+        dtype: Union[str, TrajectoryType] = "numpy",
+    ) -> Trajectories:
+        if online:
+            return self.last(batch_size, dtype)
+        if isinstance(dtype, str):
+            dtype = TrajectoryType(dtype.lower())
+
+        # Sample transitions from the last complete episode recorded
+        end_idx = self.episode_end_indices[self.episode - 1]
+        if self.full:
+            batch_inds = (
+                np.random.randint(1, self.buffer_size, size=batch_size) + end_idx
+            ) % self.buffer_size
+        else:
+            batch_inds = np.random.randint(0, end_idx, size=batch_size)
+
+        return self._sample_trajectories(batch_size, batch_inds, dtype)
+
+    def last(
         self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
     ) -> Trajectories:
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
+        assert batch_size < self.buffer_size
 
-        if self.full:
-            batch_inds = (
-                np.random.randint(1, self.buffer_size, size=batch_size) + self.pos
-            ) % self.buffer_size
+        # Sample transitions from the last complete episode recorded
+        end_idx = self.episode_end_indices[self.episode - 1]
+        start_idx = end_idx - batch_size
+        if start_idx < 0 and self.full:
+            batch_inds = np.concatenate((np.arange(start_idx, 0), np.arange(end_idx)))
+        elif start_idx >= 0:
+            batch_inds = np.arange(start_idx, end_idx)
         else:
-            batch_inds = np.random.randint(0, self.pos, size=batch_size)
+            raise RuntimeError(
+                f"Not enough samples collected, max batch_size={end_idx}"
+            )
 
         return self._sample_trajectories(batch_size, batch_inds, dtype)
-
-    def last(self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"):
-        if isinstance(dtype, str):
-            dtype = TrajectoryType(dtype.lower())
-        assert batch_size <= self.buffer_size
-
-        start_idx = self.pos - batch_size
-        if start_idx < 0:
-            batch_inds = np.concatenate((np.arange(start_idx, 0), np.arange(self.pos)))
-        else:
-            batch_inds = np.arange(start_idx, self.pos)
-
-        observations = self.observations[batch_inds]
-        actions = self.actions[batch_inds]
-        rewards = self.rewards[batch_inds]
-        next_observations = self.next_observations[batch_inds]
-        dones = self.dones[batch_inds]
-
-        # return torch tensors instead of numpy arrays
-        if dtype == TrajectoryType.TORCH:
-            observations = T.tensor(observations).to(self.device)
-            actions = T.tensor(actions).to(self.device)
-            rewards = T.tensor(rewards).to(self.device)
-            next_observations = T.tensor(next_observations).to(self.device)
-            dones = T.tensor(dones).to(self.device)
-
-        return Trajectories(
-            observations=observations,
-            actions=actions,
-            rewards=rewards,
-            next_observations=next_observations,
-            dones=dones,
-        )
