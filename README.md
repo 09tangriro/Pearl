@@ -13,8 +13,8 @@ Anvil is a pytorch based library with the goal of being excellent for rapid prot
 2. `scripts/run_tests.sh`: run tests
 
 **Windows**
-1. `scripts/setup_dev.bat`: setup your virtual environment
-2. `scripts/run_tests.bat`: run tests
+1. `scripts/windows_setup_dev.bat`: setup your virtual environment
+2. `scripts/windows_run_tests.bat`: run tests
 
 ### Dependency Management
 Anvil uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release over pip. As a quick guide:
