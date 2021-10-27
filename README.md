@@ -115,5 +115,8 @@ class YourAlgorithm(BaseAgent):
 ```
 For more examples, see implementations under `anvil/agents`!
 
+### Agent performance
+To see training performance, use the command `tensorboard --logdir runs` or `tensorboard --logdir <tensorboard_log_path>` defined in your algorithm class initialization.
+
 ## Credit
 Anvil was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
