@@ -8,7 +8,6 @@ import torch as T
 from gym import Env, spaces
 from torch.utils.tensorboard import SummaryWriter
 
-from anvil.buffers.base_buffer import BaseBuffer
 from anvil.callbacks.base_callback import BaseCallback
 from anvil.common.enumerations import TrainFrequencyType
 from anvil.common.type_aliases import Log, Tensor
@@ -21,9 +20,6 @@ class BaseAgent(ABC):
         self,
         env: Env,
         model: ActorCritic,
-        buffer_class: Type[BaseBuffer],
-        buffer_size: int,
-        n_envs: int = 1,
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         model_path: Optional[str] = None,
         device: Union[str, T.device] = "auto",
@@ -42,9 +38,6 @@ class BaseAgent(ABC):
 
         :param env: the gym-like environment to be used
         :param model: the neural network model
-        :param buffer_class: the buffer class to use
-        :param buffer_size: the size of the buffer
-        :param n_envs: number of parallel environments to train on (ONLY SUPPORTS 1 FOR NOW!)
         :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
         :param model_path: optional model path to load from
         :param device: device to run on, accepts "auto", "cuda" or "cpu"
@@ -57,8 +50,6 @@ class BaseAgent(ABC):
         self.model = model
         self.verbose = verbose
         self.model_path = model_path
-        self.n_envs = n_envs
-        self.buffer_size = buffer_size
         self.callbacks = callbacks
         self.render = render
         self.action_explorer = None
@@ -70,13 +61,7 @@ class BaseAgent(ABC):
         if verbose:
             self.logger.info(f"Using device {device}")
 
-        self.buffer = buffer_class(
-            buffer_size=buffer_size,
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            n_envs=n_envs,
-            device=device,
-        )
+        self.buffer = None
         self._reset_episode_log()
         self.writer = SummaryWriter(tensorboard_log_path)
         # Load the model if a path is given

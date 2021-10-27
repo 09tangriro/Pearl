@@ -8,7 +8,12 @@ from anvil.agents.base_agent import BaseAgent
 from anvil.buffers.base_buffer import BaseBuffer
 from anvil.buffers.replay_buffer import ReplayBuffer
 from anvil.callbacks.base_callback import BaseCallback
-from anvil.common.type_aliases import ExplorerSettings, Log, OptimizerSettings
+from anvil.common.type_aliases import (
+    BufferSettings,
+    ExplorerSettings,
+    Log,
+    OptimizerSettings,
+)
 from anvil.common.utils import get_space_shape, torch_to_numpy
 from anvil.explorers.base_explorer import BaseExplorer
 from anvil.models.actor_critics import (
@@ -50,7 +55,7 @@ class DQN(BaseAgent):
         updater_class: Type[BaseCriticUpdater] = QRegression,
         optimizer_settings: OptimizerSettings = OptimizerSettings(),
         buffer_class: Type[BaseBuffer] = ReplayBuffer,
-        buffer_size: int = int(1e6),
+        buffer_settings: BufferSettings = BufferSettings(),
         action_explorer_class: Type[BaseExplorer] = BaseExplorer,
         explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=0),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
@@ -59,25 +64,25 @@ class DQN(BaseAgent):
         render: bool = False,
         model_path: Optional[str] = None,
         tensorboard_log_path: Optional[str] = None,
-        log_level: str = "",
-        n_envs: int = 1,
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
             env,
             model,
-            buffer_class,
-            buffer_size,
             callbacks=callbacks,
             device=device,
             verbose=verbose,
             model_path=model_path,
             tensorboard_log_path=tensorboard_log_path,
-            log_level=log_level,
-            n_envs=n_envs,
             render=render,
         )
 
+        self.buffer = buffer_class(
+            env=env,
+            buffer_size=buffer_settings.buffer_size,
+            n_envs=buffer_settings.n_envs,
+            device=device,
+        )
         self.updater = updater_class(
             optimizer_class=optimizer_settings.optimizer_class,
             lr=optimizer_settings.learning_rate,
@@ -122,3 +127,16 @@ class DQN(BaseAgent):
         self.model.assign_targets()
 
         return Log(critic_loss=np.mean(critic_losses))
+
+
+if __name__ == "__main__":
+    import gym
+
+    env = gym.make("CartPole-v0")
+    agent = DQN(
+        env=env,
+        model=None,
+        verbose=True,
+        explorer_settings=ExplorerSettings(start_steps=0),
+    )
+    agent.fit(num_steps=1000, batch_size=10, critic_epochs=1)

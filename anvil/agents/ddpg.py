@@ -8,7 +8,12 @@ from anvil.agents import BaseAgent
 from anvil.buffers import ReplayBuffer
 from anvil.buffers.base_buffer import BaseBuffer
 from anvil.callbacks.base_callback import BaseCallback
-from anvil.common.type_aliases import ExplorerSettings, Log, OptimizerSettings
+from anvil.common.type_aliases import (
+    BufferSettings,
+    ExplorerSettings,
+    Log,
+    OptimizerSettings,
+)
 from anvil.common.utils import get_space_shape, torch_to_numpy
 from anvil.explorers import BaseExplorer, GaussianExplorer
 from anvil.models.actor_critics import (
@@ -53,12 +58,12 @@ class DDPG(BaseAgent):
         env: Env,
         model: Optional[ActorCritic],
         actor_updater_class: Type[BaseActorUpdater] = DeterministicPolicyGradient,
-        critic_updater_class: Type[BaseCriticUpdater] = QRegression,
-        buffer_class: Type[BaseBuffer] = ReplayBuffer,
-        buffer_size: int = int(1e6),
         actor_optimizer_settings: OptimizerSettings = OptimizerSettings(),
+        critic_updater_class: Type[BaseCriticUpdater] = QRegression,
         critic_optimizer_settings: OptimizerSettings = OptimizerSettings(),
-        action_explorer_class: Optional[Type[BaseExplorer]] = GaussianExplorer,
+        buffer_class: Type[BaseBuffer] = ReplayBuffer,
+        buffer_settings: BufferSettings = BufferSettings(),
+        action_explorer_class: Type[BaseExplorer] = GaussianExplorer,
         explorer_settings: ExplorerSettings = ExplorerSettings(
             start_steps=1000, scale=0.1
         ),
@@ -68,21 +73,23 @@ class DDPG(BaseAgent):
         render: bool = False,
         model_path: Optional[str] = None,
         tensorboard_log_path: Optional[str] = None,
-        n_envs: int = 1,
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
             env,
             model,
-            buffer_class,
-            buffer_size,
             callbacks=callbacks,
             device=device,
             verbose=verbose,
             model_path=model_path,
             tensorboard_log_path=tensorboard_log_path,
-            n_envs=n_envs,
             render=render,
+        )
+        self.buffer = buffer_class(
+            env=env,
+            buffer_size=buffer_settings.buffer_size,
+            n_envs=buffer_settings.n_envs,
+            device=device,
         )
         self.actor_updater = actor_updater_class(
             optimizer_class=actor_optimizer_settings.optimizer_class,
@@ -146,3 +153,21 @@ class DDPG(BaseAgent):
             actor_loss=np.mean(actor_losses),
             critic_loss=np.mean(critic_losses),
         )
+
+
+if __name__ == "__main__":
+    import gym
+
+    env = gym.make("Pendulum-v0")
+    agent = DDPG(
+        env=env,
+        model=None,
+        explorer_settings=ExplorerSettings(start_steps=100, scale=0.1),
+    )
+    agent.fit(
+        num_steps=1000,
+        batch_size=100,
+        critic_epochs=100,
+        actor_epochs=50,
+        train_frequency=("episode", 1),
+    )

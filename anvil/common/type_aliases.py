@@ -44,3 +44,9 @@ class OptimizerSettings:
 class ExplorerSettings:
     start_steps: int = 1000
     scale: Optional[float] = None
+
+
+@dataclass
+class BufferSettings:
+    buffer_size: int = int(1e6)
+    n_envs: int = 1
