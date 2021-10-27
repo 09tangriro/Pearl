@@ -12,11 +12,7 @@ env = gym.make("CartPole-v0")
 
 @pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
 def test_buffer_init(buffer_class):
-    action_space = env.action_space
-    observation_space = env.observation_space
-    buffer = buffer_class(
-        buffer_size=5, observation_space=observation_space, action_space=action_space
-    )
+    buffer = buffer_class(env, buffer_size=5)
 
     assert buffer.observations.shape == (5, 1, 4)
     assert buffer.actions.shape == (5, 1, 1)
@@ -27,10 +23,7 @@ def test_buffer_init(buffer_class):
 @pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
 def test_buffer_add_trajectory_and_sample(buffer_class):
     action_space = env.action_space
-    observation_space = env.observation_space
-    buffer = buffer_class(
-        buffer_size=2, observation_space=observation_space, action_space=action_space
-    )
+    buffer = buffer_class(env, buffer_size=2)
     obs = env.reset()
     action = action_space.sample()
     next_obs, reward, done, _ = env.step(action)
@@ -72,10 +65,7 @@ def test_buffer_add_trajectory_and_sample(buffer_class):
 @pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
 def test_add_batch_trajectories_and_sample(buffer_class):
     action_space = env.action_space
-    observation_space = env.observation_space
-    buffer = buffer_class(
-        buffer_size=5, observation_space=observation_space, action_space=action_space
-    )
+    buffer = buffer_class(env, buffer_size=5)
 
     observations = np.zeros(shape=(5, 4))
     next_observations = np.zeros(shape=(5, 4))
@@ -115,9 +105,7 @@ def test_last(buffer_class):
     num_steps = 10
     action_space = env.action_space
     observation_space = env.observation_space
-    buffer = buffer_class(
-        buffer_size=2, observation_space=observation_space, action_space=action_space
-    )
+    buffer = buffer_class(env, buffer_size=2)
 
     for _ in range(num_steps):
         obs = observation_space.sample()
@@ -152,9 +140,7 @@ def test_last(buffer_class):
         )
         np.testing.assert_array_almost_equal(most_recent.dones, trajectory.dones)
 
-    buffer = buffer_class(
-        buffer_size=5, observation_space=observation_space, action_space=action_space
-    )
+    buffer = buffer_class(env, buffer_size=5)
 
     num_most_recent = 2
     obs = env.reset()

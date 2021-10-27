@@ -2,7 +2,7 @@ from typing import Union
 
 import numpy as np
 import torch as T
-from gym import Space
+from gym import Env
 
 from anvil.buffers.base_buffer import BaseBuffer
 from anvil.common.enumerations import TrajectoryType
@@ -13,30 +13,27 @@ class RolloutBuffer(BaseBuffer):
     """
     Rollout buffer handles sample collection and processing for on-policy algorithms.
 
+    :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param observation_space: observation space
-    :param action_space: action space
     :param n_envs: number of parallel environments
     """
 
     def __init__(
         self,
+        env: Env,
         buffer_size: int,
-        observation_space: Space,
-        action_space: Space,
         n_envs: int = 1,
         device: Union[str, T.device] = "auto",
     ) -> None:
         super().__init__(
+            env,
             buffer_size,
-            observation_space,
-            action_space,
             n_envs,
             device,
         )
         self.next_observations = np.zeros(
             (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
+            dtype=env.observation_space.dtype,
         )
         self._check_system_memory(
             self.observations,

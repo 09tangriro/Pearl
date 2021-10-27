@@ -3,7 +3,6 @@ from typing import Dict, Union
 import numpy as np
 import torch as T
 from gym.core import GoalEnv
-from gym.spaces.space import Space
 
 from anvil.buffers.base_buffer import BaseBuffer
 from anvil.common.enumerations import GoalSelectionStrategy, TrajectoryType
@@ -22,8 +21,6 @@ class HERBuffer(BaseBuffer):
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param observation_space: observation space
-    :param action_space: action space
     :param n_envs: number of parallel environments
     :param goal_selection_strategy: the goal selection strategy to be used, defaults to future
     :param n_sampled_goal: ratio of HER data to data coming from normal experience replay
@@ -34,24 +31,20 @@ class HERBuffer(BaseBuffer):
         self,
         env: GoalEnv,
         buffer_size: int,
-        observation_space: Space,
-        action_space: Space,
         n_envs: int = 1,
         goal_selection_strategy: Union[str, GoalSelectionStrategy] = "future",
         n_sampled_goal: int = 4,
         device: Union[str, T.device] = "auto",
     ) -> None:
-        super().__init__(
-            buffer_size, observation_space, action_space, n_envs=n_envs, device=device
-        )
+        super().__init__(env, buffer_size, n_envs=n_envs, device=device)
         self.env = env
         self.desired_goals = np.zeros(
             (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
+            dtype=env.observation_space.dtype,
         )
         self.next_achieved_goals = np.zeros(
             (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
+            dtype=env.observation_space.dtype,
         )
 
         # Keep track of where in the data structure episodes end

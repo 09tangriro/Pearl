@@ -224,8 +224,6 @@ def test_her_init():
     buffer = HERBuffer(
         env=env,
         buffer_size=BUFFER_SIZE,
-        observation_space=env.observation_space,
-        action_space=env.action_space,
         goal_selection_strategy="final",
     )
 
@@ -241,8 +239,6 @@ def test_her_add_trajectory():
     buffer = HERBuffer(
         env=env,
         buffer_size=2,
-        observation_space=env.observation_space,
-        action_space=env.action_space,
         goal_selection_strategy="final",
     )
 
@@ -271,8 +267,6 @@ def test_her_sample(goal_selection_strategy, buffer_size):
     buffer = HERBuffer(
         env=env,
         buffer_size=buffer_size,
-        observation_space=env.observation_space,
-        action_space=env.action_space,
         goal_selection_strategy=goal_selection_strategy,
         n_sampled_goal=1,
     )
@@ -326,8 +320,6 @@ def test_her_last(buffer_size, goal_selection_strategy):
     buffer = HERBuffer(
         env=env,
         buffer_size=buffer_size,
-        observation_space=env.observation_space,
-        action_space=env.action_space,
         goal_selection_strategy=goal_selection_strategy,
         n_sampled_goal=1,
     )

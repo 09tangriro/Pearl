@@ -1,11 +1,11 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import Union
 
 import numpy as np
 import psutil
 import torch as T
-from gym import Space
+from gym import Env
 
 from anvil.common.enumerations import TrajectoryType
 from anvil.common.type_aliases import Trajectories
@@ -16,17 +16,15 @@ class BaseBuffer(ABC):
     """
     the base buffer class which handles sample collection and processing.
 
+    :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param observation_space: observation space
-    :param action_space: action space
     :param n_envs: number of parallel environments
     """
 
     def __init__(
         self,
+        env: Env,
         buffer_size: int,
-        observation_space: Space,
-        action_space: Space,
         n_envs: int = 1,
         device: Union[str, T.device] = "auto",
     ) -> None:
@@ -36,16 +34,16 @@ class BaseBuffer(ABC):
         self.full = False
         self.pos = 0
 
-        self.obs_shape = get_space_shape(observation_space)
-        action_shape = get_space_shape(action_space)
+        self.obs_shape = get_space_shape(env.observation_space)
+        action_shape = get_space_shape(env.action_space)
 
         self.observations = np.zeros(
             (self.buffer_size, self.n_envs) + self.obs_shape,
-            dtype=observation_space.dtype,
+            dtype=env.observation_space.dtype,
         )
         self.actions = np.zeros(
             (self.buffer_size, self.n_envs) + action_shape,
-            dtype=observation_space.dtype,
+            dtype=env.observation_space.dtype,
         )
         # Use 3 dims for easier calculations without having to think about broadcasting
         self.rewards = np.zeros((self.buffer_size, self.n_envs, 1), dtype=np.float32)
