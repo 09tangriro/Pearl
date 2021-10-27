@@ -59,7 +59,7 @@ class YourAlgorithm(BaseAgent):
         buffer_settings: BufferSettings,
         action_explorer_class: Type[BaseExplorer],
         explorer_settings: ExplorerSettings,
-        callbacks: Optional[List[Type[BaseCallback]]] = None, # callbacks
+        callbacks: Optional[List[Type[BaseCallback]]] = None,
         device: Union[T.device, str] = "auto",
         verbose: bool = True,
         render: bool = False,
