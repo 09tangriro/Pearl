@@ -227,12 +227,12 @@ def test_her_init():
         goal_selection_strategy="final",
     )
 
-    assert buffer.observations.shape == (BUFFER_SIZE, 1, NUM_BITS)
-    assert buffer.actions.shape == (BUFFER_SIZE, 1, 1)
-    assert buffer.rewards.shape == (BUFFER_SIZE, 1, 1)
-    assert buffer.dones.shape == (BUFFER_SIZE, 1, 1)
-    assert buffer.desired_goals.shape == (BUFFER_SIZE, 1, NUM_BITS)
-    assert buffer.next_achieved_goals.shape == (BUFFER_SIZE, 1, NUM_BITS)
+    assert buffer.observations.shape == (BUFFER_SIZE, NUM_BITS)
+    assert buffer.actions.shape == (BUFFER_SIZE, 1)
+    assert buffer.rewards.shape == (BUFFER_SIZE, 1)
+    assert buffer.dones.shape == (BUFFER_SIZE, 1)
+    assert buffer.desired_goals.shape == (BUFFER_SIZE, NUM_BITS)
+    assert buffer.next_achieved_goals.shape == (BUFFER_SIZE, NUM_BITS)
 
 
 def test_her_add_trajectory():
@@ -248,14 +248,14 @@ def test_her_add_trajectory():
 
     buffer.add_trajectory(observation, action, reward, next_obs, done)
 
-    np.testing.assert_array_equal(buffer.observations[0][0], observation["observation"])
-    np.testing.assert_array_equal(buffer.observations[1][0], next_obs["observation"])
-    assert buffer.actions[0][0] == action
-    assert buffer.rewards[0][0] == reward
-    assert buffer.dones[0][0] == done
-    np.testing.assert_array_equal(buffer.desired_goals[0][0], env.desired_goal)
+    np.testing.assert_array_equal(buffer.observations[0], observation["observation"])
+    np.testing.assert_array_equal(buffer.observations[1], next_obs["observation"])
+    assert buffer.actions[0] == action
+    assert buffer.rewards[0] == reward
+    assert buffer.dones[0] == done
+    np.testing.assert_array_equal(buffer.desired_goals[0], env.desired_goal)
     np.testing.assert_array_equal(
-        buffer.next_achieved_goals[0][0], next_obs["achieved_goal"]
+        buffer.next_achieved_goals[0], next_obs["achieved_goal"]
     )
 
 
@@ -323,10 +323,10 @@ def test_her_last(buffer_size, goal_selection_strategy):
         goal_selection_strategy=goal_selection_strategy,
         n_sampled_goal=1,
     )
-    observations = np.zeros((OBSERVATION_BUFFER_SIZE, 1, NUM_BITS))
-    next_observations = np.zeros((OBSERVATION_BUFFER_SIZE, 1, NUM_BITS))
-    actions = np.zeros((OBSERVATION_BUFFER_SIZE, 1, 1))
-    dones = np.zeros((OBSERVATION_BUFFER_SIZE, 1, 1))
+    observations = np.zeros((OBSERVATION_BUFFER_SIZE, NUM_BITS))
+    next_observations = np.zeros((OBSERVATION_BUFFER_SIZE, NUM_BITS))
+    actions = np.zeros((OBSERVATION_BUFFER_SIZE, 1))
+    dones = np.zeros((OBSERVATION_BUFFER_SIZE, 1))
 
     episode = 0
     pos = 0
@@ -352,14 +352,14 @@ def test_her_last(buffer_size, goal_selection_strategy):
 
     # Don't assert rewards since these can change with HER sampled goals
     np.testing.assert_array_almost_equal(
-        most_recent.observations[:, :, :NUM_BITS],
+        most_recent.observations[:, :NUM_BITS],
         observations[last_episode_pos - 1 : last_episode_pos + 1],
     )
     np.testing.assert_array_almost_equal(
         most_recent.actions, actions[last_episode_pos - 1 : last_episode_pos + 1]
     )
     np.testing.assert_array_almost_equal(
-        most_recent.next_observations[:, :, :NUM_BITS],
+        most_recent.next_observations[:, :NUM_BITS],
         next_observations[last_episode_pos - 1 : last_episode_pos + 1],
     )
     np.testing.assert_array_almost_equal(

@@ -17,7 +17,7 @@ class HERBuffer(BaseBuffer):
     goals every time we add transitions, instead we do it all at once when
     sampling for vectorized (fast) processing.
 
-    TODO: more testing for multiple environments
+    TODO: DOES NOT YET SUPPORT MULTIPLE ENVIRONEMTS!! More testing needed for this.
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
@@ -39,22 +39,18 @@ class HERBuffer(BaseBuffer):
         super().__init__(env, buffer_size, n_envs=n_envs, device=device)
         self.env = env
         self.desired_goals = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
+            self.batch_shape + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
         self.next_achieved_goals = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
+            self.batch_shape + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
 
         # Keep track of where in the data structure episodes end
-        self.episode_end_indices = np.zeros(
-            (self.buffer_size, self.n_envs), dtype=np.int8
-        )
+        self.episode_end_indices = np.zeros(self.batch_shape, dtype=np.int8)
         # Keep track of which transitions belong to which episodes.
-        self.index_episode_map = np.zeros(
-            (self.buffer_size, self.n_envs), dtype=np.int8
-        )
+        self.index_episode_map = np.zeros(self.batch_shape, dtype=np.int8)
         self.episode = 0
 
         self._check_system_memory(
@@ -115,6 +111,7 @@ class HERBuffer(BaseBuffer):
         :return: the new episode goals
         """
         her_episodes = self.index_episode_map[her_inds]
+        # Reshaping to handle multiple environments (if self.n_envs > 1)
         episode_end_indices = self.episode_end_indices[her_episodes].reshape(
             her_episodes.shape
         )
@@ -125,14 +122,12 @@ class HERBuffer(BaseBuffer):
 
         # Goal is a random state in the same episode observed after current transition
         elif self.goal_section_strategy == GoalSelectionStrategy.FUTURE:
-            # Need to expand her_inds to account for multiple environments, advised to
-            # expand dim before calling `np.tile`
-            her_inds = her_inds.reshape([-1, 1])
-            her_inds = np.tile(her_inds, (1, self.n_envs))  # (batch_size, n_envs)
             # FAILURE MODE: if episode overlaps from end to beginning of buffer
             # then the randint method will likely fail due to low > high.
             # This will only happen at the overlapping episodes so quick
             # fix is to simply revert to final goal strategy in this case.
+            # TODO: This will also break with multiple environments, need some sort
+            # of `np.tile()` to account for this.
             if any(episode_end_indices < her_inds):
                 goal_indices = episode_end_indices - 1
             else:
@@ -143,6 +138,7 @@ class HERBuffer(BaseBuffer):
                 f"Strategy {self.goal_section_strategy} for samping goals not supported."
             )
 
+        # Reshaping to handle multiple environments (if self.n_envs > 1)
         return self.next_achieved_goals[goal_indices].reshape(
             goal_indices.shape + self.obs_shape
         )
@@ -172,34 +168,22 @@ class HERBuffer(BaseBuffer):
         # therefore we have to use "next_achieved_goal" and not "achieved_goal"
         her_rewards = self.env.compute_reward(
             self.next_achieved_goals[her_inds], her_goals, {}
-        ).reshape(len(her_goals), self.n_envs, 1)
+        )[:, np.newaxis]
 
         desired_goals = np.concatenate([her_goals, self.desired_goals[replay_inds]])
         rewards = np.concatenate([her_rewards, self.rewards[replay_inds]])
         observations = np.concatenate(
-            [self.observations[batch_inds], desired_goals], axis=2
+            [self.observations[batch_inds], desired_goals], axis=len(self.batch_shape)
         )
         next_observations = np.concatenate(
             [self.observations[(batch_inds + 1) % self.buffer_size], desired_goals],
-            axis=2,
+            axis=len(self.batch_shape),
         )
         actions = self.actions[batch_inds]
         dones = self.dones[batch_inds]
 
-        # return torch tensors instead of numpy arrays
-        if dtype == TrajectoryType.TORCH:
-            observations = T.tensor(observations).to(self.device)
-            actions = T.tensor(actions).to(self.device)
-            rewards = T.tensor(rewards).to(self.device)
-            next_observations = T.tensor(next_observations).to(self.device)
-            dones = T.tensor(dones).to(self.device)
-
-        return Trajectories(
-            observations=observations,
-            actions=actions,
-            rewards=rewards,
-            next_observations=next_observations,
-            dones=dones,
+        return self._transform_samples(
+            observations, actions, rewards, next_observations, dones, dtype
         )
 
     def sample(
