@@ -72,14 +72,6 @@ python2 = ["typed-ast (>=1.4.2)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
-name = "box2d"
-version = "2.3.10"
-description = "Python Box2D"
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "cachetools"
 version = "4.2.4"
 description = "Extensible memoizing collections and decorators"
@@ -755,7 +747,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.10"
-content-hash = "54726bc0b63234418fa1502547a04af027430cc4a4e5ff57855fe199602cfd7b"
+content-hash = "d7911a1826c93e285c1c38c6057fe346de12891b822189ed4d48d9041da0b689"
 
 [metadata.files]
 absl-py = [
@@ -777,27 +769,6 @@ attrs = [
 black = [
     {file = "black-21.9b0-py3-none-any.whl", hash = "sha256:380f1b5da05e5a1429225676655dddb96f5ae8c75bdf91e53d798871b902a115"},
     {file = "black-21.9b0.tar.gz", hash = "sha256:7de4cfc7eb6b710de325712d40125689101d21d25283eed7e9998722cf10eb91"},
-]
-box2d = [
-    {file = "Box2D-2.3.10-cp27-cp27m-win32.whl", hash = "sha256:d7ec7cc89e0f6eef5fe713c5b6ff767725e4ff61a5a3cc15babf42563a842e80"},
-    {file = "Box2D-2.3.10-cp35-cp35m-macosx_10_6_intel.whl", hash = "sha256:34928b2d5dc8479a0b3dfae39a44a0e7c7ad5a57cfbeba41d4fe48453bfaa77a"},
-    {file = "Box2D-2.3.10-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:0b55fbbe30e2e78e79c35473be94fc7aecba0a9d9d120e52170191b7975ff020"},
-    {file = "Box2D-2.3.10-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:54fe770d353257a779661a16fb559d7dfc4da831726eef232aebb75ae590dfb9"},
-    {file = "Box2D-2.3.10-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:dccfee7b64af849fb0d410ab3bdecd7b99115df228083b8f3782ea244875d22c"},
-    {file = "Box2D-2.3.10-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:9b9836bb36e7e44d6fddb77ccc7b3fff29d8a6bc638948ddd622fd45fdbaddda"},
-    {file = "Box2D-2.3.10-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:6c3bbca0e4eb0a681439c477fc6c7bdd4d8e9d93e9d18fd8dbae682467512049"},
-    {file = "Box2D-2.3.10-cp36-cp36m-win32.whl", hash = "sha256:69e25c3fe590d8736163c5783d02cd3c5a0d50cb0e045672ff6e95e560d48fa3"},
-    {file = "Box2D-2.3.10-cp36-cp36m-win_amd64.whl", hash = "sha256:257d8779decaa3ffbbfb7f7b3261e635775db1b93955ad95efbc8563a464bc7d"},
-    {file = "Box2D-2.3.10-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:d1d7f298b6c4f5e862fdeabd59a8b0e21269647cff615a3f76fea9d2934ad7ca"},
-    {file = "Box2D-2.3.10-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:e4870ae6caa491264456be1cdbceeba7f14de51a9fdaa19fa0e5871d22b519f6"},
-    {file = "Box2D-2.3.10-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:827e224751130ffc608b60fcb2d21390200cd5ea1cc86c15eae1b08abb3f1266"},
-    {file = "Box2D-2.3.10-cp37-cp37m-win32.whl", hash = "sha256:dc682ba34473fdbd2d901a96db651662f7af09c423f98faca1cb430ed2c0188a"},
-    {file = "Box2D-2.3.10-cp37-cp37m-win_amd64.whl", hash = "sha256:11687af5d483e54c3b1afe3d159e07830d6338b936950853a942b7a579b862b6"},
-    {file = "Box2D-2.3.10-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:9dd6a58d2dcf1b3b2e91ce2b5d50b548f53cad055739fb3f2cfd6296bd5ed138"},
-    {file = "Box2D-2.3.10-cp38-cp38-manylinux1_i686.whl", hash = "sha256:edf96b308df449b9051e6f8079c926cfa4106c065d04608594b91b9f6d1dcb43"},
-    {file = "Box2D-2.3.10-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:802975ac751df1d7f5e98086503227cc74ad0033c7509eb0fb08d3dd9598fea9"},
-    {file = "Box2D-2.3.10-cp38-cp38-win32.whl", hash = "sha256:dca4b52b75ceb0dcc7de0d07f5fee639c707326d8a266bb89994cd3f713859f8"},
-    {file = "Box2D-2.3.10-cp38-cp38-win_amd64.whl", hash = "sha256:777f5d8f56ca10821f0e08363887058e94e9b1c5c1a6d5d007e5c2a93c0d6215"},
 ]
 cachetools = [
     {file = "cachetools-4.2.4-py3-none-any.whl", hash = "sha256:92971d3cb7d2a97efff7c7bb1657f21a8f5fb309a37530537c71b1774189f2d1"},
