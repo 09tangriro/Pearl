@@ -34,6 +34,8 @@ class FlattenEncoder(T.nn.Module):
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
         observations = concat_obs_actions(observations, actions)
+        # Make sure observations is a torch tensor, get error if numpy for some reason??
+        observations = numpy_to_torch(observations)
         return self.flatten(observations)
 
 
