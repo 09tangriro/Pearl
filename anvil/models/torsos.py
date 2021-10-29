@@ -11,10 +11,9 @@ class MLP(T.nn.Module):
 
         layers = []
         for i, size in enumerate(layer_sizes[:-1]):
+            layers += [T.nn.Linear(size, layer_sizes[i + 1])]
             if activation_fn:
-                layers += [T.nn.Linear(size, layer_sizes[i + 1]), activation_fn()]
-            else:
-                layers += [T.nn.Linear(size, layer_sizes[i + 1])]
+                layers += [activation_fn()]
         self.model = T.nn.Sequential(*layers)
 
     def forward(self, inputs):
