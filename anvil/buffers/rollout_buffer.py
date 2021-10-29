@@ -32,7 +32,7 @@ class RolloutBuffer(BaseBuffer):
             device,
         )
         self.next_observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
+            self.batch_shape + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
         self._check_system_memory(
@@ -65,8 +65,6 @@ class RolloutBuffer(BaseBuffer):
     def sample(
         self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
     ) -> Trajectories:
-        if isinstance(dtype, str):
-            dtype = TrajectoryType(dtype.lower())
         if self.full:
             assert (
                 batch_size <= self.buffer_size
@@ -86,27 +84,13 @@ class RolloutBuffer(BaseBuffer):
         next_observations = self.next_observations[start_idx:last_idx]
         dones = self.dones[start_idx:last_idx]
 
-        # return torch tensors instead of numpy arrays
-        if dtype == TrajectoryType.TORCH:
-            observations = T.tensor(observations).to(self.device)
-            actions = T.tensor(actions).to(self.device)
-            rewards = T.tensor(rewards).to(self.device)
-            next_observations = T.tensor(next_observations).to(self.device)
-            dones = T.tensor(dones).to(self.device)
-
-        return Trajectories(
-            observations=observations,
-            actions=actions,
-            rewards=rewards,
-            next_observations=next_observations,
-            dones=dones,
+        return self._transform_samples(
+            observations, actions, rewards, next_observations, dones, dtype
         )
 
     def last(
         self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
     ) -> Trajectories:
-        if isinstance(dtype, str):
-            dtype = TrajectoryType(dtype.lower())
         assert batch_size <= self.buffer_size
 
         start_idx = self.pos - batch_size
@@ -121,18 +105,6 @@ class RolloutBuffer(BaseBuffer):
         next_observations = self.next_observations[batch_inds]
         dones = self.dones[batch_inds]
 
-        # return torch tensors instead of numpy arrays
-        if dtype == TrajectoryType.TORCH:
-            observations = T.tensor(observations).to(self.device)
-            actions = T.tensor(actions).to(self.device)
-            rewards = T.tensor(rewards).to(self.device)
-            next_observations = T.tensor(next_observations).to(self.device)
-            dones = T.tensor(dones).to(self.device)
-
-        return Trajectories(
-            observations=observations,
-            actions=actions,
-            rewards=rewards,
-            next_observations=next_observations,
-            dones=dones,
+        return self._transform_samples(
+            observations, actions, rewards, next_observations, dones, dtype
         )

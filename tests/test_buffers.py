@@ -14,10 +14,10 @@ env = gym.make("CartPole-v0")
 def test_buffer_init(buffer_class):
     buffer = buffer_class(env, buffer_size=5)
 
-    assert buffer.observations.shape == (5, 1, 4)
-    assert buffer.actions.shape == (5, 1, 1)
-    assert buffer.rewards.shape == (5, 1, 1)
-    assert buffer.dones.shape == (5, 1, 1)
+    assert buffer.observations.shape == (5, 4)
+    assert buffer.actions.shape == (5, 1)
+    assert buffer.rewards.shape == (5, 1)
+    assert buffer.dones.shape == (5, 1)
 
 
 @pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
@@ -40,7 +40,7 @@ def test_buffer_add_trajectory_and_sample(buffer_class):
 
     for field in trajectory_numpy.__dataclass_fields__:
         value = getattr(trajectory_numpy, field)
-        assert len(value.shape) == 3
+        assert len(value.shape) == 2
 
     np.testing.assert_array_almost_equal(
         obs,
@@ -113,11 +113,11 @@ def test_last(buffer_class):
         next_obs, reward, done, _ = env.step(action)
 
         trajectory = Trajectories(
-            observations=obs[np.newaxis, np.newaxis, :],
-            actions=np.array([[[action]]], dtype=np.float32),
-            rewards=np.array([[[reward]]]),
-            next_observations=next_obs[np.newaxis, np.newaxis, :],
-            dones=np.array([[[done]]], dtype=np.float32),
+            observations=obs[np.newaxis, :],
+            actions=np.array([[action]], dtype=np.float32),
+            rewards=np.array([[reward]]),
+            next_observations=next_obs[np.newaxis, :],
+            dones=np.array([[done]], dtype=np.float32),
         )
 
         buffer.add_trajectory(
@@ -152,30 +152,30 @@ def test_last(buffer_class):
 
             if i == 0:
                 trajectories = Trajectories(
-                    observations=obs[np.newaxis, np.newaxis, :],
-                    actions=np.array([[[action]]], dtype=np.float32),
-                    rewards=np.array([[[reward]]]),
-                    next_observations=next_obs[np.newaxis, np.newaxis, :],
-                    dones=np.array([[[done]]], dtype=np.float32),
+                    observations=obs[np.newaxis, :],
+                    actions=np.array([[action]], dtype=np.float32),
+                    rewards=np.array([[reward]]),
+                    next_observations=next_obs[np.newaxis, :],
+                    dones=np.array([[done]], dtype=np.float32),
                 )
             else:
                 trajectories.observations = np.concatenate(
-                    (trajectories.observations, obs[np.newaxis, np.newaxis, :])
+                    (trajectories.observations, obs[np.newaxis, :])
                 )
                 trajectories.actions = np.concatenate(
-                    (trajectories.actions, np.array([[[action]]], dtype=np.float32))
+                    (trajectories.actions, np.array([[action]], dtype=np.float32))
                 )
                 trajectories.rewards = np.concatenate(
-                    (trajectories.rewards, np.array([[[reward]]]))
+                    (trajectories.rewards, np.array([[reward]]))
                 )
                 trajectories.next_observations = np.concatenate(
                     (
                         trajectories.next_observations,
-                        next_obs[np.newaxis, np.newaxis, :],
+                        next_obs[np.newaxis, :],
                     )
                 )
                 trajectories.dones = np.concatenate(
-                    (trajectories.dones, np.array([[[done]]], dtype=np.float32))
+                    (trajectories.dones, np.array([[done]], dtype=np.float32))
                 )
             buffer.add_trajectory(
                 observation=obs,

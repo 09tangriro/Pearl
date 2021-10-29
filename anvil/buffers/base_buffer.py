@@ -34,20 +34,26 @@ class BaseBuffer(ABC):
         self.full = False
         self.pos = 0
 
+        # If only 1 environment, don't need the n_envs axis
+        if n_envs > 1:
+            self.batch_shape = (buffer_size, n_envs)
+        else:
+            self.batch_shape = (buffer_size,)
+
         self.obs_shape = get_space_shape(env.observation_space)
         action_shape = get_space_shape(env.action_space)
 
         self.observations = np.zeros(
-            (self.buffer_size, self.n_envs) + self.obs_shape,
+            self.batch_shape + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs) + action_shape,
+            self.batch_shape + action_shape,
             dtype=env.observation_space.dtype,
         )
         # Use 3 dims for easier calculations without having to think about broadcasting
-        self.rewards = np.zeros((self.buffer_size, self.n_envs, 1), dtype=np.float32)
-        self.dones = np.zeros((self.buffer_size, self.n_envs, 1), dtype=np.float32)
+        self.rewards = np.zeros(self.batch_shape + (1,), dtype=np.float32)
+        self.dones = np.zeros(self.batch_shape + (1,), dtype=np.float32)
 
     @staticmethod
     def _check_system_memory(*buffers) -> None:
@@ -63,6 +69,38 @@ class BaseBuffer(ABC):
                 "This system does not have enough memory to store the complete "
                 f"replay buffer: {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
             )
+
+    def _transform_samples(
+        self,
+        observations: np.ndarray,
+        actions: np.ndarray,
+        rewards: np.ndarray,
+        next_observations: np.ndarray,
+        dones: np.ndarray,
+        dtype: Union[str, TrajectoryType],
+    ) -> Trajectories:
+        """
+        Handle post-processing of sampled trajectories.
+        For now, only functionality is to transform to torch tensor if specified.
+        """
+        if isinstance(dtype, str):
+            dtype = TrajectoryType(dtype.lower())
+
+        # return torch tensors instead of numpy arrays
+        if dtype == TrajectoryType.TORCH:
+            observations = T.tensor(observations).to(self.device)
+            actions = T.tensor(actions).to(self.device)
+            rewards = T.tensor(rewards).to(self.device)
+            next_observations = T.tensor(next_observations).to(self.device)
+            dones = T.tensor(dones).to(self.device)
+
+        return Trajectories(
+            observations=observations,
+            actions=actions,
+            rewards=rewards,
+            next_observations=next_observations,
+            dones=dones,
+        )
 
     @abstractmethod
     def add_trajectory(
