@@ -83,12 +83,12 @@ class YourAlgorithm(BaseAgent):
             n_envs=buffer_settings.n_envs,
             device=device,
         )
-        self.actor_updater = updater_class(
+        self.actor_updater = actor_updater_class(
             optimizer_class=optimizer_settings.optimizer_class,
             lr=optimizer_settings.learning_rate,
             max_grad=optimizer_settings.max_grad,
         )
-        self.critic_updater = updater_class(
+        self.critic_updater = critic_updater_class(
             optimizer_class=optimizer_settings.optimizer_class,
             lr=optimizer_settings.learning_rate,
             max_grad=optimizer_settings.max_grad,
