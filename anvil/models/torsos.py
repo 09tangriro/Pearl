@@ -2,6 +2,8 @@ from typing import List, Optional, Type
 
 import torch as T
 
+from anvil.common.type_aliases import Tensor
+
 
 class MLP(T.nn.Module):
     def __init__(
@@ -16,5 +18,5 @@ class MLP(T.nn.Module):
                 layers += [activation_fn()]
         self.model = T.nn.Sequential(*layers)
 
-    def forward(self, inputs):
+    def forward(self, inputs: Tensor):
         return self.model(inputs)

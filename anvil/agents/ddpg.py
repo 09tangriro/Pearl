@@ -162,12 +162,12 @@ if __name__ == "__main__":
     agent = DDPG(
         env=env,
         model=None,
-        explorer_settings=ExplorerSettings(start_steps=100, scale=0.1),
+        explorer_settings=ExplorerSettings(start_steps=1000, scale=0.1),
     )
     agent.fit(
-        num_steps=1000,
-        batch_size=100,
-        critic_epochs=100,
-        actor_epochs=50,
-        train_frequency=("episode", 1),
+        num_steps=50000,
+        batch_size=64,
+        critic_epochs=1,
+        actor_epochs=1,
+        train_frequency=("step", 1),
     )

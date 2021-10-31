@@ -125,19 +125,36 @@ class BaseAgent(ABC):
 
     def predict(self, observations: Tensor) -> T.Tensor:
         """Run the agent actor model"""
+        self.model.eval()
         return self.model(observations)
 
     def get_action_distribution(
         self, observations: Tensor
     ) -> T.distributions.Distribution:
         """Get the policy distribution given an observation"""
+        self.model.eval()
         return self.model.get_action_distribution(observations)
 
     def critic(
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         """Run the agent critic model"""
+        self.model.eval()
         return self.model.critic(observations, actions)
+
+    def _process_action(self, action: Union[np.ndarray, int]) -> Union[np.ndarray, int]:
+        """
+        Process the action taken from the action explorer ready for the `env.step()` method
+        and buffer storage.
+
+        :param action: the action taken from the action explorer
+        :return: the processed action
+        """
+        if isinstance(self.env.action_space, spaces.Discrete) and not isinstance(
+            action, int
+        ):
+            action = action.item()
+        return action
 
     def step_env(self, observation: np.ndarray, num_steps: int = 1) -> np.ndarray:
         """
@@ -147,24 +164,21 @@ class BaseAgent(ABC):
         :param num_steps: how many steps to take
         :return: the final observation after all steps have been done
         """
+        self.model.eval()
         for _ in range(num_steps):
             if self.render:
                 self.env.render()
             action = self.action_explorer(self.model, observation, self.step)
-            if isinstance(self.env.action_space, spaces.Discrete) and not isinstance(
-                action, int
-            ):
-                action = action.item()
+            action = self._process_action(action)
             next_observation, reward, done, _ = self.env.step(action)
+            self.buffer.add_trajectory(
+                observation, action, reward, next_observation, done
+            )
 
             self.episode_rewards.append(reward)
             if self.verbose:
                 self.logger.debug(f"ACTION: {action}")
                 self.logger.debug(f"REWARD: {reward}")
-
-            self.buffer.add_trajectory(
-                observation, action, reward, next_observation, done
-            )
 
             if done:
                 observation = self.env.reset()
@@ -248,6 +262,7 @@ class BaseAgent(ABC):
                 if self.step >= num_steps:
                     break
 
+            self.model.train()
             train_log = self._fit(
                 batch_size=batch_size,
                 actor_epochs=actor_epochs,
