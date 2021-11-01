@@ -63,7 +63,7 @@ class DQN(BaseAgent):
         verbose: bool = True,
         render: bool = False,
         model_path: Optional[str] = None,
-        tensorboard_log_path: Optional[str] = None,
+        tensorboard_log_path: Optional[str] = "runs/DQN",
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
