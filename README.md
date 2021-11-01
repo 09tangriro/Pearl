@@ -25,7 +25,9 @@ AnvilRL uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependenc
 ## User Guide
 
 ### Installation
-A version of this library doesn't currently exist in pypi. You'll need to `git clone` the repo instead.
+There are two options to install this package:
+1. `pip install anvil_rl`
+2. `git clone git@github.com:LondonNode/AnvilRL.git`
 
 ### Algorithm Template
 Below is a template of a new algorithm implementation:
