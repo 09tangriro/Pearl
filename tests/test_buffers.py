@@ -3,9 +3,9 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvil.buffers import ReplayBuffer
-from anvil.buffers.rollout_buffer import RolloutBuffer
-from anvil.common.type_aliases import Trajectories
+from anvil_rl.buffers import ReplayBuffer
+from anvil_rl.buffers.rollout_buffer import RolloutBuffer
+from anvil_rl.common.type_aliases import Trajectories
 
 env = gym.make("CartPole-v0")
 

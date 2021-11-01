@@ -7,9 +7,9 @@ import psutil
 import torch as T
 from gym import Env
 
-from anvil.common.enumerations import TrajectoryType
-from anvil.common.type_aliases import Trajectories
-from anvil.common.utils import get_device, get_space_shape
+from anvil_rl.common.enumerations import TrajectoryType
+from anvil_rl.common.type_aliases import Trajectories
+from anvil_rl.common.utils import get_device, get_space_shape
 
 
 class BaseBuffer(ABC):

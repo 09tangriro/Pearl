@@ -8,8 +8,8 @@ import torch as T
 from gym import GoalEnv, spaces
 from gym.envs.registration import EnvSpec
 
-from anvil.buffers import HERBuffer
-from anvil.common.type_aliases import Trajectories
+from anvil_rl.buffers import HERBuffer
+from anvil_rl.common.type_aliases import Trajectories
 
 
 class BitFlippingEnv(GoalEnv):

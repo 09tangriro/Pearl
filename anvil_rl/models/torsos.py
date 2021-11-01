@@ -2,7 +2,7 @@ from typing import List, Optional, Type
 
 import torch as T
 
-from anvil.common.type_aliases import Tensor
+from anvil_rl.common.type_aliases import Tensor
 
 
 class MLP(T.nn.Module):

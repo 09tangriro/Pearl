@@ -5,8 +5,8 @@ import numpy as np
 import torch as T
 from gym import spaces
 
-from anvil.common.type_aliases import Tensor
-from anvil.common.utils import numpy_to_torch
+from anvil_rl.common.type_aliases import Tensor
+from anvil_rl.common.utils import numpy_to_torch
 
 
 def trainable_variables(model: T.nn.Module) -> list:

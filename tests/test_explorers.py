@@ -1,12 +1,12 @@
 import gym
 import pytest
 
-from anvil.explorers import BaseExplorer, GaussianExplorer
-from anvil.models.actor_critics import Actor
-from anvil.models.encoders import IdentityEncoder
-from anvil.models.heads import DeterministicPolicyHead
-from anvil.models.torsos import MLP
-from anvil.models.utils import get_mlp_size
+from anvil_rl.explorers import BaseExplorer, GaussianExplorer
+from anvil_rl.models.actor_critics import Actor
+from anvil_rl.models.encoders import IdentityEncoder
+from anvil_rl.models.heads import DeterministicPolicyHead
+from anvil_rl.models.torsos import MLP
+from anvil_rl.models.utils import get_mlp_size
 
 
 @pytest.mark.parametrize("explorer_class", [BaseExplorer, GaussianExplorer])

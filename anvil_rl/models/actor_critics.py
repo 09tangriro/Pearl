@@ -3,10 +3,10 @@ from typing import List, Optional, Tuple, Union
 
 import torch as T
 
-from anvil.common.type_aliases import Tensor
-from anvil.common.utils import get_device
-from anvil.models.heads import BaseActorHead, BaseCriticHead
-from anvil.models.utils import trainable_variables
+from anvil_rl.common.type_aliases import Tensor
+from anvil_rl.common.utils import get_device
+from anvil_rl.models.heads import BaseActorHead, BaseCriticHead
+from anvil_rl.models.utils import trainable_variables
 
 
 class Actor(T.nn.Module):

@@ -1,17 +1,17 @@
 import pytest
 import torch as T
 
-from anvil.models import Actor, ActorCritic, Critic
-from anvil.models.encoders import IdentityEncoder, MLPEncoder
-from anvil.models.heads import DiagGaussianPolicyHead, ValueHead
-from anvil.models.torsos import MLP
-from anvil.updaters.actors import (
+from anvil_rl.models import Actor, ActorCritic, Critic
+from anvil_rl.models.encoders import IdentityEncoder, MLPEncoder
+from anvil_rl.models.heads import DiagGaussianPolicyHead, ValueHead
+from anvil_rl.models.torsos import MLP
+from anvil_rl.updaters.actors import (
     DeterministicPolicyGradient,
     PolicyGradient,
     ProximalPolicyClip,
     SoftPolicyGradient,
 )
-from anvil.updaters.critics import QRegression, ValueRegression
+from anvil_rl.updaters.critics import QRegression, ValueRegression
 
 ############################### SET UP MODELS ###############################
 

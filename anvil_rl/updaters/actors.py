@@ -3,10 +3,10 @@ from typing import Iterator, Optional, Type, Union
 import torch as T
 from torch.nn.parameter import Parameter
 
-from anvil.common.type_aliases import Tensor, UpdaterLog
-from anvil.common.utils import numpy_to_torch
-from anvil.models.actor_critics import Actor, ActorCritic
-from anvil.signal_processing.sample_estimators import sample_reverse_kl_divergence
+from anvil_rl.common.type_aliases import Tensor, UpdaterLog
+from anvil_rl.common.utils import numpy_to_torch
+from anvil_rl.models.actor_critics import Actor, ActorCritic
+from anvil_rl.signal_processing.sample_estimators import sample_reverse_kl_divergence
 
 
 class BaseActorUpdater(object):

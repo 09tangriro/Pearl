@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "anvil"
+name = "anvil_rl"
 version = "0.1.0"
 description = "Adaptable tools to make reinforcement learning algorithms"
 authors = ["Rohan Tangri <rohan.tangri@gmail.com>"]
@@ -28,7 +28,7 @@ addopts = """
     -p no:warnings
     -m 'not integration'
     --tb=short -rEf
-    --cov anvil
+    --cov anvil_rl
     --cov-report xml:build/reports/coverage.xml
     --cov-report term
 """

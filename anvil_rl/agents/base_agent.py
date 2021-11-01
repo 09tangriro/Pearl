@@ -8,11 +8,11 @@ import torch as T
 from gym import Env, spaces
 from torch.utils.tensorboard import SummaryWriter
 
-from anvil.callbacks.base_callback import BaseCallback
-from anvil.common.enumerations import TrainFrequencyType
-from anvil.common.type_aliases import Log, Tensor
-from anvil.common.utils import get_device
-from anvil.models.actor_critics import ActorCritic
+from anvil_rl.callbacks.base_callback import BaseCallback
+from anvil_rl.common.enumerations import TrainFrequencyType
+from anvil_rl.common.type_aliases import Log, Tensor
+from anvil_rl.common.utils import get_device
+from anvil_rl.models.actor_critics import ActorCritic
 
 
 class BaseAgent(ABC):

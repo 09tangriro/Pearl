@@ -4,31 +4,31 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvil.agents import BaseAgent
-from anvil.buffers import ReplayBuffer
-from anvil.buffers.base_buffer import BaseBuffer
-from anvil.callbacks.base_callback import BaseCallback
-from anvil.common.type_aliases import (
+from anvil_rl.agents import BaseAgent
+from anvil_rl.buffers import ReplayBuffer
+from anvil_rl.buffers.base_buffer import BaseBuffer
+from anvil_rl.callbacks.base_callback import BaseCallback
+from anvil_rl.common.type_aliases import (
     BufferSettings,
     ExplorerSettings,
     Log,
     OptimizerSettings,
 )
-from anvil.common.utils import get_space_shape, torch_to_numpy
-from anvil.explorers import BaseExplorer, GaussianExplorer
-from anvil.models.actor_critics import (
+from anvil_rl.common.utils import get_space_shape, torch_to_numpy
+from anvil_rl.explorers import BaseExplorer, GaussianExplorer
+from anvil_rl.models.actor_critics import (
     Actor,
     ActorCritic,
     ActorCriticWithTargets,
     Critic,
 )
-from anvil.models.encoders import IdentityEncoder
-from anvil.models.heads import ContinuousQHead, DeterministicPolicyHead
-from anvil.models.torsos import MLP
-from anvil.models.utils import get_mlp_size
-from anvil.signal_processing.sample_estimators import TD_zero
-from anvil.updaters.actors import BaseActorUpdater, DeterministicPolicyGradient
-from anvil.updaters.critics import BaseCriticUpdater, QRegression
+from anvil_rl.models.encoders import IdentityEncoder
+from anvil_rl.models.heads import ContinuousQHead, DeterministicPolicyHead
+from anvil_rl.models.torsos import MLP
+from anvil_rl.models.utils import get_mlp_size
+from anvil_rl.signal_processing.sample_estimators import TD_zero
+from anvil_rl.updaters.actors import BaseActorUpdater, DeterministicPolicyGradient
+from anvil_rl.updaters.critics import BaseCriticUpdater, QRegression
 
 
 def get_default_model(env: Env) -> ActorCriticWithTargets:

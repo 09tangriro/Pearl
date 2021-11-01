@@ -1,10 +1,10 @@
-[![pipeline status](https://github.com/LondonNode/Anvil/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/Anvil/actions/workflows/ci.yaml)
+[![pipeline status](https://github.com/LondonNode/anvil/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/anvil/actions/workflows/ci.yaml)
 [![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <img src="docs/images/logo.png" align="right" width="50%"/>
 
-# Anvil
-Anvil is a pytorch based library with the goal of being excellent for rapid prototyping of new algorithms and ideas over benchmarking. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas.
+# AnvilRL
+AnvilRL is a pytorch based library with the goal of being excellent for rapid prototyping of new algorithms and ideas over benchmarking. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas.
 
 ## Developer Guide
 ### Scripts
@@ -17,7 +17,7 @@ Anvil is a pytorch based library with the goal of being excellent for rapid prot
 2. `scripts/windows_run_tests.bat`: run tests
 
 ### Dependency Management
-Anvil uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release over pip. As a quick guide:
+AnvilRL uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release over pip. As a quick guide:
 1. Run `poetry add [package]` to add more package dependencies.
 2. Poetry automatically handles the virtual environment used, check `pyproject.toml` for specifics on the virtual environment setup.
 3. If you want to run something in the poetry virtual environment, add `poetry run` as a prefix to the command you want to execute. For example, to run a python file: `poetry run python3 script.py`.
@@ -37,15 +37,15 @@ class YourAlgorithm(BaseAgent):
     
     :param env: the environment
     :param model: an actor critic model
-    :param actor_updater_class: the actor updater class, from anvil/updaters/actors.py
-    :param actor_optimizer_settings: optimizer settings for the actor updater, from anvil/common/type_aliases.py
-    :param critic_updater_class: the critic updater class, from anvil/updaters/critics.py
-    :param critic_optimizer_settings: optimizer settings for the actor updater, from anvil/common/type_aliases.py
-    :param buffer_class: the buffer class, from anvil/buffers
-    :param buffer_settings: the buffer settings, from anvil/common/type_aliases.py
-    :param action_explorer_class: action explorer class allows for uniform action sampling at beginning of training and adding noise to actions, from anvil/explorers
-    :param explorer_settings: settings for the action explorer, from anvil/common/type_aliases.py
-    :param callbacks: e.g. saving model, from anvil/callbacks
+    :param actor_updater_class: the actor updater class, from anvil_rl/updaters/actors.py
+    :param actor_optimizer_settings: optimizer settings for the actor updater, from anvil_rl/common/type_aliases.py
+    :param critic_updater_class: the critic updater class, from anvil_rl/updaters/critics.py
+    :param critic_optimizer_settings: optimizer settings for the actor updater, from anvil_rl/common/type_aliases.py
+    :param buffer_class: the buffer class, from anvil_rl/buffers
+    :param buffer_settings: the buffer settings, from anvil_rl/common/type_aliases.py
+    :param action_explorer_class: action explorer class allows for uniform action sampling at beginning of training and adding noise to actions, from anvil_rl/explorers
+    :param explorer_settings: settings for the action explorer, from anvil_rl/common/type_aliases.py
+    :param callbacks: e.g. saving model, from anvil_rl/callbacks
     """
     def __init__(
         self,
@@ -110,13 +110,13 @@ class YourAlgorithm(BaseAgent):
     ) -> Log:
     """
     Specify your algorithm logic here! Should call your critic_updater and actor_updater
-    and return a `Log` object, details of which can be found in anvil/common/type_aliases.py
+    and return a `Log` object, details of which can be found in anvil_rl/common/type_aliases.py
     """
 ```
-For more examples, see implementations under `anvil/agents`!
+For more examples, see implementations under `anvil_rl/agents`!
 
 ### Agent performance
 To see training performance, use the command `tensorboard --logdir runs` or `tensorboard --logdir <tensorboard_log_path>` defined in your algorithm class initialization.
 
 ## Credit
-Anvil was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
+AnvilRL was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)

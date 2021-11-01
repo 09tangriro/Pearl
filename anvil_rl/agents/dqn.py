@@ -4,30 +4,30 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvil.agents.base_agent import BaseAgent
-from anvil.buffers.base_buffer import BaseBuffer
-from anvil.buffers.replay_buffer import ReplayBuffer
-from anvil.callbacks.base_callback import BaseCallback
-from anvil.common.type_aliases import (
+from anvil_rl.agents.base_agent import BaseAgent
+from anvil_rl.buffers.base_buffer import BaseBuffer
+from anvil_rl.buffers.replay_buffer import ReplayBuffer
+from anvil_rl.callbacks.base_callback import BaseCallback
+from anvil_rl.common.type_aliases import (
     BufferSettings,
     ExplorerSettings,
     Log,
     OptimizerSettings,
 )
-from anvil.common.utils import get_space_shape, torch_to_numpy
-from anvil.explorers.base_explorer import BaseExplorer
-from anvil.models.actor_critics import (
+from anvil_rl.common.utils import get_space_shape, torch_to_numpy
+from anvil_rl.explorers.base_explorer import BaseExplorer
+from anvil_rl.models.actor_critics import (
     ActorCritic,
     ActorCriticWithCriticTarget,
     Critic,
     EpsilonGreedyActor,
 )
-from anvil.models.encoders import IdentityEncoder
-from anvil.models.heads import DiscreteQHead
-from anvil.models.torsos import MLP
-from anvil.models.utils import get_mlp_size
-from anvil.signal_processing.sample_estimators import TD_zero
-from anvil.updaters.critics import BaseCriticUpdater, QRegression
+from anvil_rl.models.encoders import IdentityEncoder
+from anvil_rl.models.heads import DiscreteQHead
+from anvil_rl.models.torsos import MLP
+from anvil_rl.models.utils import get_mlp_size
+from anvil_rl.signal_processing.sample_estimators import TD_zero
+from anvil_rl.updaters.critics import BaseCriticUpdater, QRegression
 
 
 def get_default_model(env: Env):

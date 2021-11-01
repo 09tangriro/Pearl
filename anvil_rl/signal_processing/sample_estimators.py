@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 import torch as T
 
-from anvil.common.utils import numpy_to_torch
+from anvil_rl.common.utils import numpy_to_torch
 
 
 def TD_lambda(

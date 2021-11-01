@@ -3,10 +3,10 @@ from typing import Union
 import numpy as np
 from gym import spaces
 
-from anvil.common.type_aliases import Tensor
-from anvil.common.utils import get_space_shape, torch_to_numpy
-from anvil.models.actor_critics import Actor, ActorCritic
-from anvil.models.utils import get_mlp_size
+from anvil_rl.common.type_aliases import Tensor
+from anvil_rl.common.utils import get_space_shape, torch_to_numpy
+from anvil_rl.models.actor_critics import Actor, ActorCritic
+from anvil_rl.models.utils import get_mlp_size
 
 
 class BaseExplorer(object):
