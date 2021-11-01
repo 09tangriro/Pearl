@@ -3,7 +3,7 @@ import torch as T
 from gym.spaces import Box
 from torch.autograd.grad_mode import F
 
-from anvil_rl.models import (
+from anvilrl.models import (
     Actor,
     ActorCritic,
     ActorCriticWithTargets,
@@ -11,15 +11,15 @@ from anvil_rl.models import (
     EpsilonGreedyActor,
     TwinActorCritic,
 )
-from anvil_rl.models.encoders import FlattenEncoder, IdentityEncoder, MLPEncoder
-from anvil_rl.models.heads import (
+from anvilrl.models.encoders import FlattenEncoder, IdentityEncoder, MLPEncoder
+from anvilrl.models.heads import (
     ContinuousQHead,
     DeterministicPolicyHead,
     DiagGaussianPolicyHead,
     DiscreteQHead,
     ValueHead,
 )
-from anvil_rl.models.torsos import MLP
+from anvilrl.models.torsos import MLP
 
 
 def test_mlp():

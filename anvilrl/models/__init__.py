@@ -1,4 +1,4 @@
-from anvil_rl.models.actor_critics import (
+from anvilrl.models.actor_critics import (
     Actor,
     ActorCritic,
     ActorCriticWithCriticTarget,

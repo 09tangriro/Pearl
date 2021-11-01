@@ -3,9 +3,9 @@ from typing import Union
 import numpy as np
 from gym import spaces
 
-from anvil_rl.common.type_aliases import Tensor
-from anvil_rl.explorers.base_explorer import BaseExplorer
-from anvil_rl.models.actor_critics import Actor, ActorCritic
+from anvilrl.common.type_aliases import Tensor
+from anvilrl.explorers.base_explorer import BaseExplorer
+from anvilrl.models.actor_critics import Actor, ActorCritic
 
 
 class GaussianExplorer(BaseExplorer):

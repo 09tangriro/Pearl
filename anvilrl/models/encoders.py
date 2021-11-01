@@ -3,9 +3,9 @@ from typing import Optional, Type
 import torch as T
 from gym import spaces
 
-from anvil_rl.common.type_aliases import Tensor
-from anvil_rl.common.utils import numpy_to_torch
-from anvil_rl.models.utils import concat_obs_actions, is_image_space
+from anvilrl.common.type_aliases import Tensor
+from anvilrl.common.utils import numpy_to_torch
+from anvilrl.models.utils import concat_obs_actions, is_image_space
 
 
 class IdentityEncoder(T.nn.Module):

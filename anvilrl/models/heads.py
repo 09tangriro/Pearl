@@ -3,9 +3,9 @@ from typing import Optional, Tuple, Type, Union
 
 import torch as T
 
-from anvil_rl.common.enumerations import NetworkType
-from anvil_rl.models.torsos import MLP
-from anvil_rl.models.utils import get_mlp_size
+from anvilrl.common.enumerations import NetworkType
+from anvilrl.models.torsos import MLP
+from anvilrl.models.utils import get_mlp_size
 
 ################################### BASE CLASSES ###################################
 

@@ -1,6 +1,6 @@
 import os
 
-from anvil_rl.callbacks.base_callback import BaseCallback
+from anvilrl.callbacks.base_callback import BaseCallback
 
 
 class CheckpointCallback(BaseCallback):

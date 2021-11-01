@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvil_rl.common.utils import extend_shape, numpy_to_torch, torch_to_numpy
+from anvilrl.common.utils import extend_shape, numpy_to_torch, torch_to_numpy
 
 numpy_data = (np.zeros(shape=(2, 2)), np.zeros(shape=(3, 3)))
 torch_data = (T.zeros(2, 2), T.zeros(3, 3))

@@ -26,7 +26,7 @@ AnvilRL uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependenc
 
 ### Installation
 There are two options to install this package:
-1. `pip install anvil_rl`
+1. `pip install anvilrl`
 2. `git clone git@github.com:LondonNode/AnvilRL.git`
 
 ### Algorithm Template
@@ -39,15 +39,15 @@ class YourAlgorithm(BaseAgent):
     
     :param env: the environment
     :param model: an actor critic model
-    :param actor_updater_class: the actor updater class, from anvil_rl/updaters/actors.py
-    :param actor_optimizer_settings: optimizer settings for the actor updater, from anvil_rl/common/type_aliases.py
-    :param critic_updater_class: the critic updater class, from anvil_rl/updaters/critics.py
-    :param critic_optimizer_settings: optimizer settings for the actor updater, from anvil_rl/common/type_aliases.py
-    :param buffer_class: the buffer class, from anvil_rl/buffers
-    :param buffer_settings: the buffer settings, from anvil_rl/common/type_aliases.py
-    :param action_explorer_class: action explorer class allows for uniform action sampling at beginning of training and adding noise to actions, from anvil_rl/explorers
-    :param explorer_settings: settings for the action explorer, from anvil_rl/common/type_aliases.py
-    :param callbacks: e.g. saving model, from anvil_rl/callbacks
+    :param actor_updater_class: the actor updater class, from anvilrl/updaters/actors.py
+    :param actor_optimizer_settings: optimizer settings for the actor updater, from anvilrl/common/type_aliases.py
+    :param critic_updater_class: the critic updater class, from anvilrl/updaters/critics.py
+    :param critic_optimizer_settings: optimizer settings for the actor updater, from anvilrl/common/type_aliases.py
+    :param buffer_class: the buffer class, from anvilrl/buffers
+    :param buffer_settings: the buffer settings, from anvilrl/common/type_aliases.py
+    :param action_explorer_class: action explorer class allows for uniform action sampling at beginning of training and adding noise to actions, from anvilrl/explorers
+    :param explorer_settings: settings for the action explorer, from anvilrl/common/type_aliases.py
+    :param callbacks: e.g. saving model, from anvilrl/callbacks
     """
     def __init__(
         self,
@@ -112,10 +112,10 @@ class YourAlgorithm(BaseAgent):
     ) -> Log:
     """
     Specify your algorithm logic here! Should call your critic_updater and actor_updater
-    and return a `Log` object, details of which can be found in anvil_rl/common/type_aliases.py
+    and return a `Log` object, details of which can be found in anvilrl/common/type_aliases.py
     """
 ```
-For more examples, see implementations under `anvil_rl/agents`!
+For more examples, see implementations under `anvilrl/agents`!
 
 ### Agent performance
 To see training performance, use the command `tensorboard --logdir runs` or `tensorboard --logdir <tensorboard_log_path>` defined in your algorithm class initialization.

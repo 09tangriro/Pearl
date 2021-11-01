@@ -4,9 +4,9 @@ import numpy as np
 import torch as T
 from gym.core import GoalEnv
 
-from anvil_rl.buffers.base_buffer import BaseBuffer
-from anvil_rl.common.enumerations import GoalSelectionStrategy, TrajectoryType
-from anvil_rl.common.type_aliases import Trajectories
+from anvilrl.buffers.base_buffer import BaseBuffer
+from anvilrl.common.enumerations import GoalSelectionStrategy, TrajectoryType
+from anvilrl.common.type_aliases import Trajectories
 
 
 class HERBuffer(BaseBuffer):

@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvil_rl.signal_processing.sample_estimators import (
+from anvilrl.signal_processing.sample_estimators import (
     TD_lambda,
     TD_zero,
     generalized_advantage_estimate,

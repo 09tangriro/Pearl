@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional
 
 from gym import Env
 
-from anvil_rl.agents import base_agent
-from anvil_rl.models.actor_critics import ActorCritic
+from anvilrl.agents import base_agent
+from anvilrl.models.actor_critics import ActorCritic
 
 
 class BaseCallback(ABC):

@@ -4,10 +4,10 @@ import numpy as np
 import torch as T
 from torch.nn.parameter import Parameter
 
-from anvil_rl.common.type_aliases import Tensor, UpdaterLog
-from anvil_rl.common.utils import numpy_to_torch
-from anvil_rl.models.actor_critics import ActorCritic, Critic
-from anvil_rl.signal_processing.sample_estimators import soft_q_target
+from anvilrl.common.type_aliases import Tensor, UpdaterLog
+from anvilrl.common.utils import numpy_to_torch
+from anvilrl.models.actor_critics import ActorCritic, Critic
+from anvilrl.signal_processing.sample_estimators import soft_q_target
 
 
 class BaseCriticUpdater(object):
