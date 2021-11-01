@@ -1,4 +1,3 @@
-import logging
 import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Type, Union
@@ -10,6 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.enumerations import TrainFrequencyType
+from anvilrl.common.logging import get_logger
 from anvilrl.common.type_aliases import Log, Tensor
 from anvilrl.common.utils import get_device
 from anvilrl.models.actor_critics import ActorCritic
@@ -50,37 +50,24 @@ class BaseAgent(ABC):
         self.model = model
         self.verbose = verbose
         self.model_path = model_path
-        self.callbacks = callbacks
         self.render = render
         self.action_explorer = None
         self.step = 0
         self.episode = 0
-        self.logger = self.get_logger()
+        self.logger = get_logger()
+        if callbacks is not None:
+            self.callbacks = [callback() for callback in callbacks]
+        self.buffer = None
 
         device = get_device(device)
         if verbose:
             self.logger.info(f"Using device {device}")
 
-        self.buffer = None
         self._reset_episode_log()
         self.writer = SummaryWriter(tensorboard_log_path)
         # Load the model if a path is given
         if self.model_path is not None:
             self.load(model_path)
-
-    def get_logger(self) -> logging.Logger:
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-
-        file_handler = logging.FileHandler("agent.log", mode="w")
-        file_handler.setLevel(logging.DEBUG)
-        stream_handler = logging.StreamHandler()
-        stream_handler.setLevel(logging.INFO)
-
-        logger.addHandler(file_handler)
-        logger.addHandler(stream_handler)
-
-        return logger
 
     def save(self, path: str):
         """Save the model"""
