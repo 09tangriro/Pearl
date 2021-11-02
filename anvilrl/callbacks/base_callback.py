@@ -1,27 +1,20 @@
 from abc import ABC, abstractmethod
-from logging import INFO, Logger
-from typing import Any, Dict, Optional
 
-from gym import Env
-
-from anvilrl.agents import base_agent
+from anvilrl.common.logging import Logger
 from anvilrl.models.actor_critics import ActorCritic
 
 
 class BaseCallback(ABC):
     """
     Base class for callback.
-    :param verbose:
+    :param logger:
     """
 
-    def __init__(self, verbose: bool = True) -> None:
-        self.verbose = verbose
+    def __init__(self, logger: Logger, model: ActorCritic) -> None:
         self.n_calls = 0
-
-    # Type hint as string to avoid circular import
-    def init(self, agent: "base_agent.BaseAgent") -> None:
-        self.logger = agent.logger
-        self.agent = agent
+        self.step = 0
+        self.logger = logger
+        self.model = model
 
     @abstractmethod
     def _on_step(self) -> bool:
@@ -29,7 +22,7 @@ class BaseCallback(ABC):
         :return: If the callback returns False, training is aborted early.
         """
 
-    def on_step(self) -> bool:
+    def on_step(self, step: int) -> bool:
         """
         This method will be called by the model after each call to ``step_env()``.
         For child callback (of an ``EventCallback``), this will be called
@@ -37,5 +30,6 @@ class BaseCallback(ABC):
         :return: If the callback returns False, training is aborted early.
         """
         self.n_calls += 1
+        self.step = step
 
         return self._on_step()

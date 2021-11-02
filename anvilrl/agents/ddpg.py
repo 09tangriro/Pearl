@@ -74,7 +74,6 @@ class DDPG(BaseAgent):
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[T.device, str] = "auto",
         render: bool = False,
-        model_path: Optional[str] = None,
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
@@ -84,7 +83,6 @@ class DDPG(BaseAgent):
             callbacks=callbacks,
             callback_settings=callback_settings,
             device=device,
-            model_path=model_path,
             render=render,
         )
         self.buffer = buffer_class(

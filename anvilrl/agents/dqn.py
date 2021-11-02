@@ -65,7 +65,6 @@ class DQN(BaseAgent):
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[T.device, str] = "auto",
         render: bool = False,
-        model_path: Optional[str] = None,
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
@@ -75,7 +74,6 @@ class DQN(BaseAgent):
             callbacks=callbacks,
             callback_settings=callback_settings,
             device=device,
-            model_path=model_path,
             render=render,
         )
 
@@ -113,7 +111,6 @@ class DQN(BaseAgent):
                 next_q_values = self.model.target_critic(trajectories.next_observations)
                 next_q_values, _ = next_q_values.max(dim=-1)
                 next_q_values = torch_to_numpy(next_q_values.reshape(-1, 1))
-                next_q_values = np.expand_dims(next_q_values, axis=-1)
                 target_q_values = TD_zero(
                     trajectories.rewards, next_q_values, trajectories.dones
                 )
@@ -138,7 +135,7 @@ if __name__ == "__main__":
     agent = DQN(
         env=env,
         model=None,
-        logger_settings=LoggerSettings(verbose=True),
-        explorer_settings=ExplorerSettings(start_steps=0),
+        logger_settings=LoggerSettings(tensorboard_log_path="runs/DQN", verbose=True),
+        explorer_settings=ExplorerSettings(start_steps=1000),
     )
-    agent.fit(num_steps=1000, batch_size=10, critic_epochs=1)
+    agent.fit(num_steps=100000, batch_size=16, critic_epochs=1)

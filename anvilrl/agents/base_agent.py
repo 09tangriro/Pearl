@@ -1,5 +1,5 @@
-import os
 from abc import ABC, abstractmethod
+from dataclasses import asdict
 from typing import List, Optional, Tuple, Type, Union
 
 import numpy as np
@@ -22,7 +22,6 @@ class BaseAgent(ABC):
         logger_settings: LoggerSettings = LoggerSettings(),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         callback_settings: Optional[List[CallbackSettings]] = None,
-        model_path: Optional[str] = None,
         device: Union[str, T.device] = "auto",
         render: bool = False,
     ) -> None:
@@ -39,18 +38,19 @@ class BaseAgent(ABC):
         :param model: the neural network model
         :param logger_settings: settings for the logger
         :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
-        :param model_path: optional model path to load from
+        :param callback_settings: settings for callbacks
         :param device: device to run on, accepts "auto", "cuda" or "cpu"
         :param render: whether to render the environment or not
         """
 
         self.env = env
         self.model = model
-        self.model_path = model_path
         self.render = render
         self.action_explorer = None
+        self.buffer = None
         self.step = 0
         self.episode = 0
+        self.done = False  # Flag terminate training
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
@@ -58,32 +58,18 @@ class BaseAgent(ABC):
             verbose=logger_settings.verbose,
         )
         if callbacks is not None:
-            assert len(callbacks) == len(callback_settings)
-            self.callbacks = [callback() for callback in callbacks]
-        self.buffer = None
+            assert len(callbacks) == len(
+                callback_settings
+            ), "There should be a CallbackSetting object for each callback"
+            self.callbacks = [
+                callback(self.logger, self.model, **asdict(settings))
+                for callback, settings in zip(callbacks, callback_settings)
+            ]
+        else:
+            self.callbacks = None
 
         device = get_device(device)
         self.logger.info(f"Using device {device}")
-
-        # Load the model if a path is given
-        if self.model_path is not None:
-            self.load(model_path)
-
-    def save(self, path: str):
-        """Save the model"""
-        path = path + ".pt"
-        self.logger.info(f"Saving weights to {path}")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        T.save(self.model.state_dict(), path)
-
-    def load(self, path: str):
-        """Load the model"""
-        path = path + ".pt"
-        self.logger.info(f"Loading weights from {path}")
-        try:
-            self.model.load_state_dict(T.load(path))
-        except FileNotFoundError:
-            self.logger.info("File not found, assuming no model dict was to be loaded")
 
     def predict(self, observations: Tensor) -> T.Tensor:
         """Run the agent actor model"""
@@ -148,6 +134,12 @@ class BaseAgent(ABC):
                 self.episode += 1
             else:
                 observation = next_observation
+            if self.callbacks is not None:
+                if not all(
+                    [callback.on_step(self.step) for callback in self.callbacks]
+                ):
+                    self.done = True
+                    break
             self.step += 1
         return observation
 
@@ -211,6 +203,9 @@ class BaseAgent(ABC):
                     observation = self.step_env(observation=observation)
                 if self.step >= num_steps:
                     break
+
+            if self.done:
+                break
 
             self.model.train()
             train_log = self._fit(
