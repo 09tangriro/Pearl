@@ -160,6 +160,7 @@ if __name__ == "__main__":
     agent = DDPG(
         env=env,
         model=None,
+        logger_settings=LoggerSettings(tensorboard_log_path="runs/DDPG-demo"),
         explorer_settings=ExplorerSettings(start_steps=1000, scale=0.1),
     )
     agent.fit(

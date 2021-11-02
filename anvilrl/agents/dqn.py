@@ -38,8 +38,8 @@ def get_default_model(env: Env):
     observation_size = get_mlp_size(observation_shape)
 
     encoder = IdentityEncoder()
-    torso = MLP(layer_sizes=[observation_size, 16, 16], activation_fn=T.nn.ReLU)
-    head = DiscreteQHead(input_shape=16, output_shape=action_size)
+    torso = MLP(layer_sizes=[observation_size, 64, 32], activation_fn=T.nn.ReLU)
+    head = DiscreteQHead(input_shape=32, output_shape=action_size)
 
     actor = EpsilonGreedyActor(
         critic_encoder=encoder, critic_torso=torso, critic_head=head
@@ -135,7 +135,11 @@ if __name__ == "__main__":
     agent = DQN(
         env=env,
         model=None,
-        logger_settings=LoggerSettings(tensorboard_log_path="runs/DQN", verbose=True),
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/DQN-demo", verbose=True
+        ),
         explorer_settings=ExplorerSettings(start_steps=1000),
     )
-    agent.fit(num_steps=100000, batch_size=16, critic_epochs=1)
+    agent.fit(
+        num_steps=50000, batch_size=32, critic_epochs=16, train_frequency=("episode", 1)
+    )
