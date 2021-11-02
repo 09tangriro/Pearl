@@ -1,15 +1,12 @@
-import enum
 from collections import OrderedDict
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pytest
-import torch as T
 from gym import GoalEnv, spaces
 from gym.envs.registration import EnvSpec
 
 from anvilrl.buffers import HERBuffer
-from anvilrl.common.type_aliases import Trajectories
 
 
 class BitFlippingEnv(GoalEnv):
