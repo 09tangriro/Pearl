@@ -17,7 +17,7 @@ AnvilRL (referred to as *Anvil*) is a pytorch based library with the goal of bei
 2. `scripts/windows_run_tests.bat`: run tests
 
 ### Dependency Management
-Anvil uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release over pip. As a quick guide:
+Anvil uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release instead of pip. As a quick guide:
 1. Run `poetry add [package]` to add more package dependencies.
 2. Poetry automatically handles the virtual environment used, check `pyproject.toml` for specifics on the virtual environment setup.
 3. If you want to run something in the poetry virtual environment, add `poetry run` as a prefix to the command you want to execute. For example, to run a python file: `poetry run python3 script.py`.
