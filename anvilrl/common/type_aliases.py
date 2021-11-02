@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 from typing import Optional, Type, Union
 
@@ -50,3 +51,27 @@ class ExplorerSettings:
 class BufferSettings:
     buffer_size: int = int(1e6)
     n_envs: int = 1
+
+
+@dataclass
+class CallbackSettings:
+    save_freq: Optional[int] = None
+    save_path: Optional[str] = None
+    name_prefix: Optional[str] = None
+
+
+@dataclass
+class LoggerSettings:
+    """
+    Settings for the Logger
+
+    :param tensorboard_log_path: path to store the tensorboard log
+    :param file_handler_level: logging level for the file log
+    :param stream_handler_level: logging level for the streaming log
+    :param verbose: whether to record any logs at all
+    """
+
+    tensorboard_log_path: Optional[str] = None
+    file_handler_level: int = logging.DEBUG
+    stream_handler_level: int = logging.INFO
+    verbose: bool = True

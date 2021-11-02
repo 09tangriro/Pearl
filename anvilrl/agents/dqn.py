@@ -10,8 +10,10 @@ from anvilrl.buffers.replay_buffer import ReplayBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import (
     BufferSettings,
+    CallbackSettings,
     ExplorerSettings,
     Log,
+    LoggerSettings,
     OptimizerSettings,
 )
 from anvilrl.common.utils import get_space_shape, torch_to_numpy
@@ -59,21 +61,21 @@ class DQN(BaseAgent):
         action_explorer_class: Type[BaseExplorer] = BaseExplorer,
         explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=0),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
+        callback_settings: Optional[List[CallbackSettings]] = None,
+        logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[T.device, str] = "auto",
-        verbose: bool = True,
         render: bool = False,
         model_path: Optional[str] = None,
-        tensorboard_log_path: Optional[str] = "runs/DQN",
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
             env,
             model,
+            logger_settings=logger_settings,
             callbacks=callbacks,
+            callback_settings=callback_settings,
             device=device,
-            verbose=verbose,
             model_path=model_path,
-            tensorboard_log_path=tensorboard_log_path,
             render=render,
         )
 
@@ -136,7 +138,7 @@ if __name__ == "__main__":
     agent = DQN(
         env=env,
         model=None,
-        verbose=True,
+        logger_settings=LoggerSettings(verbose=True),
         explorer_settings=ExplorerSettings(start_steps=0),
     )
     agent.fit(num_steps=1000, batch_size=10, critic_epochs=1)

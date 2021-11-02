@@ -5,12 +5,11 @@ from typing import List, Optional, Tuple, Type, Union
 import numpy as np
 import torch as T
 from gym import Env, spaces
-from torch.utils.tensorboard import SummaryWriter
 
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.enumerations import TrainFrequencyType
-from anvilrl.common.logging import get_logger
-from anvilrl.common.type_aliases import Log, Tensor
+from anvilrl.common.logging import Logger
+from anvilrl.common.type_aliases import CallbackSettings, Log, LoggerSettings, Tensor
 from anvilrl.common.utils import get_device
 from anvilrl.models.actor_critics import ActorCritic
 
@@ -20,11 +19,11 @@ class BaseAgent(ABC):
         self,
         env: Env,
         model: ActorCritic,
+        logger_settings: LoggerSettings = LoggerSettings(),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
+        callback_settings: Optional[List[CallbackSettings]] = None,
         model_path: Optional[str] = None,
         device: Union[str, T.device] = "auto",
-        tensorboard_log_path: Optional[str] = None,
-        verbose: bool = True,
         render: bool = False,
     ) -> None:
         """
@@ -38,33 +37,34 @@ class BaseAgent(ABC):
 
         :param env: the gym-like environment to be used
         :param model: the neural network model
+        :param logger_settings: settings for the logger
         :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
         :param model_path: optional model path to load from
         :param device: device to run on, accepts "auto", "cuda" or "cpu"
-        :param tensorboard_log_path: path to store the tensorboard log
-        :param verbose: whether to display at all or not
         :param render: whether to render the environment or not
         """
 
         self.env = env
         self.model = model
-        self.verbose = verbose
         self.model_path = model_path
         self.render = render
         self.action_explorer = None
         self.step = 0
         self.episode = 0
-        self.logger = get_logger()
+        self.logger = Logger(
+            tensorboard_log_path=logger_settings.tensorboard_log_path,
+            file_handler_level=logger_settings.file_handler_level,
+            stream_handler_level=logger_settings.stream_handler_level,
+            verbose=logger_settings.verbose,
+        )
         if callbacks is not None:
+            assert len(callbacks) == len(callback_settings)
             self.callbacks = [callback() for callback in callbacks]
         self.buffer = None
 
         device = get_device(device)
-        if verbose:
-            self.logger.info(f"Using device {device}")
+        self.logger.info(f"Using device {device}")
 
-        self._reset_episode_log()
-        self.writer = SummaryWriter(tensorboard_log_path)
         # Load the model if a path is given
         if self.model_path is not None:
             self.load(model_path)
@@ -72,43 +72,18 @@ class BaseAgent(ABC):
     def save(self, path: str):
         """Save the model"""
         path = path + ".pt"
-        if self.verbose:
-            self.logger.info(f"Saving weights to {path}")
+        self.logger.info(f"Saving weights to {path}")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         T.save(self.model.state_dict(), path)
 
     def load(self, path: str):
         """Load the model"""
         path = path + ".pt"
-        if self.verbose:
-            self.logger.info(f"Loading weights from {path}")
+        self.logger.info(f"Loading weights from {path}")
         try:
             self.model.load_state_dict(T.load(path))
         except FileNotFoundError:
-            if self.verbose:
-                self.logger.info(
-                    "File not found, assuming no model dict was to be loaded"
-                )
-
-    def _reset_episode_log(self) -> None:
-        self.episode_actor_losses = []
-        self.episode_critic_losses = []
-        self.episode_kl_divergences = []
-        self.episode_entropies = []
-        self.episode_rewards = []
-
-    def _write_log(self, log: Log, step: int) -> None:
-        """Write a log to tensorboard and python logging"""
-        self.writer.add_scalar("Reward/episode_reward", log.reward, step)
-        self.writer.add_scalar("Loss/actor_loss", log.actor_loss, step)
-        self.writer.add_scalar("Loss/critic_loss", log.critic_loss, step)
-        if log.kl_divergence is not None:
-            self.writer.add_scalar("Metrics/kl_divergence", log.kl_divergence, step)
-        if log.entropy is not None:
-            self.writer.add_scalar("Metrics/entropy", log.entropy, step)
-
-        if self.verbose:
-            self.logger.info(f"{step}: {log}")
+            self.logger.info("File not found, assuming no model dict was to be loaded")
 
     def predict(self, observations: Tensor) -> T.Tensor:
         """Run the agent actor model"""
@@ -162,26 +137,14 @@ class BaseAgent(ABC):
                 observation, action, reward, next_observation, done
             )
 
-            self.episode_rewards.append(reward)
-            if self.verbose:
-                self.logger.debug(f"ACTION: {action}")
-                self.logger.debug(f"REWARD: {reward}")
+            self.logger.episode_rewards.append(reward)
+            self.logger.debug(f"ACTION: {action}")
+            self.logger.debug(f"REWARD: {reward}")
 
             if done:
                 observation = self.env.reset()
-                episode_log = Log(
-                    reward=np.sum(self.episode_rewards),
-                )
-                if self.episode_actor_losses:
-                    episode_log.actor_loss = np.mean(self.episode_actor_losses)
-                if self.episode_critic_losses:
-                    episode_log.critic_loss = np.mean(self.episode_critic_losses)
-                if self.episode_kl_divergences:
-                    episode_log.kl_divergence = np.mean(self.episode_kl_divergences)
-                if self.episode_entropies:
-                    episode_log.entropy = np.mean(self.episode_entropies)
-                self._write_log(episode_log, self.step)
-                self._reset_episode_log()
+                self.logger.write_episode_log(self.step)
+                self.logger.reset_episode_log()
                 self.episode += 1
             else:
                 observation = next_observation
@@ -256,9 +219,4 @@ class BaseAgent(ABC):
                 critic_epochs=critic_epochs,
             )
 
-            self.episode_actor_losses.append(train_log.actor_loss)
-            self.episode_critic_losses.append(train_log.critic_loss)
-            if train_log.entropy is not None:
-                self.episode_entropies.append(train_log.entropy)
-            if train_log.kl_divergence is not None:
-                self.episode_kl_divergences.append(train_log.kl_divergence)
+            self.logger.add_train_log(train_log)

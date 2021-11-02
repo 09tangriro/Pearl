@@ -10,8 +10,10 @@ from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import (
     BufferSettings,
+    CallbackSettings,
     ExplorerSettings,
     Log,
+    LoggerSettings,
     OptimizerSettings,
 )
 from anvilrl.common.utils import get_space_shape, torch_to_numpy
@@ -68,21 +70,21 @@ class DDPG(BaseAgent):
             start_steps=1000, scale=0.1
         ),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
+        callback_settings: Optional[List[CallbackSettings]] = None,
+        logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[T.device, str] = "auto",
-        verbose: bool = True,
         render: bool = False,
         model_path: Optional[str] = None,
-        tensorboard_log_path: Optional[str] = "runs/DDPG",
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
             env,
             model,
+            logger_settings=logger_settings,
             callbacks=callbacks,
+            callback_settings=callback_settings,
             device=device,
-            verbose=verbose,
             model_path=model_path,
-            tensorboard_log_path=tensorboard_log_path,
             render=render,
         )
         self.buffer = buffer_class(
@@ -135,16 +137,14 @@ class DDPG(BaseAgent):
                 trajectories.actions,
             )
             critic_losses[i] = critic_log.loss
-        if self.verbose:
-            self.logger.debug(f"critic losses: {critic_losses[:5], critic_losses[-5:]}")
+        self.logger.debug(f"critic losses: {critic_losses[:5], critic_losses[-5:]}")
 
         # Train actor for actor_epochs
         for i in range(actor_epochs):
             trajectories = self.buffer.sample(batch_size=batch_size)
             actor_log = self.actor_updater(self.model, trajectories.observations)
             actor_losses[i] = actor_log.loss
-        if self.verbose:
-            self.logger.debug(f"actor losses: {actor_losses[:5], actor_losses[-5:]}")
+        self.logger.debug(f"actor losses: {actor_losses[:5], actor_losses[-5:]}")
 
         # Update target networks
         self.model.update_targets()
