@@ -9,7 +9,7 @@ from anvilrl.common.type_aliases import Tensor
 from anvilrl.common.utils import numpy_to_torch
 
 
-def trainable_variables(model: T.nn.Module) -> list:
+def trainable_parameters(model: T.nn.Module) -> list:
     return [p for p in model.parameters() if p.requires_grad]
 
 

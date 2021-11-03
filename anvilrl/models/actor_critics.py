@@ -6,7 +6,7 @@ import torch as T
 from anvilrl.common.type_aliases import Tensor
 from anvilrl.common.utils import get_device
 from anvilrl.models.heads import BaseActorHead, BaseCriticHead
-from anvilrl.models.utils import trainable_variables
+from anvilrl.models.utils import trainable_parameters
 
 
 class Actor(T.nn.Module):
@@ -165,20 +165,20 @@ class ActorCritic(T.nn.Module):
         super().__init__()
         self.actor = actor
         self.critic = critic
-        self.online_variables = None
-        self.target_variables = None
+        self.online_parameters = None
+        self.target_parameters = None
         self.polyak_coeff = None
 
     def assign_targets(self) -> None:
-        """Assign the target variables"""
-        for online, target in zip(self.online_variables, self.target_variables):
+        """Assign the target parameters"""
+        for online, target in zip(self.online_parameters, self.target_parameters):
             target.data.copy_(online.data)
 
     def update_targets(self) -> None:
-        """Update the target variables"""
+        """Update the target parameters"""
         # target_params = polyak_coeff * target_params + (1 - polyak_coeff) * online_params
         with T.no_grad():
-            for online, target in zip(self.online_variables, self.target_variables):
+            for online, target in zip(self.online_parameters, self.target_parameters):
                 target.data.mul_(self.polyak_coeff)
                 target.data.add_((1 - self.polyak_coeff) * online.data)
 
@@ -218,12 +218,12 @@ class ActorCriticWithCriticTarget(ActorCritic):
         self.polyak_coeff = polyak_coeff
 
         self.target_critic = copy.deepcopy(critic)
-        self.online_variables = trainable_variables(self.critic) + trainable_variables(
-            self.actor
-        )
-        self.target_variables = trainable_variables(self.target_critic)
+        self.online_parameters = trainable_parameters(
+            self.critic
+        ) + trainable_parameters(self.actor)
+        self.target_parameters = trainable_parameters(self.target_critic)
 
-        for target in self.target_variables:
+        for target in self.target_parameters:
             target.requires_grad = False
         self.assign_targets()
 
@@ -254,14 +254,14 @@ class ActorCriticWithTargets(ActorCritic):
 
         self.target_critic = copy.deepcopy(critic)
         self.target_actor = copy.deepcopy(actor)
-        self.online_variables = trainable_variables(self.critic) + trainable_variables(
-            self.actor
-        )
-        self.target_variables = trainable_variables(
+        self.online_parameters = trainable_parameters(
+            self.critic
+        ) + trainable_parameters(self.actor)
+        self.target_parameters = trainable_parameters(
             self.target_critic
-        ) + trainable_variables(self.target_actor)
+        ) + trainable_parameters(self.target_actor)
 
-        for target in self.target_variables:
+        for target in self.target_parameters:
             target.requires_grad = False
         self.assign_targets()
 
@@ -297,14 +297,14 @@ class TwinActorCritic(ActorCritic):
         self.target_actor = copy.deepcopy(actor)
         self.target_critic = copy.deepcopy(critic)
         self.target_critic2 = copy.deepcopy(critic)
-        self.online_variables = trainable_variables(self.critic)
-        self.online_variables += trainable_variables(self.critic2)
-        self.online_variables += trainable_variables(self.actor)
-        self.target_variables = trainable_variables(self.target_critic)
-        self.target_variables += trainable_variables(self.target_critic2)
-        self.target_variables += trainable_variables(self.target_actor)
+        self.online_parameters = trainable_parameters(self.critic)
+        self.online_parameters += trainable_parameters(self.critic2)
+        self.online_parameters += trainable_parameters(self.actor)
+        self.target_parameters = trainable_parameters(self.target_critic)
+        self.target_parameters += trainable_parameters(self.target_critic2)
+        self.target_parameters += trainable_parameters(self.target_actor)
 
-        for target in self.target_variables:
+        for target in self.target_parameters:
             target.requires_grad = False
         self.assign_targets()
 
