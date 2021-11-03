@@ -4,7 +4,7 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvilrl.agents.base_agent import BaseAgent
+from anvilrl.agents.base_agent import BaseDeepAgent
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.buffers.replay_buffer import ReplayBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
@@ -49,7 +49,7 @@ def get_default_model(env: Env):
     return ActorCriticWithCriticTarget(actor, critic)
 
 
-class DQN(BaseAgent):
+class DQN(BaseDeepAgent):
     def __init__(
         self,
         env: Env,

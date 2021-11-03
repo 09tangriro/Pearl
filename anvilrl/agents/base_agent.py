@@ -14,7 +14,7 @@ from anvilrl.common.utils import get_device
 from anvilrl.models.actor_critics import ActorCritic
 
 
-class BaseAgent(ABC):
+class BaseDeepAgent(ABC):
     def __init__(
         self,
         env: Env,
