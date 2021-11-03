@@ -4,7 +4,7 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvilrl.agents.base_agent import BaseDeepAgent
+from anvilrl.agents.base_agents import BaseDeepAgent
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.buffers.replay_buffer import ReplayBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
