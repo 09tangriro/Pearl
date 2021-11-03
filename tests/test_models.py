@@ -1,7 +1,5 @@
 import pytest
 import torch as T
-from gym.spaces import Box
-from torch.autograd.grad_mode import F
 
 from anvilrl.models import (
     Actor,
@@ -20,6 +18,7 @@ from anvilrl.models.heads import (
     ValueHead,
 )
 from anvilrl.models.torsos import MLP
+from anvilrl.models.utils import trainable_parameters
 
 
 def test_mlp():
@@ -159,3 +158,15 @@ def test_epsilon_greedy_actor():
     max_q_output = actor(input)
 
     assert random_output.shape == max_q_output.shape
+
+
+def test_trainable_parameters():
+    mlp = MLP([2, 3])
+
+    weights, biases = trainable_parameters(mlp)
+    assert weights.shape == T.Size([3, 2])
+    assert biases.shape == T.Size([3])
+
+    all_params = T.cat((T.flatten(weights), biases))
+
+    assert all_params.shape == T.Size([9])
