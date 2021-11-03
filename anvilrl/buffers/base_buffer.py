@@ -107,9 +107,9 @@ class BaseBuffer(ABC):
         self,
         observation: np.ndarray,
         action: Union[np.ndarray, int],
-        reward: float,
+        reward: Union[float, np.ndarray],
         next_observation: np.ndarray,
-        done: bool,
+        done: Union[bool, np.ndarray],
     ) -> None:
         """
         Add a trajectory to the buffer

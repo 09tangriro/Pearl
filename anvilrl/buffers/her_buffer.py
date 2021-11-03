@@ -76,9 +76,9 @@ class HERBuffer(BaseBuffer):
         self,
         observation: Dict[str, np.ndarray],
         action: Union[np.ndarray, int],
-        reward: float,
+        reward: Union[float, np.ndarray],
         next_observation: Dict[str, np.ndarray],
-        done: bool,
+        done: Union[bool, np.ndarray],
     ) -> None:
         self.observations[self.pos] = observation["observation"]
         self.desired_goals[self.pos] = observation["desired_goal"]

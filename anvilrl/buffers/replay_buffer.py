@@ -44,9 +44,9 @@ class ReplayBuffer(BaseBuffer):
         self,
         observation: np.ndarray,
         action: Union[np.ndarray, int],
-        reward: float,
+        reward: Union[float, np.ndarray],
         next_observation: np.ndarray,
-        done: bool,
+        done: Union[bool, np.ndarray],
     ) -> None:
         self.observations[self.pos] = observation
         self.observations[(self.pos + 1) % self.buffer_size] = next_observation
