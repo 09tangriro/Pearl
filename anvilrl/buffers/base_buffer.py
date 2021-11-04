@@ -6,6 +6,7 @@ import numpy as np
 import psutil
 import torch as T
 from gym import Env
+from gym.vector import VectorEnv
 
 from anvilrl.common.enumerations import TrajectoryType
 from anvilrl.common.type_aliases import Trajectories
@@ -18,21 +19,23 @@ class BaseBuffer(ABC):
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param n_envs: number of parallel environments
     """
 
     def __init__(
         self,
         env: Env,
         buffer_size: int,
-        n_envs: int = 1,
         device: Union[str, T.device] = "auto",
     ) -> None:
         self.buffer_size = buffer_size
-        self.n_envs = n_envs
         self.device = get_device(device)
         self.full = False
         self.pos = 0
+
+        if isinstance(env, VectorEnv):
+            n_envs = env.num_envs
+        else:
+            n_envs = 1
 
         # If only 1 environment, don't need the n_envs axis
         if n_envs > 1:

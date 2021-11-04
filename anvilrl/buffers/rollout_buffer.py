@@ -15,20 +15,17 @@ class RolloutBuffer(BaseBuffer):
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param n_envs: number of parallel environments
     """
 
     def __init__(
         self,
         env: Env,
         buffer_size: int,
-        n_envs: int = 1,
         device: Union[str, T.device] = "auto",
     ) -> None:
         super().__init__(
             env,
             buffer_size,
-            n_envs,
             device,
         )
         self.next_observations = np.zeros(

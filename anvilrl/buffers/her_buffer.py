@@ -21,7 +21,6 @@ class HERBuffer(BaseBuffer):
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param n_envs: number of parallel environments
     :param goal_selection_strategy: the goal selection strategy to be used, defaults to future
     :param n_sampled_goal: ratio of HER data to data coming from normal experience replay
     :param device: if return torch tensors on sampling, the device to attach to
@@ -31,12 +30,11 @@ class HERBuffer(BaseBuffer):
         self,
         env: GoalEnv,
         buffer_size: int,
-        n_envs: int = 1,
         goal_selection_strategy: Union[str, GoalSelectionStrategy] = "future",
         n_sampled_goal: int = 4,
         device: Union[str, T.device] = "auto",
     ) -> None:
-        super().__init__(env, buffer_size, n_envs=n_envs, device=device)
+        super().__init__(env, buffer_size, device=device)
         self.env = env
         self.desired_goals = np.zeros(
             self.batch_shape + self.obs_shape,
