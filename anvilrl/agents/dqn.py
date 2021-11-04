@@ -59,7 +59,7 @@ class DQN(BaseDeepAgent):
         buffer_class: Type[BaseBuffer] = ReplayBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         action_explorer_class: Type[BaseExplorer] = BaseExplorer,
-        explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=0),
+        explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=1000),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         callback_settings: Optional[List[CallbackSettings]] = None,
         logger_settings: LoggerSettings = LoggerSettings(),
@@ -70,35 +70,21 @@ class DQN(BaseDeepAgent):
         super().__init__(
             env,
             model,
+            action_explorer_class=action_explorer_class,
+            explorer_settings=explorer_settings,
+            buffer_class=buffer_class,
+            buffer_settings=buffer_settings,
             logger_settings=logger_settings,
             callbacks=callbacks,
             callback_settings=callback_settings,
             device=device,
             render=render,
         )
-
-        self.buffer = buffer_class(
-            env=env,
-            buffer_size=buffer_settings.buffer_size,
-            n_envs=buffer_settings.n_envs,
-            device=device,
-        )
         self.updater = updater_class(
             optimizer_class=optimizer_settings.optimizer_class,
             lr=optimizer_settings.learning_rate,
             max_grad=optimizer_settings.max_grad,
         )
-
-        if explorer_settings.scale is not None:
-            self.action_explorer = action_explorer_class(
-                action_space=env.action_space,
-                start_steps=explorer_settings.start_steps,
-                scale=explorer_settings.scale,
-            )
-        else:
-            self.action_explorer = action_explorer_class(
-                action_space=env.action_space, start_steps=explorer_settings.start_steps
-            )
 
     def _fit(
         self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1

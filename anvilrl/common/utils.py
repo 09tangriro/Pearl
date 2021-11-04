@@ -1,4 +1,5 @@
-from typing import Dict, Tuple, Union
+from dataclasses import asdict
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import torch as T
@@ -100,3 +101,8 @@ def extend_shape(original_shape: Tuple, new_size: int, axis: int = 0) -> Tuple:
     shape = list(original_shape)
     shape[axis] = new_size
     return tuple(shape)
+
+
+def filter_dataclass_by_none(class_object: Any) -> Dict[str, Any]:
+    dict_class = asdict(class_object)
+    return {k: v for k, v in dict_class.items() if v is not None}

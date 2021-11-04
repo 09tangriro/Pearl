@@ -78,11 +78,9 @@ class BufferSettings:
     Settings for buffers
 
     :buffer_size: max number of transitions to store at once in each environment
-    :n_envs: number of environments being run
     """
 
     buffer_size: int = int(1e6)
-    n_envs: int = 1
 
 
 @dataclass

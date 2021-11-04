@@ -19,6 +19,7 @@ class BaseBuffer(ABC):
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
+    :param device: if return torch tensors on sampling, the device to attach to
     """
 
     def __init__(

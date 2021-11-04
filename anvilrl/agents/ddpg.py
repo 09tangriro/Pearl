@@ -79,17 +79,15 @@ class DDPG(BaseDeepAgent):
         super().__init__(
             env,
             model,
+            action_explorer_class=action_explorer_class,
+            explorer_settings=explorer_settings,
+            buffer_class=buffer_class,
+            buffer_settings=buffer_settings,
             logger_settings=logger_settings,
             callbacks=callbacks,
             callback_settings=callback_settings,
             device=device,
             render=render,
-        )
-        self.buffer = buffer_class(
-            env=env,
-            buffer_size=buffer_settings.buffer_size,
-            n_envs=buffer_settings.n_envs,
-            device=device,
         )
         self.actor_updater = actor_updater_class(
             optimizer_class=actor_optimizer_settings.optimizer_class,
@@ -101,16 +99,6 @@ class DDPG(BaseDeepAgent):
             lr=critic_optimizer_settings.learning_rate,
             max_grad=critic_optimizer_settings.max_grad,
         )
-        if explorer_settings.scale is not None:
-            self.action_explorer = action_explorer_class(
-                action_space=env.action_space,
-                start_steps=explorer_settings.start_steps,
-                scale=explorer_settings.scale,
-            )
-        else:
-            self.action_explorer = action_explorer_class(
-                action_space=env.action_space, start_steps=explorer_settings.start_steps
-            )
 
     def _fit(self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1):
         critic_losses = np.zeros(shape=(critic_epochs))
@@ -164,7 +152,7 @@ if __name__ == "__main__":
         explorer_settings=ExplorerSettings(start_steps=1000, scale=0.1),
     )
     agent.fit(
-        num_steps=50000,
+        num_steps=100000,
         batch_size=64,
         critic_epochs=1,
         actor_epochs=1,
