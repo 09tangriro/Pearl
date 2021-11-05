@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.abspath(".."))
 
 project = "AnvilRL"
 copyright = "2021, Rohan Tangri"
-author = "Rohan Tangri"
+author = "09tangriro"
 
 
 # -- General configuration ---------------------------------------------------
