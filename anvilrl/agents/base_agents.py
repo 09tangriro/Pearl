@@ -11,17 +11,16 @@ from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.enumerations import TrainFrequencyType
 from anvilrl.common.logging import Logger
-from anvilrl.common.type_aliases import (
-    BufferSettings,
-    CallbackSettings,
-    ExplorerSettings,
-    Log,
-    LoggerSettings,
-    Tensor,
-)
+from anvilrl.common.type_aliases import Log, Tensor
 from anvilrl.common.utils import filter_dataclass_by_none, get_device, numpy_to_torch
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import Actor, ActorCritic
+from anvilrl.settings import (
+    BufferSettings,
+    CallbackSettings,
+    ExplorerSettings,
+    LoggerSettings,
+)
 
 
 class BaseDeepAgent(ABC):

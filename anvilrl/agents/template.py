@@ -6,15 +6,15 @@ from gym import Env
 from anvilrl.agents.base_agents import BaseDeepAgent
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
-from anvilrl.common.type_aliases import (
+from anvilrl.common.type_aliases import Log
+from anvilrl.explorers.base_explorer import BaseExplorer
+from anvilrl.models.actor_critics import ActorCritic
+from anvilrl.settings import (
     BufferSettings,
     CallbackSettings,
     ExplorerSettings,
-    Log,
     LoggerSettings,
 )
-from anvilrl.explorers.base_explorer import BaseExplorer
-from anvilrl.models.actor_critics import ActorCritic
 
 
 class YourAlgorithm(BaseDeepAgent):

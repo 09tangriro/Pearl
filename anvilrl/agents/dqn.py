@@ -8,14 +8,7 @@ from anvilrl.agents.base_agents import BaseDeepAgent
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.buffers.replay_buffer import ReplayBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
-from anvilrl.common.type_aliases import (
-    BufferSettings,
-    CallbackSettings,
-    ExplorerSettings,
-    Log,
-    LoggerSettings,
-    OptimizerSettings,
-)
+from anvilrl.common.type_aliases import Log
 from anvilrl.common.utils import get_space_shape, torch_to_numpy
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import (
@@ -28,6 +21,13 @@ from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import DiscreteQHead
 from anvilrl.models.torsos import MLP
 from anvilrl.models.utils import get_mlp_size
+from anvilrl.settings import (
+    BufferSettings,
+    CallbackSettings,
+    ExplorerSettings,
+    LoggerSettings,
+    OptimizerSettings,
+)
 from anvilrl.signal_processing.sample_estimators import TD_zero
 from anvilrl.updaters.critics import BaseCriticUpdater, QRegression
 
