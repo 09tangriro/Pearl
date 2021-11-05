@@ -26,6 +26,14 @@ class YourAlgorithm(BaseDeepAgent):
     settings, simply inherit the setting object from which the module is based and update as required
     before passing here.
 
+    For example:
+    ```
+    @dataclass
+    class HERBufferSettings(BufferSettings):
+        goal_selection_strategy: Union[str, GoalSelectionStrategy] = "future"
+        n_sampled_goal: int = 4
+    ```
+
     :param env: the gym-like environment to be used
     :param model: the neural network model
     :param action_explorer_class: the explorer class for random search at beginning of training and
