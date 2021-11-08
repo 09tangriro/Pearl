@@ -10,6 +10,5 @@ repos:
     rev: 5.9.2
     hooks:
     - id: isort
-      entry: poetry run isort .
       args: [--filter-files, --profile=black]
       files: \.py$
