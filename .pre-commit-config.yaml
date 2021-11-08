@@ -3,11 +3,13 @@ repos:
     rev: 21.7b0
     hooks:
     - id: black
+      entry: poetry run black .
       language_version: python3.8
 
   - repo: https://github.com/timothycrosley/isort
     rev: 5.9.2
     hooks:
     - id: isort
+      entry: poetry run isort .
       args: [--filter-files, --profile=black]
       files: \.py$
