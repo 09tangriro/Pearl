@@ -44,8 +44,8 @@ class BaseDeepAgent(ABC):
         to implement the _fit() abstract method and override the __init__ to add buffer, updaters
         and explorers along with their respective settings.
 
-        See the example algorithms already done for guidance and common/type_aliases.py for settings
-        objects that can be used.
+        See the example algorithms already done for guidance and settings.py for settings objects
+        that can be used.
 
         :param env: the gym-like environment to be used
         :param model: the neural network model
@@ -73,11 +73,13 @@ class BaseDeepAgent(ABC):
         self.step = 0
         self.episode = 0
         self.done = False  # Flag terminate training
+        num_envs = env.num_envs if isinstance(env, VectorEnv) else 1
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
             stream_handler_level=logger_settings.stream_handler_level,
             verbose=logger_settings.verbose,
+            num_envs=num_envs,
         )
         if callbacks is not None:
             assert len(callbacks) == len(
@@ -154,18 +156,27 @@ class BaseDeepAgent(ABC):
             self.buffer.add_trajectory(
                 observation, action, reward, next_observation, done
             )
-
-            self.logger.episode_rewards.append(reward)
+            self.logger.add_reward(reward)
             self.logger.debug(f"ACTION: {action}")
             self.logger.debug(f"REWARD: {reward}")
+            done_indices = np.where(done)[0]
 
-            if done:
-                observation = self.env.reset()
+            if isinstance(self.env, VectorEnv):
+                not_done_indices = np.where(~done)[0]
+                observation[done_indices] = self.env.reset()[done_indices]
+                observation[not_done_indices] = next_observation[not_done_indices]
+            else:
+                if done:
+                    observation = self.env.reset()
+                else:
+                    observation = next_observation
+
+            self.logger.epsiode_dones[done_indices] = True
+            if all(self.logger.epsiode_dones):
                 self.logger.write_episode_log(self.step)
                 self.logger.reset_episode_log()
                 self.episode += 1
-            else:
-                observation = next_observation
+
             if self.callbacks is not None:
                 if not all(
                     [callback.on_step(self.step) for callback in self.callbacks]
@@ -256,6 +267,8 @@ class BaseSearchAgent(ABC):
         self,
         env: VectorEnv,
         model: Actor,
+        population_size: int,
+        population_std: float,
         logger_settings: LoggerSettings = LoggerSettings(),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         callback_settings: Optional[List[CallbackSettings]] = None,
@@ -264,11 +277,15 @@ class BaseSearchAgent(ABC):
     ) -> None:
         self.env = env
         self.model = model
+        self.population_size = population_size
+        self.population_std = population_std
         self.render = render
         self.buffer = None
         self.step = 0
         self.episode = 0
         self.done = False  # Flag terminate training
+        # Keep track of which individuals have completed an episode
+        self.epsiode_dones = np.array([False for _ in range(population_size)])
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
@@ -332,19 +349,10 @@ class BaseSearchAgent(ABC):
             self.logger.debug(f"ACTION: {action}")
             self.logger.debug(f"REWARD: {reward}")
 
-            if done:
-                observation = self.env.reset()
-                self.logger.write_episode_log(self.step)
-                self.logger.reset_episode_log()
-                self.episode += 1
-            else:
-                observation = next_observation
-            if self.callbacks is not None:
-                if not all(
-                    [callback.on_step(self.step) for callback in self.callbacks]
-                ):
-                    self.done = True
-                    break
+            done_indices = np.where(done)[0]
+            not_done_indices = np.where(~done)[0]
+            observation[done_indices] = self.env.reset()[done_indices]
+            observation[not_done_indices] = next_observation[not_done_indices]
             self.step += 1
         return observation
 
@@ -358,10 +366,10 @@ class BaseSearchAgent(ABC):
     def _vector_to_model(vector: np.ndarray) -> Actor:
         raise NotImplementedError()
 
-    def initialize_population(self, population_size: int, std: float) -> np.ndarray:
+    def initialize_population(self) -> np.ndarray:
         mean = self._model_to_vector(self.model)
-        normal_dist = np.random.randn(population_size, len(mean))
-        return mean + std * normal_dist
+        normal_dist = np.random.randn(self.population_size, len(mean))
+        return mean + self.population_std * normal_dist
 
     @abstractmethod
     def _fit(
@@ -379,8 +387,6 @@ class BaseSearchAgent(ABC):
     def fit(
         self,
         num_steps: int,
-        population_size: int,
-        population_std: float,
         train_frequency: Tuple[str, int] = ("step", 1),
     ) -> None:
         """
@@ -401,8 +407,8 @@ class BaseSearchAgent(ABC):
         if train_frequency[0] == TrainFrequencyType.STEP:
             num_steps = num_steps // train_frequency[1]
 
-        self.population = self.initialize_population(population_size, population_std)
-        observation = np.array([self.env.reset() for _ in range(population_size)])
+        self.population = self.initialize_population()
+        observation = self.env.reset()
         for _ in range(num_steps):
             models = [
                 self._vector_to_model(individual) for individual in self.population
@@ -424,10 +430,9 @@ class BaseSearchAgent(ABC):
             if self.done:
                 break
 
-            self.model.train()
             train_log = self._fit(
-                population_size=population_size,
-                population_std=population_std,
+                population_size=self.population_size,
+                population_std=self.population_std,
                 learning_rate=1,
             )
 

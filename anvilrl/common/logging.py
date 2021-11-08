@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
@@ -38,15 +38,19 @@ class Logger(object):
         file_handler_level: int = logging.DEBUG,
         stream_handler_level: int = logging.INFO,
         verbose: bool = True,
+        num_envs: int = 1,
     ) -> None:
         self.writer = SummaryWriter(tensorboard_log_path)
         self.logger = get_logger(file_handler_level, stream_handler_level)
         self.verbose = verbose
+        self.num_envs = num_envs
         self.episode_actor_losses = []
         self.episode_critic_losses = []
         self.episode_kl_divergences = []
         self.episode_entropies = []
         self.episode_rewards = []
+        # Keep track of which environments have completed an episode
+        self.epsiode_dones = np.array([False for _ in range(num_envs)])
 
     def reset_episode_log(self) -> None:
         self.episode_actor_losses = []
@@ -54,6 +58,7 @@ class Logger(object):
         self.episode_kl_divergences = []
         self.episode_entropies = []
         self.episode_rewards = []
+        self.epsiode_dones = np.array([False for _ in range(self.num_envs)])
 
     def add_train_log(self, train_log: Log) -> None:
         self.episode_actor_losses.append(train_log.actor_loss)
@@ -62,6 +67,15 @@ class Logger(object):
             self.episode_entropies.append(train_log.entropy)
         if train_log.kl_divergence is not None:
             self.episode_kl_divergences.append(train_log.kl_divergence)
+
+    def add_reward(self, reward: Union[float, np.ndarray]) -> None:
+        """Add step reward to the episode rewards"""
+        if self.num_envs == 1:
+            self.episode_rewards.append(reward)
+        else:
+            self.episode_rewards.append(
+                reward[np.where(self.epsiode_dones == False)[0]]
+            )
 
     def _make_episode_log(self) -> Log:
         """Make an episode log out of the collected stats"""
