@@ -30,6 +30,7 @@ class Logger(object):
     :param file_handler_level: logging level for the file log
     :param stream_handeler_level: logging level for the streaming log
     :param verbose: whether to display at all or not
+    :param num_envs: number of environments to run, useful for multi-agent
     """
 
     def __init__(
