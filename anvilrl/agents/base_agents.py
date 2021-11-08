@@ -168,7 +168,9 @@ class BaseDeepAgent(ABC):
             else:
                 observation = self.env.reset() if done else next_observation
 
+            # For multiple environments, we keep track of individual episodes as they finish
             self.logger.epsiode_dones[done_indices] = True
+            # If all environment episodes are done, we write an episode log and reset it.
             if all(self.logger.epsiode_dones):
                 self.logger.write_episode_log(self.step)
                 self.logger.reset_episode_log()
