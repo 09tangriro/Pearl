@@ -73,13 +73,12 @@ class BaseDeepAgent(ABC):
         self.step = 0
         self.episode = 0
         self.done = False  # Flag terminate training
-        num_envs = env.num_envs if isinstance(env, VectorEnv) else 1
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
             stream_handler_level=logger_settings.stream_handler_level,
             verbose=logger_settings.verbose,
-            num_envs=num_envs,
+            num_envs=env.num_envs if isinstance(env, VectorEnv) else 1,
         )
         if callbacks is not None:
             assert len(callbacks) == len(
@@ -290,6 +289,7 @@ class BaseSearchAgent(ABC):
             file_handler_level=logger_settings.file_handler_level,
             stream_handler_level=logger_settings.stream_handler_level,
             verbose=logger_settings.verbose,
+            num_envs=env.num_envs,
         )
         if callbacks is not None:
             assert len(callbacks) == len(
