@@ -166,10 +166,7 @@ class BaseDeepAgent(ABC):
                 observation[done_indices] = self.env.reset()[done_indices]
                 observation[not_done_indices] = next_observation[not_done_indices]
             else:
-                if done:
-                    observation = self.env.reset()
-                else:
-                    observation = next_observation
+                observation = self.env.reset() if done else next_observation
 
             self.logger.epsiode_dones[done_indices] = True
             if all(self.logger.epsiode_dones):
@@ -345,7 +342,7 @@ class BaseSearchAgent(ABC):
                 observation, action, reward, next_observation, done
             )
 
-            self.logger.episode_rewards.append(reward)
+            self.logger.add_reward(reward)
             self.logger.debug(f"ACTION: {action}")
             self.logger.debug(f"REWARD: {reward}")
 
@@ -353,6 +350,12 @@ class BaseSearchAgent(ABC):
             not_done_indices = np.where(~done)[0]
             observation[done_indices] = self.env.reset()[done_indices]
             observation[not_done_indices] = next_observation[not_done_indices]
+
+            self.logger.epsiode_dones[done_indices] = True
+            if all(self.logger.epsiode_dones):
+                self.logger.write_episode_log(self.step)
+                self.logger.reset_episode_log()
+                self.episode += 1
             self.step += 1
         return observation
 
