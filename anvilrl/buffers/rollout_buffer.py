@@ -85,7 +85,7 @@ class RolloutBuffer(BaseBuffer):
         dones = self.dones[start_idx:last_idx]
 
         return self._transform_samples(
-            observations, actions, rewards, next_observations, dones, flatten_env, dtype
+            flatten_env, dtype, observations, actions, rewards, next_observations, dones
         )
 
     def last(
@@ -109,5 +109,5 @@ class RolloutBuffer(BaseBuffer):
         dones = self.dones[batch_inds]
 
         return self._transform_samples(
-            observations, actions, rewards, next_observations, dones, flatten_env, dtype
+            flatten_env, dtype, observations, actions, rewards, next_observations, dones
         )

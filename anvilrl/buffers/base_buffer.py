@@ -86,13 +86,13 @@ class BaseBuffer(ABC):
 
     def _transform_samples(
         self,
+        flatten_env: bool,
+        dtype: Union[str, TrajectoryType],
         observations: np.ndarray,
         actions: np.ndarray,
         rewards: np.ndarray,
         next_observations: np.ndarray,
         dones: np.ndarray,
-        flatten_env: bool,
-        dtype: Union[str, TrajectoryType],
     ) -> Trajectories:
         """
         Handle post-processing of sampled trajectories:

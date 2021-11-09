@@ -11,7 +11,9 @@ from anvilrl.common.type_aliases import Trajectories
 
 class HERBuffer(BaseBuffer):
     """
-    Hindsight Exprience Replay (HER) Buffer: https://arxiv.org/abs/1707.01495
+    Hindsight Exprience Replay (HER) Buffer
+    Paper: https://arxiv.org/abs/1707.01495
+    Guide: https://towardsdatascience.com/hindsight-experience-replay-her-implementation-92eebab6f653
     The HER buffer uses the same trick as the standard `ReplayBuffer` using
     a single array to handle the observations. Instead of sampling and storing
     goals every time we add transitions, instead we do it all at once when
@@ -143,10 +145,7 @@ class HERBuffer(BaseBuffer):
 
     def _sample_trajectories(
         self,
-        batch_size: int,
         batch_inds: np.ndarray,
-        flatten_env: bool,
-        dtype: Union[str, TrajectoryType],
     ) -> Trajectories:
         """
         Get the trajectories based on batch indices calculated
@@ -155,7 +154,7 @@ class HERBuffer(BaseBuffer):
         :param batch_inds: the indices of the elements to sample
         :param dtype: :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         """
-        her_batch_size = int(batch_size * self.her_ratio)
+        her_batch_size = int(len(batch_inds) * self.her_ratio)
 
         # Separate HER and replay batch indices
         her_inds = batch_inds[:her_batch_size]
@@ -184,19 +183,14 @@ class HERBuffer(BaseBuffer):
         actions = self.actions[batch_inds]
         dones = self.dones[batch_inds]
 
-        return self._transform_samples(
-            observations, actions, rewards, next_observations, dones, flatten_env, dtype
-        )
+        return observations, actions, rewards, next_observations, dones
 
     def sample(
         self,
         batch_size: int,
         flatten_env: bool = True,
-        online: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
-        if online:
-            return self.last(batch_size, dtype)
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
 
@@ -209,7 +203,8 @@ class HERBuffer(BaseBuffer):
         else:
             batch_inds = np.random.randint(0, end_idx, size=batch_size)
 
-        return self._sample_trajectories(batch_size, batch_inds, flatten_env, dtype)
+        trajectories = self._sample_trajectories(batch_inds)
+        return self._transform_samples(flatten_env, dtype, *trajectories)
 
     def last(
         self,
@@ -233,4 +228,5 @@ class HERBuffer(BaseBuffer):
                 f"Not enough samples collected, max batch_size={end_idx}"
             )
 
-        return self._sample_trajectories(batch_size, batch_inds, flatten_env, dtype)
+        trajectories = self._sample_trajectories(batch_inds)
+        return self._transform_samples(flatten_env, dtype, *trajectories)
