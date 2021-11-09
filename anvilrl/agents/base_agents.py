@@ -116,20 +116,6 @@ class BaseDeepAgent(ABC):
         self.model.eval()
         return self.model.critic(observations, actions)
 
-    def _process_action(self, action: Union[np.ndarray, int]) -> Union[np.ndarray, int]:
-        """
-        Process the action taken from the action explorer ready for the `env.step()` method
-        and buffer storage.
-
-        :param action: the action taken from the action explorer
-        :return: the processed action
-        """
-        if isinstance(self.env.action_space, spaces.Discrete) and not isinstance(
-            action, int
-        ):
-            action = action.item()
-        return action
-
     def step_env(self, observation: np.ndarray, num_steps: int = 1) -> np.ndarray:
         """
         Step the agent in the environment
@@ -142,15 +128,7 @@ class BaseDeepAgent(ABC):
         for _ in range(num_steps):
             if self.render:
                 self.env.render()
-            if isinstance(self.env, VectorEnv):
-                action = [
-                    self.action_explorer(self.model, env_obs, self.step)
-                    for env_obs in observation
-                ]
-                action = np.array([self._process_action(a) for a in action])
-            else:
-                action = self.action_explorer(self.model, observation, self.step)
-                action = self._process_action(action)
+            action = self.action_explorer(self.model, observation, self.step)
             next_observation, reward, done, _ = self.env.step(action)
             self.buffer.add_trajectory(
                 observation, action, reward, next_observation, done
