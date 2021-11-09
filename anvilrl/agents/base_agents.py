@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as T
-from gym import Env, spaces
+from gym import Env
 from gym.vector import VectorEnv
 
 from anvilrl.buffers.base_buffer import BaseBuffer
