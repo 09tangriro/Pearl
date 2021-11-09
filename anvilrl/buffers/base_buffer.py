@@ -76,7 +76,10 @@ class BaseBuffer(ABC):
         data: np.ndarray,
     ) -> np.ndarray:
         """
-        Flatten the n_env axis of the input arrays to get samples of (batch_size, ...).
+        Flatten the n_env axis of the input arrays to get samples of (batch_size, ...)
+
+        :param data: the data to flatten (batch_size, num_envs, ...)
+        :return: the flattened data (batch_size, ...)
         """
         if self.num_envs > 1:
             batch_size = data.shape[0] // self.num_envs
@@ -98,8 +101,17 @@ class BaseBuffer(ABC):
     ) -> Trajectories:
         """
         Handle post-processing of sampled trajectories:
-        1. Transform to torch tensor if specified.
-        2. Flatten the n_env axis if specified.
+        1. Transform to torch tensor if specified
+        2. Flatten the n_env axis if specified
+
+        :param flatten_env: whether to flatten the num_envs axis
+        :param dtype: the data type to return (torch or numpy)
+        :param observations: the observations
+        :param actions: the actions
+        :param rewards: the rewards
+        :param next_observations: the next observations
+        :param dones: the done flags
+        :return: the final transformed trajectories
         """
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
@@ -153,7 +165,7 @@ class BaseBuffer(ABC):
         rewards: np.ndarray,
         next_observations: np.ndarray,
         dones: np.ndarray,
-    ):
+    ) -> None:
         """
         Add a batch of trajectories to the buffer
 
@@ -179,7 +191,7 @@ class BaseBuffer(ABC):
         :param batch_size: the batch size
         :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
-        :return: the trajectories
+        :return: the sampled trajectories
         """
 
     @abstractmethod
@@ -195,5 +207,5 @@ class BaseBuffer(ABC):
         :param batch_size: the batch size
         :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
-        :return: the trajectories
+        :return: the most recent trajectories
         """
