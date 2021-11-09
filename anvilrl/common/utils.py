@@ -77,6 +77,8 @@ def get_space_shape(
     :param space:
     :return:
     """
+    if isinstance(space, spaces.Tuple):
+        return (len(space),) + get_space_shape(space.spaces[0])
     if isinstance(space, spaces.Box):
         return space.shape
     elif isinstance(space, spaces.Discrete):
