@@ -57,7 +57,10 @@ class ReplayBuffer(BaseBuffer):
             self.pos = 0
 
     def sample(
-        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+        self,
+        batch_size: int,
+        flatten_env: bool = True,
+        dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         if self.full:
             batch_inds = (
@@ -73,11 +76,14 @@ class ReplayBuffer(BaseBuffer):
         dones = self.dones[batch_inds]
 
         return self._transform_samples(
-            observations, actions, rewards, next_observations, dones, dtype
+            observations, actions, rewards, next_observations, dones, flatten_env, dtype
         )
 
     def last(
-        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+        self,
+        batch_size: int,
+        flatten_env: bool = True,
+        dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         assert batch_size < self.buffer_size
 
@@ -94,5 +100,5 @@ class ReplayBuffer(BaseBuffer):
         dones = self.dones[batch_inds]
 
         return self._transform_samples(
-            observations, actions, rewards, next_observations, dones, dtype
+            observations, actions, rewards, next_observations, dones, flatten_env, dtype
         )

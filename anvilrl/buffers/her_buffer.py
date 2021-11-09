@@ -142,7 +142,11 @@ class HERBuffer(BaseBuffer):
         )
 
     def _sample_trajectories(
-        self, batch_size: int, batch_inds: np.ndarray, dtype: Union[str, TrajectoryType]
+        self,
+        batch_size: int,
+        batch_inds: np.ndarray,
+        flatten_env: bool,
+        dtype: Union[str, TrajectoryType],
     ) -> Trajectories:
         """
         Get the trajectories based on batch indices calculated
@@ -181,12 +185,13 @@ class HERBuffer(BaseBuffer):
         dones = self.dones[batch_inds]
 
         return self._transform_samples(
-            observations, actions, rewards, next_observations, dones, dtype
+            observations, actions, rewards, next_observations, dones, flatten_env, dtype
         )
 
     def sample(
         self,
         batch_size: int,
+        flatten_env: bool = True,
         online: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
@@ -204,10 +209,13 @@ class HERBuffer(BaseBuffer):
         else:
             batch_inds = np.random.randint(0, end_idx, size=batch_size)
 
-        return self._sample_trajectories(batch_size, batch_inds, dtype)
+        return self._sample_trajectories(batch_size, batch_inds, flatten_env, dtype)
 
     def last(
-        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+        self,
+        batch_size: int,
+        flatten_env: bool = True,
+        dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
@@ -225,4 +233,4 @@ class HERBuffer(BaseBuffer):
                 f"Not enough samples collected, max batch_size={end_idx}"
             )
 
-        return self._sample_trajectories(batch_size, batch_inds, dtype)
+        return self._sample_trajectories(batch_size, batch_inds, flatten_env, dtype)

@@ -91,14 +91,23 @@ class BaseBuffer(ABC):
         rewards: np.ndarray,
         next_observations: np.ndarray,
         dones: np.ndarray,
+        flatten_env: bool,
         dtype: Union[str, TrajectoryType],
     ) -> Trajectories:
         """
-        Handle post-processing of sampled trajectories.
-        For now, only functionality is to transform to torch tensor if specified.
+        Handle post-processing of sampled trajectories:
+        1. Transform to torch tensor if specified.
+        2. Flatten the n_env axis if specified.
         """
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
+
+        if flatten_env:
+            observations = self._flatten_env_axis(observations)
+            actions = self._flatten_env_axis(actions)
+            rewards = self._flatten_env_axis(rewards)
+            next_observations = self._flatten_env_axis(next_observations)
+            dones = self._flatten_env_axis(dones)
 
         # return torch tensors instead of numpy arrays
         if dtype == TrajectoryType.TORCH:
@@ -159,26 +168,30 @@ class BaseBuffer(ABC):
     def sample(
         self,
         batch_size: int,
-        flatten: bool = True,
+        flatten_env: bool = True,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         """
         Sample a batch of trajectories
 
         :param batch_size: the batch size
-        :param flatten: useful for multiple environments, whether to sample with the n_envs axis
+        :param flatten_env: useful for multiple environments, whether to sample with the n_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: the trajectories
         """
 
     @abstractmethod
     def last(
-        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+        self,
+        batch_size: int,
+        flatten_env: bool = True,
+        dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         """
         Get the most recent batch of trajectories stored
 
         :param batch_size: the batch size
+        :param flatten_env: useful for multiple environments, whether to sample with the n_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: the trajectories
         """
