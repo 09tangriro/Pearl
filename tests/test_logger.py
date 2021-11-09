@@ -1,3 +1,5 @@
+import numpy as np
+
 from anvilrl.common.logging import Logger
 from anvilrl.common.type_aliases import Log
 
@@ -25,3 +27,15 @@ def test_make_episode_log():
     expected_log = Log()
 
     assert actual_log == expected_log
+
+
+def test_add_reward():
+    logger = Logger()
+    vec_logger = Logger(num_envs=2)
+
+    logger.add_reward(1)
+    assert logger.episode_rewards == [1]
+
+    reward = np.array([1, 1])
+    vec_logger.add_reward(reward)
+    np.testing.assert_array_almost_equal([reward], vec_logger.episode_rewards)
