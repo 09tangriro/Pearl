@@ -146,9 +146,9 @@ class BaseDeepAgent(ABC):
                 observation = self.env.reset() if done else next_observation
 
             # For multiple environments, we keep track of individual episodes as they finish
-            self.logger.epsiode_dones[done_indices] = True
+            self.logger.episode_dones[done_indices] = True
             # If all environment episodes are done, we write an episode log and reset it.
-            if all(self.logger.epsiode_dones):
+            if all(self.logger.episode_dones):
                 self.logger.write_episode_log(self.step)
                 self.logger.reset_episode_log()
                 self.episode += 1
@@ -261,7 +261,7 @@ class BaseSearchAgent(ABC):
         self.episode = 0
         self.done = False  # Flag terminate training
         # Keep track of which individuals have completed an episode
-        self.epsiode_dones = np.array([False for _ in range(population_size)])
+        self.episode_dones = np.array([False for _ in range(population_size)])
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
@@ -316,8 +316,8 @@ class BaseSearchAgent(ABC):
             observation[done_indices] = self.env.reset()[done_indices]
             observation[not_done_indices] = next_observation[not_done_indices]
 
-            self.logger.epsiode_dones[done_indices] = True
-            if all(self.logger.epsiode_dones):
+            self.logger.episode_dones[done_indices] = True
+            if all(self.logger.episode_dones):
                 self.logger.write_episode_log(self.step)
                 self.logger.reset_episode_log()
                 self.episode += 1

@@ -51,7 +51,7 @@ class Logger(object):
         self.episode_entropies = []
         self.episode_rewards = []
         # Keep track of which environments have completed an episode
-        self.epsiode_dones = np.array([False for _ in range(num_envs)])
+        self.episode_dones = np.array([False for _ in range(num_envs)])
 
     def reset_episode_log(self) -> None:
         self.episode_actor_losses = []
@@ -59,7 +59,7 @@ class Logger(object):
         self.episode_kl_divergences = []
         self.episode_entropies = []
         self.episode_rewards = []
-        self.epsiode_dones = np.array([False for _ in range(self.num_envs)])
+        self.episode_dones = np.array([False for _ in range(self.num_envs)])
 
     def add_train_log(self, train_log: Log) -> None:
         self.episode_actor_losses.append(train_log.actor_loss)
@@ -75,7 +75,7 @@ class Logger(object):
             self.episode_rewards.append(reward)
         else:
             self.episode_rewards.append(
-                reward[np.where(self.epsiode_dones == False)[0]]
+                reward[np.where(self.episode_dones == False)[0]]
             )
 
     def _make_episode_log(self) -> Log:
