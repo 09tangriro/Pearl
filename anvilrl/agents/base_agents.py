@@ -287,20 +287,6 @@ class BaseSearchAgent(ABC):
         """Run the agent actor model"""
         return self.model(observations)
 
-    def _process_action(self, action: Union[np.ndarray, int]) -> Union[np.ndarray, int]:
-        """
-        Process the action taken from the action explorer ready for the `env.step()` method
-        and buffer storage.
-
-        :param action: the action taken from the action explorer
-        :return: the processed action
-        """
-        if isinstance(self.env.action_space, spaces.Discrete) and not isinstance(
-            action, int
-        ):
-            action = action.item()
-        return action
-
     def step_env(
         self, models: List[Actor], observation: np.ndarray, num_steps: int = 1
     ) -> np.ndarray:
@@ -316,7 +302,6 @@ class BaseSearchAgent(ABC):
             if self.render:
                 self.env.render()
             action = [model(observation[i]) for i, model in enumerate(models)]
-            action = [self._process_action(a) for a in action]
             next_observation, reward, done, _ = self.env.step(action)
             self.buffer.add_trajectory(
                 observation, action, reward, next_observation, done
