@@ -37,11 +37,11 @@ class HERBuffer(BaseBuffer):
         super().__init__(env, buffer_size, device=device)
         self.env = env
         self.desired_goals = np.zeros(
-            self.batch_shape + self.obs_shape,
+            (self.buffer_size,) + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
         self.next_achieved_goals = np.zeros(
-            self.batch_shape + self.obs_shape,
+            (self.buffer_size,) + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
 

@@ -33,14 +33,11 @@ class BaseBuffer(ABC):
         self.full = False
         self.pos = 0
 
-        if isinstance(env, VectorEnv):
-            n_envs = env.num_envs
-        else:
-            n_envs = 1
+        self.n_envs = env.num_envs if isinstance(env, VectorEnv) else 1
 
         # If only 1 environment, don't need the n_envs axis
-        if n_envs > 1:
-            self.batch_shape = (buffer_size, n_envs)
+        if self.n_envs > 1:
+            self.batch_shape = (buffer_size, self.n_envs)
         else:
             self.batch_shape = (buffer_size,)
 
@@ -48,11 +45,11 @@ class BaseBuffer(ABC):
         action_shape = get_space_shape(env.action_space)
 
         self.observations = np.zeros(
-            self.batch_shape + self.obs_shape,
+            (self.buffer_size,) + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
         self.actions = np.zeros(
-            self.batch_shape + action_shape,
+            (self.buffer_size,) + action_shape,
             dtype=env.observation_space.dtype,
         )
         # Use 3 dims for easier calculations without having to think about broadcasting
@@ -73,6 +70,19 @@ class BaseBuffer(ABC):
                 "This system does not have enough memory to store the complete "
                 f"replay buffer: {total_memory_usage:.2f}GB > {mem_available:.2f}GB"
             )
+
+    def _flatten_env_axis(
+        self,
+        data: np.ndarray,
+    ) -> np.ndarray:
+        """
+        Flatten the n_env axis of the input arrays to get samples of (batch_size, ...).
+        """
+        if self.n_envs > 1:
+            batch_size = data.shape[0] // self.n_envs
+            data = data[-batch_size:].reshape(batch_size * self.n_envs, *data.shape[2:])
+
+        return data
 
     def _transform_samples(
         self,
@@ -147,12 +157,16 @@ class BaseBuffer(ABC):
 
     @abstractmethod
     def sample(
-        self, batch_size: int, dtype: Union[str, TrajectoryType] = "numpy"
+        self,
+        batch_size: int,
+        flatten: bool = True,
+        dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         """
         Sample a batch of trajectories
 
         :param batch_size: the batch size
+        :param flatten: useful for multiple environments, whether to sample with the n_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: the trajectories
         """

@@ -198,3 +198,24 @@ def test_last(buffer_class):
             most_recent.next_observations, trajectories.next_observations
         )
         np.testing.assert_array_almost_equal(most_recent.dones, trajectories.dones)
+
+
+def test_flatten_env_axis():
+    arr = np.random.rand(7, 3, 2)
+    # First test with a single environment
+    env = gym.make("CartPole-v0")
+    buffer = ReplayBuffer(env, buffer_size=100)
+
+    actual_result = buffer._flatten_env_axis(arr).shape
+    expected_result = (7, 3, 2)
+
+    assert actual_result == expected_result
+
+    # Test with multiple environments
+    env = gym.vector.make("CartPole-v0", 3)
+    buffer = ReplayBuffer(env, buffer_size=100)
+
+    actual_result = buffer._flatten_env_axis(arr).shape
+    expected_result = (6, 2)
+
+    assert actual_result == expected_result

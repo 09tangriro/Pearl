@@ -29,7 +29,7 @@ class RolloutBuffer(BaseBuffer):
             device,
         )
         self.next_observations = np.zeros(
-            self.batch_shape + self.obs_shape,
+            (self.buffer_size,) + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
         self._check_system_memory(
