@@ -33,11 +33,11 @@ class BaseBuffer(ABC):
         self.full = False
         self.pos = 0
 
-        self.n_envs = env.num_envs if isinstance(env, VectorEnv) else 1
+        self.num_envs = env.num_envs if isinstance(env, VectorEnv) else 1
 
-        # If only 1 environment, don't need the n_envs axis
-        if self.n_envs > 1:
-            self.batch_shape = (buffer_size, self.n_envs)
+        # If only 1 environment, don't need the num_envs axis
+        if self.num_envs > 1:
+            self.batch_shape = (buffer_size, self.num_envs)
         else:
             self.batch_shape = (buffer_size,)
 
@@ -78,9 +78,11 @@ class BaseBuffer(ABC):
         """
         Flatten the n_env axis of the input arrays to get samples of (batch_size, ...).
         """
-        if self.n_envs > 1:
-            batch_size = data.shape[0] // self.n_envs
-            data = data[-batch_size:].reshape(batch_size * self.n_envs, *data.shape[2:])
+        if self.num_envs > 1:
+            batch_size = data.shape[0] // self.num_envs
+            data = data[-batch_size:].reshape(
+                batch_size * self.num_envs, *data.shape[2:]
+            )
 
         return data
 
@@ -175,7 +177,7 @@ class BaseBuffer(ABC):
         Sample a batch of trajectories
 
         :param batch_size: the batch size
-        :param flatten_env: useful for multiple environments, whether to sample with the n_envs axis
+        :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: the trajectories
         """
@@ -191,7 +193,7 @@ class BaseBuffer(ABC):
         Get the most recent batch of trajectories stored
 
         :param batch_size: the batch size
-        :param flatten_env: useful for multiple environments, whether to sample with the n_envs axis
+        :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: the trajectories
         """
