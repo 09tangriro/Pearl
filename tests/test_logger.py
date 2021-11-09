@@ -29,6 +29,17 @@ def test_make_episode_log():
     assert actual_log == expected_log
 
 
+def test_add_train_log():
+    logger = Logger()
+    train_log = Log()
+
+    logger.add_train_log(train_log)
+    assert logger.episode_actor_losses == [0]
+    assert logger.episode_critic_losses == [0]
+    assert logger.episode_kl_divergences == []
+    assert logger.episode_entropies == []
+
+
 def test_add_reward():
     logger = Logger()
     vec_logger = Logger(num_envs=2)
