@@ -83,12 +83,9 @@ class EpsilonGreedyActor(Actor):
         trigger = T.rand(1).item()
 
         if trigger <= self.epsilon:
-            actions = T.randint(
-                low=0, high=action_size, size=q_values.shape[:-1] + (1,)
-            )
+            actions = T.randint(low=0, high=action_size, size=q_values.shape[:-1])
         else:
             _, actions = T.max(q_values, dim=-1)
-            actions = actions.reshape(-1, 1)
 
         self.update_epsilon()
         return actions
