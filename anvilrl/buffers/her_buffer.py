@@ -80,13 +80,13 @@ class HERBuffer(BaseBuffer):
     ) -> None:
         self.observations[self.pos] = observation["observation"]
         self.desired_goals[self.pos] = observation["desired_goal"]
-        self.rewards[self.pos] = reward
-        self.actions[self.pos] = action
+        self.rewards[self.pos] = np.array(reward).reshape(*self.rewards.shape[1:])
+        self.actions[self.pos] = np.array(action).reshape(*self.actions.shape[1:])
         self.observations[(self.pos + 1) % self.buffer_size] = next_observation[
             "observation"
         ]
         self.next_achieved_goals[self.pos] = next_observation["achieved_goal"]
-        self.dones[self.pos] = done
+        self.dones[self.pos] = np.array(done).reshape(*self.dones.shape[1:])
         self.index_episode_map[self.pos] = self.episode
         self.pos += 1
 

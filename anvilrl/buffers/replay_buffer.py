@@ -47,9 +47,9 @@ class ReplayBuffer(BaseBuffer):
     ) -> None:
         self.observations[self.pos] = observation
         self.observations[(self.pos + 1) % self.buffer_size] = next_observation
-        self.actions[self.pos] = action
-        self.rewards[self.pos] = reward
-        self.dones[self.pos] = done
+        self.actions[self.pos] = np.array(action).reshape(*self.actions.shape[1:])
+        self.rewards[self.pos] = np.array(reward).reshape(*self.rewards.shape[1:])
+        self.dones[self.pos] = np.array(done).reshape(*self.dones.shape[1:])
 
         self.pos += 1
         if self.pos == self.buffer_size:

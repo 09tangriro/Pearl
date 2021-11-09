@@ -49,10 +49,10 @@ class RolloutBuffer(BaseBuffer):
         done: Union[bool, np.ndarray],
     ) -> None:
         self.observations[self.pos] = observation
-        self.rewards[self.pos] = reward
-        self.actions[self.pos] = action
         self.next_observations[self.pos] = next_observation
-        self.dones[self.pos] = done
+        self.actions[self.pos] = np.array(action).reshape(*self.actions.shape[1:])
+        self.rewards[self.pos] = np.array(reward).reshape(*self.rewards.shape[1:])
+        self.dones[self.pos] = np.array(done).reshape(*self.dones.shape[1:])
 
         self.pos += 1
         if self.pos == self.buffer_size:
