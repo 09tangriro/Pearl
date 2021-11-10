@@ -246,15 +246,19 @@ class BaseSearchAgent(ABC):
     def __init__(
         self,
         env: VectorEnv,
+        population_std: Optional[Union[float, np.ndarray]] = None,
         buffer_class: BaseBuffer = BaseBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[str, T.device] = "auto",
     ) -> None:
         self.env = env
+        self.population_std = population_std
+        self.population_size = env.num_envs
         buffer_settings = filter_dataclass_by_none(buffer_settings)
         self.buffer = buffer_class(env=env, device=device, **buffer_settings)
         self.step = 0
+        self.episode = 0
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
@@ -271,7 +275,6 @@ class BaseSearchAgent(ABC):
         self,
         population_init_strategy: PopulationInitStrategy,
         starting_point: Optional[np.ndarray],
-        population_std: Optional[float] = None,
     ) -> np.ndarray:
         if population_init_strategy == PopulationInitStrategy.NORMAL:
             mean = (
@@ -279,7 +282,7 @@ class BaseSearchAgent(ABC):
                 if starting_point is None
                 else starting_point
             )
-            std = 1 if population_std is None else population_std
+            std = 1 if self.population_std is None else np.mean(self.population_std)
             population = np.random.normal(
                 mean, std, (self.population_size, self.env.action_space.shape[0])
             )
@@ -345,15 +348,13 @@ class BaseSearchAgent(ABC):
         for _ in num_steps:
             # Step for number of steps specified
             if train_frequency[0] == TrainFrequencyType.STEP:
-                observation = self.step_env(
-                    observation=observation, num_steps=train_frequency[1]
-                )
+                self.step_env(num_steps=train_frequency[1])
             # Step for number of episodes specified
             elif train_frequency[0] == TrainFrequencyType.EPISODE:
                 start_episode = self.episode
                 end_episode = start_episode + train_frequency[1]
                 while self.episode != end_episode:
-                    observation = self.step_env(observation=observation)
+                    self.step_env()
                 if self.step >= num_steps:
                     break
 
