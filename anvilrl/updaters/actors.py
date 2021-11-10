@@ -1,6 +1,10 @@
+from abc import ABC, abstractmethod
 from typing import Iterator, Optional, Type, Union
 
+import numpy as np
 import torch as T
+from gym.vector import VectorEnv
+from sklearn.preprocessing import scale
 from torch.nn.parameter import Parameter
 
 from anvilrl.common.type_aliases import Tensor, UpdaterLog
@@ -9,7 +13,7 @@ from anvilrl.models.actor_critics import Actor, ActorCritic
 from anvilrl.signal_processing.sample_estimators import sample_reverse_kl_divergence
 
 
-class BaseActorUpdater(object):
+class BaseActorUpdater(ABC):
     """
     The base class with pre-defined methods for derived classes
 
@@ -49,6 +53,10 @@ class BaseActorUpdater(object):
         if self.max_grad > 0:
             T.nn.utils.clip_grad_norm_(actor_parameters, self.max_grad)
         optimizer.step()
+
+    @abstractmethod
+    def __call__(self):
+        """Run an optimization step"""
 
 
 class PolicyGradient(BaseActorUpdater):
@@ -291,3 +299,35 @@ class SoftPolicyGradient(BaseActorUpdater):
         self.run_optimizer(optimizer, loss, actor_parameters)
 
         return UpdaterLog(loss=loss.detach().item(), entropy=entropy.detach().item())
+
+
+class EvolutionaryUpdater(BaseActorUpdater):
+    """
+    Updater for the Natural Evolutionary Strategy
+    """
+
+    def __init__(
+        self,
+        env: VectorEnv,
+        lr: float,
+        population_size: int,
+        sigma: float,
+    ) -> None:
+        self.env = env
+        self.lr = lr
+        self.population_size = population_size
+        self.sigma = sigma
+
+    def __call__(
+        self, mean: np.ndarray, rewards: np.ndarray, normal_dist: np.ndarray
+    ) -> np.ndarray:
+        """
+        Perform an optimization step
+
+        :param normal_dist:
+        """
+        scaled_rewards = scale(rewards)
+        mean += (self.lr / (np.mean(self.sigma) * self.population_size)) * np.dot(
+            normal_dist.T, scaled_rewards
+        )
+        return np.clip(mean, self.env.action_space.low, self.env.action_space.high)

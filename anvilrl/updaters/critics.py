@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Iterator, Optional, Type, Union
 
 import numpy as np
@@ -10,7 +11,7 @@ from anvilrl.models.actor_critics import ActorCritic, Critic
 from anvilrl.signal_processing.sample_estimators import soft_q_target
 
 
-class BaseCriticUpdater(object):
+class BaseCriticUpdater(ABC):
     """
     The base class with pre-defined methods for derived classes
 
@@ -53,6 +54,10 @@ class BaseCriticUpdater(object):
         if self.max_grad > 0:
             T.nn.utils.clip_grad_norm_(critic_parameters, self.max_grad)
         optimizer.step()
+
+    @abstractmethod
+    def __call__(self):
+        """Run an optimization step"""
 
 
 class ValueRegression(BaseCriticUpdater):
