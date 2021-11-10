@@ -9,9 +9,9 @@ from gym.vector import VectorEnv
 
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
-from anvilrl.common.enumerations import TrainFrequencyType
+from anvilrl.common.enumerations import PopulationInitStrategy, TrainFrequencyType
 from anvilrl.common.logging import Logger
-from anvilrl.common.type_aliases import Log, Tensor
+from anvilrl.common.type_aliases import Log, Tensor, Trajectories
 from anvilrl.common.utils import filter_dataclass_by_none, get_device, numpy_to_torch
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import Actor, ActorCritic
@@ -133,9 +133,12 @@ class BaseDeepAgent(ABC):
             self.buffer.add_trajectory(
                 observation, action, reward, next_observation, done
             )
+            self.logger.debug(
+                f"{Trajectories(observation, action, reward, next_observation, done)}"
+            )
+            # Add reward to current episode log
             self.logger.add_reward(reward)
-            self.logger.debug(f"ACTION: {action}")
-            self.logger.debug(f"REWARD: {reward}")
+            # Get indices of episodes that are done, especially useful for vectorized environments
             done_indices = np.where(done)[0]
 
             if isinstance(self.env, VectorEnv):
@@ -145,7 +148,8 @@ class BaseDeepAgent(ABC):
             else:
                 observation = self.env.reset() if done else next_observation
 
-            # For multiple environments, we keep track of individual episodes as they finish
+            # For vectorized environments, we keep track of individual episodes as they finish
+            # also applies to single environments
             self.logger.episode_dones[done_indices] = True
             # If all environment episodes are done, we write an episode log and reset it.
             if all(self.logger.episode_dones):
@@ -242,26 +246,15 @@ class BaseSearchAgent(ABC):
     def __init__(
         self,
         env: VectorEnv,
-        model: Actor,
-        population_size: int,
-        population_std: float,
+        buffer_class: BaseBuffer = BaseBuffer,
+        buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
-        callbacks: Optional[List[Type[BaseCallback]]] = None,
-        callback_settings: Optional[List[CallbackSettings]] = None,
         device: Union[str, T.device] = "auto",
-        render: bool = False,
     ) -> None:
         self.env = env
-        self.model = model
-        self.population_size = population_size
-        self.population_std = population_std
-        self.render = render
-        self.buffer = None
+        buffer_settings = filter_dataclass_by_none(buffer_settings)
+        self.buffer = buffer_class(env=env, device=device, **buffer_settings)
         self.step = 0
-        self.episode = 0
-        self.done = False  # Flag terminate training
-        # Keep track of which individuals have completed an episode
-        self.episode_dones = np.array([False for _ in range(population_size)])
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
@@ -269,104 +262,76 @@ class BaseSearchAgent(ABC):
             verbose=logger_settings.verbose,
             num_envs=env.num_envs,
         )
-        if callbacks is not None:
-            assert len(callbacks) == len(
-                callback_settings
-            ), "There should be a CallbackSetting object for each callback"
-            self.callbacks = [
-                callback(self.logger, self.model, **asdict(settings))
-                for callback, settings in zip(callbacks, callback_settings)
-            ]
-        else:
-            self.callbacks = None
+        self.population = None
 
         device = get_device(device)
         self.logger.info(f"Using device {device}")
 
-    def predict(self, observations: Tensor) -> T.Tensor:
-        """Run the agent actor model"""
-        return self.model(observations)
-
-    def step_env(
-        self, models: List[Actor], observation: np.ndarray, num_steps: int = 1
+    def initialize_population(
+        self,
+        population_init_strategy: PopulationInitStrategy,
+        starting_point: Optional[np.ndarray],
+        population_std: Optional[float] = None,
     ) -> np.ndarray:
-        """
-        Step the agent in the environment
-
-        :param observation: the starting observation to step from
-        :param num_steps: how many steps to take
-        :return: the final observation after all steps have been done
-        """
-
-        for _ in range(num_steps):
-            if self.render:
-                self.env.render()
-            action = [model(observation[i]) for i, model in enumerate(models)]
-            next_observation, reward, done, _ = self.env.step(action)
-            self.buffer.add_trajectory(
-                observation, action, reward, next_observation, done
+        if population_init_strategy == PopulationInitStrategy.NORMAL:
+            mean = (
+                self.env.action_space.sample()
+                if starting_point is None
+                else starting_point
+            )
+            std = 1 if population_std is None else population_std
+            population = np.random.normal(
+                mean, std, (self.population_size, self.env.action_space.shape[0])
+            )
+            return np.clip(
+                population, self.env.action_space.low, self.env.action_space.high
+            )
+        elif population_init_strategy == PopulationInitStrategy.UNIFORM:
+            low = self.env.action_space.low
+            high = self.env.action_space.high
+            return np.random.uniform(
+                low, high, (self.population_size, self.env.action_space.shape[0])
             )
 
-            self.logger.add_reward(reward)
-            self.logger.debug(f"ACTION: {action}")
-            self.logger.debug(f"REWARD: {reward}")
-
-            done_indices = np.where(done)[0]
-            not_done_indices = np.where(~done)[0]
-            observation[done_indices] = self.env.reset()[done_indices]
-            observation[not_done_indices] = next_observation[not_done_indices]
-
-            self.logger.episode_dones[done_indices] = True
-            if all(self.logger.episode_dones):
-                self.logger.write_episode_log(self.step)
-                self.logger.reset_episode_log()
-                self.episode += 1
+    def step_env(self, num_steps: int = 1) -> None:
+        for _ in num_steps:
+            _, rewards, dones, _ = self.env.step(self.population)
+            self.buffer.add_trajectory(
+                observation=self.env.observation_space.sample(),
+                action=self.env.action_space.sample(),
+                reward=rewards,
+                next_observation=self.env.observation_space.sample(),
+                dones=dones,
+            )
             self.step += 1
-        return observation
 
-    @staticmethod
-    def _model_to_vector(model: Actor) -> np.ndarray:
-        weights, biases = [p for p in model.parameters() if p.requires_grad]
-        parameter_vector = T.cat((T.flatten(weights), biases))
-        return numpy_to_torch(parameter_vector)
-
-    @staticmethod
-    def _vector_to_model(vector: np.ndarray) -> Actor:
-        raise NotImplementedError()
-
-    def initialize_population(self) -> np.ndarray:
-        mean = self._model_to_vector(self.model)
-        normal_dist = np.random.randn(self.population_size, len(mean))
-        return mean + self.population_std * normal_dist
+    def evaluate_agent(self) -> None:
+        trajectories = self.buffer.all()
+        max_reward = np.max(trajectories.rewards)
+        self.logger.add_reward(max_reward)
+        self.logger.write_episode_log(self.step)
+        self.buffer.reset()
 
     @abstractmethod
-    def _fit(
-        self, population_size: int, population_std: float, learning_rate: float
-    ) -> Log:
+    def _fit(self) -> Log:
         """
         Train the agent in the environment
+        This method should also update `self.population` with the new population to step in
+        the environment
 
-        :param batch_size: minibatch size to make a single gradient descent step on
-        :param actor_epochs: how many times to update the actor network in each training step
-        :param critic_epochs: how many times to update the critic network in each training step
         :return: a Log object with training diagnostic info
         """
 
     def fit(
         self,
         num_steps: int,
+        population_init_strategy: str,
+        starting_point: Optional[np.ndarray] = None,
         train_frequency: Tuple[str, int] = ("step", 1),
-    ) -> None:
-        """
-        Train the agent in the environment
-
-        :param num_steps: total number of environment steps to train over
-        :param population_size: how many agents to compare in each iteration
-        :param actor_epochs: how many times to update the actor network in each training step
-        :param train_frequency: the number of steps or episodes to run before running a training step.
-            To run every n episodes, use `("episode", n)`.
-            To run every n steps, use `("step", n)`.
-        """
+    ):
+        population_init_strategy = PopulationInitStrategy(
+            population_init_strategy.lower()
+        )
         train_frequency = (
             TrainFrequencyType(train_frequency[0].lower()),
             train_frequency[1],
@@ -375,33 +340,25 @@ class BaseSearchAgent(ABC):
         if train_frequency[0] == TrainFrequencyType.STEP:
             num_steps = num_steps // train_frequency[1]
 
-        self.population = self.initialize_population()
-        observation = self.env.reset()
-        for _ in range(num_steps):
-            models = [
-                self._vector_to_model(individual) for individual in self.population
-            ]
+        self.population = self.initialize_population(
+            population_init_strategy, starting_point
+        )
+        for _ in num_steps:
             # Step for number of steps specified
             if train_frequency[0] == TrainFrequencyType.STEP:
                 observation = self.step_env(
-                    models, observation=observation, num_steps=train_frequency[1]
+                    observation=observation, num_steps=train_frequency[1]
                 )
             # Step for number of episodes specified
             elif train_frequency[0] == TrainFrequencyType.EPISODE:
                 start_episode = self.episode
                 end_episode = start_episode + train_frequency[1]
                 while self.episode != end_episode:
-                    observation = self.step_env(models, observation=observation)
+                    observation = self.step_env(observation=observation)
                 if self.step >= num_steps:
                     break
 
-            if self.done:
-                break
-
-            train_log = self._fit(
-                population_size=self.population_size,
-                population_std=self.population_std,
-                learning_rate=1,
-            )
+            train_log = self._fit()
 
             self.logger.add_train_log(train_log)
+            self.evaluate_agent()

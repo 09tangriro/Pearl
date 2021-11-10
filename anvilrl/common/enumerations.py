@@ -22,3 +22,10 @@ class GoalSelectionStrategy(Enum):
     FINAL = "final"
     FUTURE = "future"
     EPISODE = "episode"
+
+
+class PopulationInitStrategy(Enum):
+    """Population initialization strategy for random search agents"""
+
+    NORMAL = "normal"
+    UNIFORM = "uniform"
