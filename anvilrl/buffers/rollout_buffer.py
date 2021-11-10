@@ -40,6 +40,13 @@ class RolloutBuffer(BaseBuffer):
             self.next_observations,
         )
 
+    def reset(self) -> None:
+        super().reset()
+        self.next_observations = np.zeros(
+            (self.buffer_size,) + self.obs_shape,
+            dtype=self.env.observation_space.dtype,
+        )
+
     def add_trajectory(
         self,
         observation: np.ndarray,
@@ -110,4 +117,13 @@ class RolloutBuffer(BaseBuffer):
 
         return self._transform_samples(
             flatten_env, dtype, observations, actions, rewards, next_observations, dones
+        )
+
+    def all(self) -> Trajectories:
+        return Trajectories(
+            observations=self.observations[: self.pos],
+            actions=self.actions[: self.pos],
+            rewards=self.rewards[: self.pos],
+            next_observations=self.next_observations[: self.pos],
+            dones=self.dones[: self.pos],
         )

@@ -72,6 +72,23 @@ class HERBuffer(BaseBuffer):
 
         self.her_ratio = 1 - (1.0 / (n_sampled_goal + 1))
 
+    def reset(self) -> None:
+        super().reset()
+
+        self.desired_goals = np.zeros(
+            (self.buffer_size,) + self.obs_shape,
+            dtype=self.env.observation_space.dtype,
+        )
+        self.next_achieved_goals = np.zeros(
+            (self.buffer_size,) + self.obs_shape,
+            dtype=self.env.observation_space.dtype,
+        )
+
+        # Keep track of where in the data structure episodes end
+        self.episode_end_indices = np.zeros(self.batch_shape, dtype=np.int8)
+        # Keep track of which transitions belong to which episodes.
+        self.index_episode_map = np.zeros(self.batch_shape, dtype=np.int8)
+
     def add_trajectory(
         self,
         observation: Dict[str, np.ndarray],
@@ -230,3 +247,12 @@ class HERBuffer(BaseBuffer):
 
         trajectories = self._sample_trajectories(batch_inds)
         return self._transform_samples(flatten_env, dtype, *trajectories)
+
+    def all(self):
+        return Trajectories(
+            observations=self.observations[: self.pos],
+            actions=self.actions[: self.pos],
+            rewards=self.rewards[: self.pos],
+            next_observations=self.observations[: (self.pos + 1) % self.buffer_size],
+            dones=self.dones[: self.pos],
+        )

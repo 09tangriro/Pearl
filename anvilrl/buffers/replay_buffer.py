@@ -37,6 +37,9 @@ class ReplayBuffer(BaseBuffer):
             self.observations, self.actions, self.rewards, self.dones
         )
 
+    def reset(self) -> None:
+        super().reset()
+
     def add_trajectory(
         self,
         observation: np.ndarray,
@@ -101,4 +104,13 @@ class ReplayBuffer(BaseBuffer):
 
         return self._transform_samples(
             flatten_env, dtype, observations, actions, rewards, next_observations, dones
+        )
+
+    def all(self) -> Trajectories:
+        return Trajectories(
+            observations=self.observations[: self.pos],
+            actions=self.actions[: self.pos],
+            rewards=self.rewards[: self.pos],
+            next_observations=self.observations[: (self.pos + 1) % self.buffer_size],
+            dones=self.dones[: self.pos],
         )

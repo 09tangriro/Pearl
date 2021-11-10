@@ -28,6 +28,7 @@ class BaseBuffer(ABC):
         buffer_size: int,
         device: Union[str, T.device] = "auto",
     ) -> None:
+        self.env = env
         self.buffer_size = buffer_size
         self.device = get_device(device)
         self.full = False
@@ -42,14 +43,14 @@ class BaseBuffer(ABC):
             self.batch_shape = (buffer_size,)
 
         self.obs_shape = get_space_shape(env.observation_space)
-        action_shape = get_space_shape(env.action_space)
+        self.action_shape = get_space_shape(env.action_space)
 
         self.observations = np.zeros(
             (self.buffer_size,) + self.obs_shape,
             dtype=env.observation_space.dtype,
         )
         self.actions = np.zeros(
-            (self.buffer_size,) + action_shape,
+            (self.buffer_size,) + self.action_shape,
             dtype=env.observation_space.dtype,
         )
         # Use 3 dims for easier calculations without having to think about broadcasting
@@ -140,6 +141,25 @@ class BaseBuffer(ABC):
         )
 
     @abstractmethod
+    def reset(self) -> None:
+        """Reset the buffer"""
+
+        self.episode = 0
+        self.pos = 0
+        self.full = False
+
+        self.observations = np.zeros(
+            (self.buffer_size,) + self.obs_shape,
+            dtype=self.env.observation_space.dtype,
+        )
+        self.actions = np.zeros(
+            (self.buffer_size,) + self.action_shape,
+            dtype=self.env.observation_space.dtype,
+        )
+        self.rewards = np.zeros(self.batch_shape + (1,), dtype=np.float32)
+        self.dones = np.zeros(self.batch_shape + (1,), dtype=np.float32)
+
+    @abstractmethod
     def add_trajectory(
         self,
         observation: np.ndarray,
@@ -208,4 +228,12 @@ class BaseBuffer(ABC):
         :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
         :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: the most recent trajectories
+        """
+
+    @abstractmethod
+    def all(self) -> Trajectories:
+        """
+        Get all stored trajectories
+
+        :return: stored trajectories
         """
