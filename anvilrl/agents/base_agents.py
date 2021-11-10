@@ -310,10 +310,9 @@ class BaseSearchAgent(ABC):
         max_reward = np.max(trajectories.rewards)
         self.logger.add_reward(max_reward)
         self.logger.write_episode_log(self.step)
-        self.buffer.reset()
 
     @abstractmethod
-    def _fit(self) -> Log:
+    def _fit(self, rewards: np.ndarray) -> Log:
         """
         Train the agent in the environment
         This method should also update `self.population` with the new population to step in
@@ -358,7 +357,6 @@ class BaseSearchAgent(ABC):
                 if self.step >= num_steps:
                     break
 
-            train_log = self._fit()
-
-            self.logger.add_train_log(train_log)
             self.evaluate_agent()
+            train_log = self._fit()
+            self.logger.add_train_log(train_log)
