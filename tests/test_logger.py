@@ -44,8 +44,8 @@ def test_add_reward():
     logger = Logger()
     vec_logger = Logger(num_envs=2)
 
-    logger.add_reward(1)
-    assert logger.episode_rewards == [1]
+    logger.add_reward(1.0)
+    assert logger.episode_rewards == [1.0]
 
     reward = np.array([1, 1])
     vec_logger.add_reward(reward)

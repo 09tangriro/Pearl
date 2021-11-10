@@ -2,6 +2,7 @@ import logging
 from typing import Optional, Union
 
 import numpy as np
+from numpy.lib.arraysetops import isin
 from torch.utils.tensorboard import SummaryWriter
 
 from anvilrl.common.type_aliases import Log
@@ -71,9 +72,9 @@ class Logger(object):
 
     def add_reward(self, reward: Union[float, np.ndarray]) -> None:
         """Add step reward to the episode rewards"""
-        if self.num_envs == 1:
+        if isinstance(reward, float):
             self.episode_rewards.append(reward)
-        else:
+        elif isinstance(reward, np.ndarray):
             self.episode_rewards.append(
                 reward[np.where(self.episode_dones == False)[0]]
             )
