@@ -310,13 +310,12 @@ class EvolutionaryUpdater(BaseActorUpdater):
         self,
         env: VectorEnv,
         lr: float,
-        population_size: int,
-        sigma: float,
+        population_std: Union[float, np.ndarray],
     ) -> None:
         self.env = env
         self.lr = lr
-        self.population_size = population_size
-        self.sigma = sigma
+        self.population_size = env.num_envs
+        self.population_std = population_std
 
     def __call__(
         self, mean: np.ndarray, rewards: np.ndarray, normal_dist: np.ndarray
@@ -327,7 +326,7 @@ class EvolutionaryUpdater(BaseActorUpdater):
         :param normal_dist:
         """
         scaled_rewards = scale(rewards)
-        mean += (self.lr / (np.mean(self.sigma) * self.population_size)) * np.dot(
-            normal_dist.T, scaled_rewards
-        )
+        mean += (
+            self.lr / (np.mean(self.population_std) * self.population_size)
+        ) * np.dot(normal_dist.T, scaled_rewards)
         return np.clip(mean, self.env.action_space.low, self.env.action_space.high)
