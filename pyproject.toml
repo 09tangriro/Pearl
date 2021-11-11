@@ -2,6 +2,7 @@
 name = "anvilrl"
 version = "0.1.0"
 description = "Adaptable tools to make reinforcement learning algorithms"
+license = "MIT"
 authors = ["Rohan Tangri <rohan.tangri@gmail.com>"]
 
 [tool.poetry.dependencies]
