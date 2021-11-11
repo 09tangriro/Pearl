@@ -7,7 +7,6 @@ from gym.vector.vector_env import VectorEnv
 from anvilrl.agents.base_agents import BaseSearchAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
-from anvilrl.common.type_aliases import Log
 from anvilrl.settings import (
     BufferSettings,
     LoggerSettings,
