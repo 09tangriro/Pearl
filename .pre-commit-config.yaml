@@ -1,14 +1,21 @@
 repos:
-  - repo: https://github.com/ambv/black
-    rev: 21.7b0
+  - repo: local
     hooks:
     - id: black
+      name: black
       entry: poetry run black .
-      language_version: python3.8
+      language: python
+      language_version: python3
+      types:
+        - file
+        - python
 
-  - repo: https://github.com/timothycrosley/isort
-    rev: 5.9.2
+  - repo: local
     hooks:
     - id: isort
-      args: [--filter-files, --profile=black]
-      files: \.py$
+      name: isort
+      entry: poetry run isort --profile=black .
+      language: system
+      types:
+        - file
+        - python
