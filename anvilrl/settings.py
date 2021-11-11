@@ -34,7 +34,7 @@ class PopulationInitializerSettings:
     :param starting_point: central starting point of the population (only used if strategy is 'normal')
     """
 
-    population_init_strategy: Union[str, PopulationInitStrategy]
+    strategy: Union[str, PopulationInitStrategy]
     population_std: Optional[Union[float, np.ndarray]] = 1
     starting_point: Optional[np.ndarray] = None
 
