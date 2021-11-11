@@ -13,12 +13,10 @@ class BaseSearchUpdater(ABC):
     The base random search updater class with pre-defined methods for derived classes
 
     :param env: the vector environment
-    :param lr: the learning rate for the optimizer algorithm
     """
 
-    def __init__(self, env: VectorEnv, lr: float) -> None:
+    def __init__(self, env: VectorEnv) -> None:
         self.env = env
-        self.lr = lr
         self.population_size = env.num_envs
 
     @abstractmethod
@@ -45,6 +43,9 @@ class BaseSearchUpdater(ABC):
 class EvolutionaryUpdater(BaseSearchUpdater):
     """
     Updater for the Natural Evolutionary Strategy
+
+    :param env: the vector environment
+    :param lr: the learning rate
     """
 
     def __init__(
@@ -52,7 +53,8 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         env: VectorEnv,
         lr: float,
     ) -> None:
-        super().__init__(env, lr)
+        super().__init__(env)
+        self.lr = lr
         self.normal_dist = None
         self.mean = None
         self.population_std = None
