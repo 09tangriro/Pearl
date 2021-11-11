@@ -1,10 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Iterator, Optional, Type, Union
 
-import numpy as np
 import torch as T
-from gym.vector import VectorEnv
-from sklearn.preprocessing import scale
 from torch.nn.parameter import Parameter
 
 from anvilrl.common.type_aliases import Tensor, UpdaterLog
@@ -15,7 +12,7 @@ from anvilrl.signal_processing.sample_estimators import sample_reverse_kl_diverg
 
 class BaseActorUpdater(ABC):
     """
-    The base class with pre-defined methods for derived classes
+    The base actor updater class with pre-defined methods for derived classes
 
     :param optimizer_class: the type of optimizer to use, defaults to Adam
     :param lr: the learning rate for the optimizer algorithm
@@ -299,34 +296,3 @@ class SoftPolicyGradient(BaseActorUpdater):
         self.run_optimizer(optimizer, loss, actor_parameters)
 
         return UpdaterLog(loss=loss.detach().item(), entropy=entropy.detach().item())
-
-
-class EvolutionaryUpdater(BaseActorUpdater):
-    """
-    Updater for the Natural Evolutionary Strategy
-    """
-
-    def __init__(
-        self,
-        env: VectorEnv,
-        lr: float,
-        population_std: Union[float, np.ndarray],
-    ) -> None:
-        self.env = env
-        self.lr = lr
-        self.population_size = env.num_envs
-        self.population_std = population_std
-
-    def __call__(
-        self, mean: np.ndarray, rewards: np.ndarray, normal_dist: np.ndarray
-    ) -> np.ndarray:
-        """
-        Perform an optimization step
-
-        :param normal_dist:
-        """
-        scaled_rewards = scale(rewards)
-        mean += (
-            self.lr / (np.mean(self.population_std) * self.population_size)
-        ) * np.dot(normal_dist.T, scaled_rewards)
-        return np.clip(mean, self.env.action_space.low, self.env.action_space.high)

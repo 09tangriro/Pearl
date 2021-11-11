@@ -1,9 +1,12 @@
 import logging
 from dataclasses import dataclass
-from typing import Optional, Type
+from typing import Optional, Type, Union
 
+import numpy as np
 import torch as T
 from torch.optim.optimizer import Optimizer
+
+from anvilrl.common.enumerations import PopulationInitStrategy
 
 
 @dataclass
@@ -19,6 +22,21 @@ class OptimizerSettings:
     optimizer_class: Type[Optimizer] = T.optim.Adam
     learning_rate: float = 1e-3
     max_grad: float = 0.5
+
+
+@dataclass
+class PopulationInitializerSettings:
+    """
+    Settings for the population initializer
+
+    :param population_init_strategy: strategy for population initialization, accepts 'normal' or 'uniform'
+    :param population_std: std for population initialization (only used if strategy is 'normal')
+    :param starting_point: central starting point of the population (only used if strategy is 'normal')
+    """
+
+    population_init_strategy: Union[str, PopulationInitStrategy]
+    population_std: Optional[Union[float, np.ndarray]] = 1
+    starting_point: Optional[np.ndarray] = None
 
 
 @dataclass

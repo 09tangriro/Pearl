@@ -1,0 +1,97 @@
+from abc import ABC, abstractmethod
+from typing import Optional, Union
+
+import numpy as np
+from gym.vector import VectorEnv
+from sklearn.preprocessing import scale
+
+from anvilrl.common.enumerations import PopulationInitStrategy
+
+
+class BaseSearchUpdater(ABC):
+    """
+    The base random search updater class with pre-defined methods for derived classes
+
+    :param env: the vector environment
+    :param lr: the learning rate for the optimizer algorithm
+    """
+
+    def __init__(self, env: VectorEnv, lr: float) -> None:
+        self.env = env
+        self.lr = lr
+        self.population_size = env.num_envs
+
+    @abstractmethod
+    def initialize_population(
+        self,
+        population_init_strategy: PopulationInitStrategy,
+        population_std: Optional[Union[float, np.ndarray]] = 1,
+        starting_point: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        """
+        Initialize the population
+
+        :param population_init_strategy: the population initialization strategy
+        :param population_std: the standard deviation for the population initialization
+        :param starting_point: the starting point for the population initialization
+        :return: the starting population
+        """
+
+    @abstractmethod
+    def __call__(self):
+        """Run an optimization step"""
+
+
+class EvolutionaryUpdater(BaseSearchUpdater):
+    """
+    Updater for the Natural Evolutionary Strategy
+    """
+
+    def __init__(
+        self,
+        env: VectorEnv,
+        lr: float,
+    ) -> None:
+        super().__init__(env, lr)
+        self.normal_dist = None
+        self.mean = None
+        self.population_std = None
+
+    def initialize_population(
+        self,
+        population_init_strategy: PopulationInitStrategy,
+        population_std: Union[float, np.ndarray] = 1,
+        starting_point: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        self.population_std = population_std
+        self.mean = (
+            starting_point
+            if starting_point is not None
+            else self.env.action_space.sample()
+        )
+        self.normal_dist = np.random.randn(
+            self.population_size, self.env.single_action_space.shape[0]
+        )
+        return self.mean + population_std * self.normal_dist
+
+    def __call__(self, rewards: np.ndarray) -> np.ndarray:
+        """
+        Perform an optimization step
+
+        :param rewards: the rewards for the current population
+        """
+        assert (
+            self.mean is not None
+        ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
+        scaled_rewards = scale(rewards)
+        self.mean += (
+            self.lr / (np.mean(self.population_std) * self.population_size)
+        ) * np.dot(self.normal_dist.T, scaled_rewards)
+
+        self.normal_dist = np.random.randn(
+            self.population_size, self.env.single_action_space.shape[0]
+        )
+        population = self.mean + self.population_std * self.normal_dist
+        return np.clip(
+            population, self.env.action_space.low, self.env.action_space.high
+        )
