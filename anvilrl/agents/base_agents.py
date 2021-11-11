@@ -20,7 +20,9 @@ from anvilrl.settings import (
     CallbackSettings,
     ExplorerSettings,
     LoggerSettings,
+    PopulationInitializerSettings,
 )
+from anvilrl.updaters.random_search import BaseSearchUpdater
 
 
 class BaseDeepAgent(ABC):
@@ -41,10 +43,10 @@ class BaseDeepAgent(ABC):
         """
         The BaseDeepAgent class is given to handle all the stuff around the actual Deep RL algorithm.
         It's recommended to inherit this class when implementing your own Deep RL agent. You'll need
-        to implement the _fit() abstract method and override the __init__ to add buffer, updaters
-        and explorers along with their respective settings.
+        to implement the _fit() abstract method and override the __init__ to add updaters along with
+        it's settings.
 
-        See the example algorithms already done for guidance and settings.py for settings objects
+        See the example deep agents already done for guidance and settings.py for settings objects
         that can be used.
 
         :param env: the gym-like environment to be used
@@ -241,20 +243,38 @@ class BaseDeepAgent(ABC):
 
 
 class BaseSearchAgent(ABC):
-    """TBD"""
+    """
+    The BaseSearchAgent class is given to handle all the stuff around the actual random search
+    algorithm. It's recommended to inherit this class when implementing your own random search
+    agent. You'll need to implement the _fit() abstract method and override the __init__ to add
+    any extra hyperparameters.
+
+    See the example random search agents already done for guidance and settings.py for settings
+    objects that can be used.
+
+    :param env: the gym vecotrized environment
+    :param updater_class: the class to use for the updater handling the actual update algorithm
+    :param population_initializer_settings: the settings object for population initialization
+    :param buffer_class: the buffer class for storing and sampling trajectories
+    :param buffer_settings: settings for the buffer
+    :param logger_settings: settings for the logger
+    :param device: device to run on, accepts "auto", "cuda" or "cpu" (needed to pass to buffer,
+        can mostly be ignored)
+    """
 
     def __init__(
         self,
         env: VectorEnv,
-        population_std: Optional[Union[float, np.ndarray]] = None,
+        updater_class: Type[BaseSearchUpdater],
+        population_initializer_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
         buffer_class: BaseBuffer = BaseBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[str, T.device] = "auto",
     ) -> None:
         self.env = env
-        self.population_std = population_std
-        self.population_size = env.num_envs
+        self.updater = updater_class(env=env)
+        self.population_init_settings = population_initializer_settings
         buffer_settings = filter_dataclass_by_none(buffer_settings)
         self.buffer = buffer_class(env=env, device=device, **buffer_settings)
         self.step = 0
@@ -271,32 +291,12 @@ class BaseSearchAgent(ABC):
         device = get_device(device)
         self.logger.info(f"Using device {device}")
 
-    def initialize_population(
-        self,
-        population_init_strategy: PopulationInitStrategy,
-        starting_point: Optional[np.ndarray],
-    ) -> np.ndarray:
-        if population_init_strategy == PopulationInitStrategy.NORMAL:
-            mean = (
-                self.env.action_space.sample()
-                if starting_point is None
-                else starting_point
-            )
-            std = 1 if self.population_std is None else np.mean(self.population_std)
-            population = np.random.normal(
-                mean, std, (self.population_size, self.env.action_space.shape[0])
-            )
-            return np.clip(
-                population, self.env.action_space.low, self.env.action_space.high
-            )
-        elif population_init_strategy == PopulationInitStrategy.UNIFORM:
-            low = self.env.action_space.low
-            high = self.env.action_space.high
-            return np.random.uniform(
-                low, high, (self.population_size, self.env.action_space.shape[0])
-            )
-
     def step_env(self, num_steps: int = 1) -> None:
+        """
+        Step the agent in the environment
+
+        :param num_steps: how many steps to take
+        """
         for _ in num_steps:
             _, rewards, dones, _ = self.env.step(self.population)
             self.buffer.add_trajectory(
@@ -309,31 +309,35 @@ class BaseSearchAgent(ABC):
             self.step += 1
 
     def evaluate_agent(self) -> None:
+        """
+        Evaluate the agent and write a log
+        """
         trajectories = self.buffer.all()
         max_reward = np.max(trajectories.rewards)
         self.logger.add_reward(max_reward)
         self.logger.write_episode_log(self.step)
 
     @abstractmethod
-    def _fit(self, rewards: np.ndarray) -> Log:
+    def _fit(self) -> np.ndarray:
         """
-        Train the agent in the environment
-        This method should also update `self.population` with the new population to step in
-        the environment
+        Update the agent
 
-        :return: a Log object with training diagnostic info
+        :return: the updated population
         """
 
     def fit(
         self,
         num_steps: int,
-        population_init_strategy: str,
-        starting_point: Optional[np.ndarray] = None,
         train_frequency: Tuple[str, int] = ("step", 1),
     ):
-        population_init_strategy = PopulationInitStrategy(
-            population_init_strategy.lower()
-        )
+        """
+        Train the agent in the environment
+
+        :param num_steps: total number of environment steps to train over
+        :param train_frequency: the number of steps or episodes to run before running a training step.
+            To run every n episodes, use `("episode", n)`.
+            To run every n steps, use `("step", n)`.
+        """
         train_frequency = (
             TrainFrequencyType(train_frequency[0].lower()),
             train_frequency[1],
@@ -342,8 +346,16 @@ class BaseSearchAgent(ABC):
         if train_frequency[0] == TrainFrequencyType.STEP:
             num_steps = num_steps // train_frequency[1]
 
-        self.population = self.initialize_population(
-            population_init_strategy, starting_point
+        if isinstance(self.population_init_settings.strategy, str):
+            population_init_strategy = PopulationInitStrategy(
+                self.population_init_settings.strategy.lower()
+            )
+        else:
+            population_init_strategy = self.population_init_settings.strategy
+        self.population = self.updater.initialize_population(
+            population_init_strategy=population_init_strategy,
+            population_std=self.population_init_settings.population_std,
+            starting_point=self.population_init_settings.starting_point,
         )
         for _ in num_steps:
             # Step for number of steps specified
@@ -359,5 +371,4 @@ class BaseSearchAgent(ABC):
                     break
 
             self.evaluate_agent()
-            train_log = self._fit()
-            self.logger.add_train_log(train_log)
+            self.population = self._fit()
