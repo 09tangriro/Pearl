@@ -313,7 +313,7 @@ class TwinActorCritic(ActorCritic):
 
     def forward_target_critic(
         self, observations: Tensor, actions: Optional[Tensor] = None
-    ) -> Tuple[T.Tensor]:
+    ) -> Tuple[T.Tensor, T.Tensor]:
         """Run a forward pass to get the target critics outputs"""
         return self.target_critic(observations, actions), self.target_critic2(
             observations, actions

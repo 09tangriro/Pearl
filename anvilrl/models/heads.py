@@ -26,6 +26,7 @@ class BaseActorHead(T.nn.Module, ABC):
 
     def __init__(self):
         super().__init__()
+        self.model = None
 
     @abstractmethod
     def get_action_distribution(
@@ -40,6 +41,8 @@ class BaseActorHead(T.nn.Module, ABC):
 
     def forward(self, input: T.Tensor) -> T.Tensor:
         distribution = self.get_action_distribution(input)
+        if distribution is None:
+            return self.model(input)
         return distribution.sample()
 
 
@@ -139,9 +142,6 @@ class DeterministicPolicyHead(BaseActorHead):
         self, input: T.Tensor
     ) -> Optional[T.distributions.Distribution]:
         return None
-
-    def forward(self, input: T.Tensor) -> T.Tensor:
-        return self.model(input)
 
 
 class DiagGaussianPolicyHead(BaseActorHead):
