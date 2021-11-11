@@ -45,16 +45,13 @@ class EvolutionaryUpdater(BaseSearchUpdater):
     Updater for the Natural Evolutionary Strategy
 
     :param env: the vector environment
-    :param lr: the learning rate
     """
 
     def __init__(
         self,
         env: VectorEnv,
-        lr: float,
     ) -> None:
         super().__init__(env)
-        self.lr = lr
         self.normal_dist = None
         self.mean = None
         self.population_std = None
@@ -76,18 +73,19 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         )
         return self.mean + population_std * self.normal_dist
 
-    def __call__(self, rewards: np.ndarray) -> np.ndarray:
+    def __call__(self, rewards: np.ndarray, lr: float) -> np.ndarray:
         """
         Perform an optimization step
 
         :param rewards: the rewards for the current population
+        :param lr: the learning rate
         """
         assert (
             self.mean is not None
         ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
         scaled_rewards = scale(rewards)
         self.mean += (
-            self.lr / (np.mean(self.population_std) * self.population_size)
+            lr / (np.mean(self.population_std) * self.population_size)
         ) * np.dot(self.normal_dist.T, scaled_rewards)
 
         self.normal_dist = np.random.randn(
