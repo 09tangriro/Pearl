@@ -10,7 +10,7 @@ from gym.vector import VectorEnv
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.enumerations import PopulationInitStrategy, TrainFrequencyType
-from anvilrl.common.logging import Logger
+from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Tensor, Trajectories
 from anvilrl.common.utils import filter_dataclass_by_none, get_device, numpy_to_torch
 from anvilrl.explorers.base_explorer import BaseExplorer

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from anvilrl.common.logging import Logger
+from anvilrl.common.logging_ import Logger
 from anvilrl.models.actor_critics import ActorCritic
 
 

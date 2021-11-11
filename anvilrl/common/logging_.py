@@ -2,7 +2,6 @@ import logging
 from typing import Optional, Union
 
 import numpy as np
-from numpy.lib.arraysetops import isin
 from torch.utils.tensorboard import SummaryWriter
 
 from anvilrl.common.type_aliases import Log

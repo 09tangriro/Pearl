@@ -1,6 +1,6 @@
 import numpy as np
 
-from anvilrl.common.logging import Logger
+from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log
 
 
