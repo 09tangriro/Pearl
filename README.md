@@ -6,7 +6,19 @@
 # AnvilRL
 AnvilRL (referred to as *Anvil*) is a pytorch based RL library with the goal of being excellent for rapid prototyping of new algorithms and ideas. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
 
-This project also incorporates components for creating random search strategies (e.g. Evolutionary Strategy, Genetic Algorithm) on top of classic deep RL algorithms.
+## Main Features
+
+| **Features**                      | **AnvilRL** |
+| ---------------------------       | ----------------------|
+| Deep RL tools (e.g. Actor Critic) | :heavy_check_mark: |
+| Random search tools (e.g. Evolutionary Strategy)   | :heavy_check_mark: |
+| Tensorboard support               | :heavy_check_mark: |
+| Modular and extensible components | :heavy_check_mark: |
+| Type hints                        | :heavy_check_mark: |
+| PEP8 code style                   | :heavy_check_mark: |
+| Custom callbacks                  | :heavy_check_mark: |
+| Unit Tests                        | :heavy_check_mark: |
+| Type hints                        | :heavy_check_mark: |
 
 ## User Guide
 
