@@ -17,7 +17,6 @@ AnvilRL (referred to as *Anvil*) is a pytorch based RL library with the goal of 
 | PEP8 code style                   | :heavy_check_mark: |
 | Custom callbacks                  | :heavy_check_mark: |
 | Unit Tests                        | :heavy_check_mark: |
-| Type hints                        | :heavy_check_mark: |
 
 ## User Guide
 
