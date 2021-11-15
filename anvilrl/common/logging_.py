@@ -62,8 +62,10 @@ class Logger(object):
         self.episode_dones = np.array([False for _ in range(self.num_envs)])
 
     def add_train_log(self, train_log: Log) -> None:
-        self.episode_actor_losses.append(train_log.actor_loss)
-        self.episode_critic_losses.append(train_log.critic_loss)
+        if train_log.actor_loss is not None:
+            self.episode_actor_losses.append(train_log.actor_loss)
+        if train_log.critic_loss is not None:
+            self.episode_critic_losses.append(train_log.critic_loss)
         if train_log.entropy is not None:
             self.episode_entropies.append(train_log.entropy)
         if train_log.kl_divergence is not None:

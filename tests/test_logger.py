@@ -34,8 +34,8 @@ def test_add_train_log():
     train_log = Log()
 
     logger.add_train_log(train_log)
-    assert logger.episode_actor_losses == [0]
-    assert logger.episode_critic_losses == [0]
+    assert logger.episode_actor_losses == []
+    assert logger.episode_critic_losses == []
     assert logger.episode_kl_divergences == []
     assert logger.episode_entropies == []
 
