@@ -1,3 +1,5 @@
+import gym
+import numpy as np
 import pytest
 import torch as T
 
@@ -12,6 +14,7 @@ from anvilrl.updaters.actors import (
     SoftPolicyGradient,
 )
 from anvilrl.updaters.critics import QRegression, ValueRegression
+from anvilrl.updaters.random_search import EvolutionaryUpdater
 
 ############################### SET UP MODELS ###############################
 
@@ -227,3 +230,45 @@ def test_q_regression(model):
         assert not assert_same_distribution(actor_before, actor_after)
     else:
         assert assert_same_distribution(actor_before, actor_after)
+
+
+############################### TEST RANDOM SEARCH UPDATERS ###############################
+
+
+class Sphere(gym.Env):
+    """
+    Sphere(2) function for testing ES agent.
+    """
+
+    def __init__(self):
+        self.action_space = gym.spaces.Box(low=-100, high=100, shape=(2,))
+        self.observation_space = gym.spaces.Discrete(1)
+
+    def step(self, action):
+        return 0, -(action[0] ** 2 + action[1] ** 2), False, {}
+
+    def reset(self):
+        return 0
+
+
+POPULATION_SIZE = 10000
+env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
+
+
+def test_evolutionary_updater():
+    np.random.seed(0)
+
+    # Assert population stats
+    updater = EvolutionaryUpdater(env)
+    population = updater.initialize_population(starting_point=np.array([10, 10]))
+    np.testing.assert_allclose(np.std(population, axis=0), np.ones(2), rtol=0.1)
+    np.testing.assert_allclose(
+        np.mean(population, axis=0), np.array([10, 10]), rtol=0.1
+    )
+
+    # Test call
+    _, rewards, _, _ = env.step(population)
+    new_population = updater(rewards=rewards, lr=1)
+    assert new_population.shape == (POPULATION_SIZE, 2)
+    np.testing.assert_allclose(np.std(new_population, axis=0), np.ones(2), rtol=0.1)
+    np.testing.assert_array_less(updater.mean, np.array([10, 10]))
