@@ -35,12 +35,12 @@ class ES(BaseSearchAgent):
         self,
         env: VectorEnv,
         updater_class: Type[BaseSearchUpdater] = EvolutionaryUpdater,
+        learning_rate: float = 0.001,
         population_init_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
         buffer_class: BaseBuffer = RolloutBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[str, T.device] = "auto",
-        learning_rate: float = 0.001,
     ) -> None:
         super().__init__(
             env=env,
@@ -62,3 +62,35 @@ class ES(BaseSearchAgent):
         self.buffer.reset()
 
         return new_population
+
+
+if __name__ == "__main__":
+    import gym
+
+    class Sphere(gym.Env):
+        """
+        Sphere(2) function for testing ES agent.
+        """
+
+        def __init__(self):
+            self.action_space = gym.spaces.Box(low=-100, high=100, shape=(2,))
+            self.observation_space = gym.spaces.Discrete(1)
+
+        def step(self, action):
+            return 0, -(action[0] ** 2 + action[1] ** 2), False, {}
+
+        def reset(self):
+            return 0
+
+    POPULATION_SIZE = 10
+    env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
+
+    agent = ES(
+        env=env,
+        population_init_settings=PopulationInitializerSettings(
+            starting_point=np.array([10, 10])
+        ),
+        learning_rate=1,
+        logger_settings=LoggerSettings(tensorboard_log_path="runs/ES-demo"),
+    )
+    agent.fit(num_steps=15)

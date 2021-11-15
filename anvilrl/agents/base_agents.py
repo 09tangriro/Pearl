@@ -250,7 +250,9 @@ class BaseSearchAgent(ABC):
     any extra hyperparameters.
 
     See the example random search agents already done for guidance and settings.py for settings
-    objects that can be used.
+    objects that can be used. It should be noted that random search algorithms are generally
+    formatted as maximization algorithms rather than minimization, and this is reflected in the
+    implemented `updaters`.
 
     :param env: the gym vecotrized environment
     :param updater_class: the class to use for the updater handling the actual update algorithm
@@ -297,14 +299,14 @@ class BaseSearchAgent(ABC):
 
         :param num_steps: how many steps to take
         """
-        for _ in num_steps:
+        for _ in range(num_steps):
             _, rewards, dones, _ = self.env.step(self.population)
             self.buffer.add_trajectory(
                 observation=self.env.observation_space.sample(),
-                action=self.env.action_space.sample(),
+                action=self.population,
                 reward=rewards,
                 next_observation=self.env.observation_space.sample(),
-                dones=dones,
+                done=dones,
             )
             self.step += 1
 
@@ -316,6 +318,7 @@ class BaseSearchAgent(ABC):
         max_reward = np.max(trajectories.rewards)
         self.logger.add_reward(max_reward)
         self.logger.write_episode_log(self.step)
+        self.logger.reset_episode_log()
 
     @abstractmethod
     def _fit(self) -> np.ndarray:
@@ -357,7 +360,7 @@ class BaseSearchAgent(ABC):
             population_std=self.population_init_settings.population_std,
             starting_point=self.population_init_settings.starting_point,
         )
-        for _ in num_steps:
+        for _ in range(num_steps):
             # Step for number of steps specified
             if train_frequency[0] == TrainFrequencyType.STEP:
                 self.step_env(num_steps=train_frequency[1])

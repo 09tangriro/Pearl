@@ -71,11 +71,15 @@ class Logger(object):
 
     def add_reward(self, reward: Union[float, np.ndarray]) -> None:
         """Add step reward to the episode rewards"""
-        if isinstance(reward, float):
+        if isinstance(reward, (float, np.floating)):
             self.episode_rewards.append(reward)
         elif isinstance(reward, np.ndarray):
             self.episode_rewards.append(
                 reward[np.where(self.episode_dones == False)[0]]
+            )
+        else:
+            raise TypeError(
+                f"Reward must be a float or numpy array, got {type(reward)}"
             )
 
     def _make_episode_log(self) -> Log:

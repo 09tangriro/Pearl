@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from typing import Optional, Union
 
@@ -6,6 +7,8 @@ from gym.vector import VectorEnv
 from sklearn.preprocessing import scale
 
 from anvilrl.common.enumerations import PopulationInitStrategy
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class BaseSearchUpdater(ABC):
@@ -66,12 +69,12 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         self.mean = (
             starting_point
             if starting_point is not None
-            else self.env.action_space.sample()
-        )
+            else self.env.single_action_space.sample()
+        ).astype(np.float32)
         self.normal_dist = np.random.randn(
             self.population_size, self.env.single_action_space.shape[0]
         )
-        return self.mean + population_std * self.normal_dist
+        return self.mean + (population_std * self.normal_dist)
 
     def __call__(self, rewards: np.ndarray, lr: float) -> np.ndarray:
         """
@@ -83,7 +86,7 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         assert (
             self.mean is not None
         ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
-        scaled_rewards = scale(rewards)
+        scaled_rewards = scale(rewards.squeeze())
         self.mean += (
             lr / (np.mean(self.population_std) * self.population_size)
         ) * np.dot(self.normal_dist.T, scaled_rewards)
@@ -91,7 +94,9 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         self.normal_dist = np.random.randn(
             self.population_size, self.env.single_action_space.shape[0]
         )
-        population = self.mean + self.population_std * self.normal_dist
+        population = self.mean + (self.population_std * self.normal_dist)
         return np.clip(
-            population, self.env.action_space.low, self.env.action_space.high
+            population,
+            self.env.single_action_space.low,
+            self.env.single_action_space.high,
         )
