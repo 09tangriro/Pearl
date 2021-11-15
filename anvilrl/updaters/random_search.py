@@ -61,7 +61,7 @@ class EvolutionaryUpdater(BaseSearchUpdater):
 
     def initialize_population(
         self,
-        population_init_strategy: PopulationInitStrategy,
+        population_init_strategy: PopulationInitStrategy = PopulationInitStrategy.NORMAL,
         population_std: Union[float, np.ndarray] = 1,
         starting_point: Optional[np.ndarray] = None,
     ) -> np.ndarray:
