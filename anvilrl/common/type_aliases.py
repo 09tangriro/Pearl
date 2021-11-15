@@ -1,16 +1,16 @@
-import logging
 from dataclasses import dataclass
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 import numpy as np
 import torch as T
-from torch.optim.optimizer import Optimizer
 
 Tensor = Union[np.ndarray, T.Tensor]
 
 
 @dataclass
 class Trajectories:
+    """Sample trajectory data needed for algorithms"""
+
     observations: Tensor
     actions: Tensor
     rewards: Tensor
@@ -20,6 +20,8 @@ class Trajectories:
 
 @dataclass
 class UpdaterLog:
+    """Log to see updater metrics"""
+
     loss: float
     kl_divergence: Optional[float] = None
     entropy: Optional[float] = None
@@ -30,15 +32,15 @@ class Log:
     """
     Log to see training progress
 
+    :param reward: reward received
     :param actor_loss: actor network loss
     :param critic_loss: critic network loss
-    :param reward: reward received
     :kl_divergence: KL divergence of policy
     :entropy: entropy of policy
     """
 
-    actor_loss: float = 0
-    critic_loss: float = 0
     reward: float = 0
+    actor_loss: Optional[float] = None
+    critic_loss: Optional[float] = None
     kl_divergence: Optional[float] = None
     entropy: Optional[float] = None
