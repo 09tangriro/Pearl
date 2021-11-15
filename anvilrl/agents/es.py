@@ -59,6 +59,7 @@ class ES(BaseSearchAgent):
         new_population = self.updater(
             rewards=trajectories.rewards, lr=self.learning_rate
         )
+        self.logger.info(f"POPULATION MEAN={self.updater.mean}")
         self.buffer.reset()
 
         return new_population
