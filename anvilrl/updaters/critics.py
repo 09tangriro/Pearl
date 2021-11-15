@@ -8,7 +8,7 @@ from torch.nn.parameter import Parameter
 from anvilrl.common.type_aliases import Tensor, UpdaterLog
 from anvilrl.common.utils import numpy_to_torch
 from anvilrl.models.actor_critics import ActorCritic, Critic
-from anvilrl.signal_processing.sample_estimators import soft_q_target
+from anvilrl.signal_processing.return_estimators import soft_q_target
 
 
 class BaseCriticUpdater(ABC):

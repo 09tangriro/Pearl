@@ -2,13 +2,17 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.signal_processing.sample_estimators import (
+from anvilrl.signal_processing.advantage_estimators import (
+    generalized_advantage_estimate,
+)
+from anvilrl.signal_processing.return_estimators import (
     TD_lambda,
     TD_zero,
-    generalized_advantage_estimate,
+    soft_q_target,
+)
+from anvilrl.signal_processing.sample_estimators import (
     sample_forward_kl_divergence,
     sample_reverse_kl_divergence,
-    soft_q_target,
 )
 
 
@@ -87,33 +91,3 @@ def test_soft_q_target():
     expected_target = np.array([3, 3, 3], dtype=np.float32)
 
     np.equal(actual_target, expected_target)
-
-
-"""
-def test_scale_normalizer():
-    env = gym.make("CartPole-v1")
-    observation_space = env.observation_space
-    observation = observation_space.sample()
-    normalized_observation = scale_normalizer(observation, observation_space)
-    np.testing.assert_array_less(
-        abs(normalized_observation), [1.00001, 1.00001, 1.00001, 1.00001]
-    )
-
-
-def test_mean_std_normalizer():
-    batch_size = 10
-    env = gym.make("CartPole-v1")
-    observation_space = env.observation_space
-    observations = np.zeros(shape=(batch_size, 4))
-    for i in range(batch_size):
-        observations[i] = observation_space.sample()
-
-    normalized_observations = mean_std_normalizer(observations)
-
-    np.testing.assert_almost_equal(
-        normalized_observations.mean(axis=0), np.zeros(shape=(4,))
-    )
-    np.testing.assert_almost_equal(
-        normalized_observations.std(axis=0), np.ones(shape=(4,))
-    )
-"""

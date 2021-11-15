@@ -28,7 +28,7 @@ from anvilrl.settings import (
     LoggerSettings,
     OptimizerSettings,
 )
-from anvilrl.signal_processing.sample_estimators import TD_zero
+from anvilrl.signal_processing.return_estimators import TD_zero
 from anvilrl.updaters.actors import BaseActorUpdater, DeterministicPolicyGradient
 from anvilrl.updaters.critics import BaseCriticUpdater, QRegression
 
