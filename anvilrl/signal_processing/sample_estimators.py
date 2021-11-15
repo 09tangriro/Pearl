@@ -1,11 +1,13 @@
 import numpy as np
 import torch as T
 
+from anvilrl.common.enumerations import TrajectoryType
 from anvilrl.common.type_aliases import Tensor
+from anvilrl.common.utils import numpy_to_torch, torch_to_numpy
 
 
 def sample_forward_kl_divergence(
-    target_dist_prob: Tensor, sample_dist_prob: Tensor
+    target_dist_prob: Tensor, sample_dist_prob: Tensor, dtype: str = "torch"
 ) -> T.Tensor:
     """
     Sample forward KL Divergence element-wise
@@ -16,11 +18,16 @@ def sample_forward_kl_divergence(
     :return: element-wise kl approximation
     """
     ratio = target_dist_prob / sample_dist_prob
-    return ratio * T.log(ratio) - (ratio - 1)
+    if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
+        ratio = numpy_to_torch(ratio)
+        return ratio * T.log(ratio) - (ratio - 1)
+    else:
+        ratio = torch_to_numpy(ratio)
+        return ratio * np.log(ratio) - (ratio - 1)
 
 
 def sample_reverse_kl_divergence(
-    target_dist_prob: Tensor, sample_dist_prob: Tensor
+    target_dist_prob: Tensor, sample_dist_prob: Tensor, dtype: str = "torch"
 ) -> T.Tensor:
     """
     Sample reverse KL Divergence element-wise
@@ -31,4 +38,9 @@ def sample_reverse_kl_divergence(
     :return: element-wise kl approximation
     """
     ratio = target_dist_prob / sample_dist_prob
-    return (ratio - 1) - T.log(ratio)
+    if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
+        ratio = numpy_to_torch(ratio)
+        return (ratio - 1) - T.log(ratio)
+    else:
+        ratio = torch_to_numpy(ratio)
+        return (ratio - 1) - np.log(ratio)
