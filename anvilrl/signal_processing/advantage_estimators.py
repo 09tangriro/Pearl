@@ -1,19 +1,21 @@
 from typing import Tuple
 
 import numpy as np
-import torch as T
 
-from anvilrl.common.utils import numpy_to_torch
+from anvilrl.common.enumerations import TrajectoryType
+from anvilrl.common.type_aliases import Tensor
+from anvilrl.common.utils import numpy_to_torch, torch_to_numpy
 
 
 def generalized_advantage_estimate(
-    rewards: np.ndarray,
-    old_values: np.ndarray,
-    new_values: np.ndarray,
-    dones: np.ndarray,
+    rewards: Tensor,
+    old_values: Tensor,
+    new_values: Tensor,
+    dones: Tensor,
     gamma: float = 0.99,
     gae_lambda: float = 0.95,
-) -> Tuple[T.Tensor, T.Tensor]:
+    dtype: str = "torch",
+) -> Tuple[Tensor, Tensor]:
     """
     Generalized advantage estimate of a trajectory: https://towardsdatascience.com/generalized-advantage-estimate-maths-and-code-b5d5bd3ce737
 
@@ -24,12 +26,15 @@ def generalized_advantage_estimate(
     :param gamma: trajectory discount
     :param gae_lambda: exponential mean discount
     """
+    rewards, old_values, new_values, dones = torch_to_numpy(
+        rewards, old_values, new_values, dones
+    )
     dones = 1 - dones
     batch_size = rewards.shape[0]
 
     advantage = np.zeros(batch_size + 1)
 
-    for t in np.flip(np.arange(batch_size)):
+    for t in reversed(range(batch_size)):
         delta = rewards[t] + (gamma * new_values[t] * dones[t]) - old_values[t]
         advantage[t] = delta + (gamma * gae_lambda * advantage[t + 1] * dones[t])
 
@@ -42,4 +47,11 @@ def generalized_advantage_estimate(
         value_target.shape == old_values.shape
     ), f"The returns' shape should be {old_values.shape}, instead it is {value_target.shape}."
 
-    return numpy_to_torch(advantage[:batch_size], value_target)
+    if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
+        return numpy_to_torch(advantage[:batch_size], value_target)
+    elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
+        return advantage[:batch_size], value_target
+    else:
+        raise ValueError(
+            f"`dtype` flag should be 'torch' or 'numpy', but received {dtype}"
+        )
