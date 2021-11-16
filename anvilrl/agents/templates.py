@@ -135,7 +135,8 @@ class YourSearchAgent(BaseSearchAgent):
             device=device,
         )
 
-    def _fit(self) -> np.ndarray:
+    def _fit(self) -> Log:
         """
-        Specify your algorithm logic here! Should call your updater and return a new population.
+        Specify your algorithm logic here! Should call your updater and return a `Log` object,
+        details of which can be found in anvilrl/common/type_aliases.py
         """
