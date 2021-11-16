@@ -56,7 +56,7 @@ class BaseCriticUpdater(ABC):
         optimizer.step()
 
     @abstractmethod
-    def __call__(self):
+    def __call__(self) -> UpdaterLog:
         """Run an optimization step"""
 
 

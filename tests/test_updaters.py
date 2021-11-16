@@ -268,7 +268,8 @@ def test_evolutionary_updater():
 
     # Test call
     _, rewards, _, _ = env.step(population)
-    new_population = updater(rewards=rewards, lr=1)
+    updater(rewards=rewards, lr=1)
+    new_population = updater.population
     assert new_population.shape == (POPULATION_SIZE, 2)
     np.testing.assert_allclose(np.std(new_population, axis=0), np.ones(2), rtol=0.1)
     np.testing.assert_array_less(updater.mean, np.array([10, 10]))

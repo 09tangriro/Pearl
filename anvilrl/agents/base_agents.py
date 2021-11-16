@@ -321,11 +321,11 @@ class BaseSearchAgent(ABC):
         self.logger.reset_episode_log()
 
     @abstractmethod
-    def _fit(self) -> np.ndarray:
+    def _fit(self) -> Log:
         """
         Update the agent
 
-        :return: the updated population
+        :return: a Log object with training diagnostic info
         """
 
     def fit(
@@ -374,4 +374,6 @@ class BaseSearchAgent(ABC):
                     break
 
             self.evaluate_agent()
-            self.population = self._fit()
+            log = self._fit()
+            self.population = self.updater.population
+            self.logger.add_train_log(log)

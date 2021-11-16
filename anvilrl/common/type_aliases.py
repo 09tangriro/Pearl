@@ -20,9 +20,9 @@ class Trajectories:
 
 @dataclass
 class UpdaterLog:
-    """Log to see updater metrics"""
+    """Log to see updater metrics for algorithms"""
 
-    loss: float
+    loss: Optional[float] = None
     kl_divergence: Optional[float] = None
     entropy: Optional[float] = None
 

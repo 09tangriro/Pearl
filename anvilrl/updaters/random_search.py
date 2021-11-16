@@ -5,8 +5,11 @@ from typing import Optional, Union
 import numpy as np
 from gym.vector import VectorEnv
 from sklearn.preprocessing import scale
+from torch.distributions import Normal, kl_divergence
 
 from anvilrl.common.enumerations import PopulationInitStrategy
+from anvilrl.common.type_aliases import UpdaterLog
+from anvilrl.common.utils import numpy_to_torch
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -20,6 +23,7 @@ class BaseSearchUpdater(ABC):
 
     def __init__(self, env: VectorEnv) -> None:
         self.env = env
+        self.population = None
         self.population_size = env.num_envs
 
     @abstractmethod
@@ -39,7 +43,7 @@ class BaseSearchUpdater(ABC):
         """
 
     @abstractmethod
-    def __call__(self):
+    def __call__(self) -> UpdaterLog:
         """Run an optimization step"""
 
 
@@ -74,9 +78,10 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         self.normal_dist = np.random.randn(
             self.population_size, self.env.single_action_space.shape[0]
         )
+        self.population = self.mean + (population_std * self.normal_dist)
         return self.mean + (population_std * self.normal_dist)
 
-    def __call__(self, rewards: np.ndarray, lr: float) -> np.ndarray:
+    def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
         """
         Perform an optimization step
 
@@ -86,17 +91,35 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         assert (
             self.mean is not None
         ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
+        std = (
+            numpy_to_torch(self.population_std)
+            if isinstance(self.population_std, np.ndarray)
+            else self.population_std
+        )
+        # Snapshot current population dist for kl divergence
+        # use copy() to avoid modifying the original
+        old_dist = Normal(numpy_to_torch(self.mean.copy()), std)
         scaled_rewards = scale(rewards.squeeze())
+
+        # Main update
         self.mean += (
             lr / (np.mean(self.population_std) * self.population_size)
         ) * np.dot(self.normal_dist.T, scaled_rewards)
 
+        # Generate new population
         self.normal_dist = np.random.randn(
             self.population_size, self.env.single_action_space.shape[0]
         )
         population = self.mean + (self.population_std * self.normal_dist)
-        return np.clip(
+        self.population = np.clip(
             population,
             self.env.single_action_space.low,
             self.env.single_action_space.high,
         )
+
+        # Calculate Log metrics
+        new_dist = Normal(numpy_to_torch(self.mean), std)
+        population_entropy = new_dist.entropy().mean()
+        population_kl = kl_divergence(old_dist, new_dist).mean()
+
+        return UpdaterLog(kl_divergence=population_kl, entropy=population_entropy)

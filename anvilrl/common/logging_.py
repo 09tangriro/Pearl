@@ -104,8 +104,10 @@ class Logger(object):
         """Write a log to tensorboard and python logging"""
         episode_log = self._make_episode_log()
         self.writer.add_scalar("Reward/episode_reward", episode_log.reward, step)
-        self.writer.add_scalar("Loss/actor_loss", episode_log.actor_loss, step)
-        self.writer.add_scalar("Loss/critic_loss", episode_log.critic_loss, step)
+        if episode_log.actor_loss is not None:
+            self.writer.add_scalar("Loss/actor_loss", episode_log.actor_loss, step)
+        if episode_log.critic_loss is not None:
+            self.writer.add_scalar("Loss/critic_loss", episode_log.critic_loss, step)
         if episode_log.kl_divergence is not None:
             self.writer.add_scalar(
                 "Metrics/kl_divergence", episode_log.kl_divergence, step

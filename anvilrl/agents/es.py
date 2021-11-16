@@ -7,6 +7,7 @@ from gym.vector.vector_env import VectorEnv
 from anvilrl.agents.base_agents import BaseSearchAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
+from anvilrl.common.type_aliases import Log
 from anvilrl.settings import (
     BufferSettings,
     LoggerSettings,
@@ -54,15 +55,13 @@ class ES(BaseSearchAgent):
 
         self.learning_rate = learning_rate
 
-    def _fit(self) -> np.ndarray:
+    def _fit(self) -> Log:
         trajectories = self.buffer.all()
-        new_population = self.updater(
-            rewards=trajectories.rewards, lr=self.learning_rate
-        )
+        log = self.updater(rewards=trajectories.rewards, lr=self.learning_rate)
         self.logger.info(f"POPULATION MEAN={self.updater.mean}")
         self.buffer.reset()
 
-        return new_population
+        return Log(kl_divergence=log.kl_divergence, entropy=log.entropy)
 
 
 if __name__ == "__main__":
