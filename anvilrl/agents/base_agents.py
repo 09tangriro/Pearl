@@ -14,7 +14,7 @@ from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Tensor, Trajectories
 from anvilrl.common.utils import filter_dataclass_by_none, get_device, numpy_to_torch
 from anvilrl.explorers.base_explorer import BaseExplorer
-from anvilrl.models.actor_critics import Actor, ActorCritic
+from anvilrl.models.actor_critics import ActorCritic
 from anvilrl.settings import (
     BufferSettings,
     CallbackSettings,
