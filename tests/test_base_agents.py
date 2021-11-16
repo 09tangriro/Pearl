@@ -1,3 +1,5 @@
+import shutil
+
 import gym
 import numpy as np
 import torch as T
@@ -8,7 +10,7 @@ from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import ContinuousQHead
 from anvilrl.models.torsos import MLP
-from anvilrl.settings import ExplorerSettings
+from anvilrl.settings import ExplorerSettings, LoggerSettings
 
 
 class MockDeepAgent(BaseDeepAgent):
@@ -31,13 +33,16 @@ agent = MockDeepAgent(
     model=model,
     buffer_class=ReplayBuffer,
     explorer_settings=ExplorerSettings(start_steps=0),
+    logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
 )
 vec_agent = MockDeepAgent(
     env=envs,
     model=model,
     buffer_class=ReplayBuffer,
     explorer_settings=ExplorerSettings(start_steps=0),
+    logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
 )
+shutil.rmtree("runs/tests")
 
 
 def test_step_env():
