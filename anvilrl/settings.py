@@ -1,3 +1,5 @@
+"""This module holds settings objects to configure the other modules"""
+
 import logging
 from dataclasses import dataclass
 from typing import Optional, Type, Union
