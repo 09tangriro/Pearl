@@ -35,6 +35,7 @@ There are two options to install this package:
 - `signal_processing`: signal processing logic for extra modularity (e.g. TD returns, GAE)
 - `updaters`: update neural networks and adaptive/iterative algorithms
 - `settings.py`: settings objects for the above components, can be extended for custom components
+- `demo.py`: script to run very basic demos of agents with pre-defined hyperparameters, run `python3 -m anvilrl.demo -h` for more info
 
 ### Agent Templates
 See `anvilrl/agents/templates.py` for the templates to create your own agents! 
