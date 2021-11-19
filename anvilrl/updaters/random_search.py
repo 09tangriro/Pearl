@@ -178,7 +178,7 @@ class GeneticAlgorithmUpdater(BaseSearchUpdater):
                 f"The population initialization strategy {population_init_strategy} is not supported"
             )
 
-    def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
+    def __call__(self, rewards: np.ndarray) -> UpdaterLog:
         """
         Perform an optimization step
 

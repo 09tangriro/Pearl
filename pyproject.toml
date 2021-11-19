@@ -33,6 +33,7 @@ addopts = """
     --cov anvilrl
     --cov-report xml:build/reports/coverage.xml
     --cov-report term
+    --color=yes
 """
 
 [build-system]
