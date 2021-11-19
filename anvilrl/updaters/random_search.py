@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Union
 
 import numpy as np
+from gym.spaces import Discrete
 from gym.vector import VectorEnv
 from sklearn.preprocessing import scale
 from torch.distributions import Normal, kl_divergence
@@ -123,3 +124,63 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         population_kl = kl_divergence(old_dist, new_dist).mean()
 
         return UpdaterLog(kl_divergence=population_kl, entropy=population_entropy)
+
+
+class GeneticAlgorithmUpdater(BaseSearchUpdater):
+    """
+    Updater for the Genetic Algorithm
+
+    :param env: the vector environment
+    """
+
+    def __init__(
+        self,
+        env: VectorEnv,
+    ) -> None:
+        super().__init__(env)
+        self.population_std = None
+
+    def initialize_population(
+        self,
+        population_init_strategy: PopulationInitStrategy = PopulationInitStrategy.UNIFORM,
+        population_std: Union[float, np.ndarray] = 1,
+        starting_point: Optional[np.ndarray] = None,
+    ) -> np.ndarray:
+        if population_init_strategy == PopulationInitStrategy.UNIFORM:
+            if isinstance(self.env.single_action_space, Discrete):
+                self.population = np.random.randint(
+                    self.env.single_action_space.n, size=(self.population_size,)
+                )
+            else:
+                self.population = np.random.uniform(
+                    self.env.single_action_space.low,
+                    self.env.single_action_space.high,
+                    size=(self.population_size, self.env.single_action_space.shape[0]),
+                )
+        elif population_init_strategy == PopulationInitStrategy.NORMAL:
+            if isinstance(self.env.single_action_space, Discrete):
+                raise ValueError(
+                    "The normal population initialization strategy is not supported for discrete action spaces"
+                )
+            else:
+                mean = (
+                    starting_point
+                    if starting_point is not None
+                    else self.env.single_action_space.sample()
+                ).astype(np.float32)
+                self.population = np.random.normal(
+                    mean,
+                    population_std,
+                    (self.population_size, self.env.single_action_space.shape[0]),
+                )
+
+    def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
+        """
+        Perform an optimization step
+
+        :param rewards: the rewards for the current population
+        :param lr: the learning rate
+        """
+        assert (
+            self.population is not None
+        ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
