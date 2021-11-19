@@ -173,6 +173,10 @@ class GeneticAlgorithmUpdater(BaseSearchUpdater):
                     population_std,
                     (self.population_size, self.env.single_action_space.shape[0]),
                 )
+        else:
+            raise ValueError(
+                f"The population initialization strategy {population_init_strategy} is not supported"
+            )
 
     def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
         """
