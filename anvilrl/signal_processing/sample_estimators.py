@@ -1,3 +1,5 @@
+"""Methods for estimating statistics"""
+
 import numpy as np
 import torch as T
 

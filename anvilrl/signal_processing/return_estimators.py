@@ -1,3 +1,5 @@
+"""Methods for estimating the Value and Q functions"""
+
 import numpy as np
 
 from anvilrl.common.enumerations import TrajectoryType

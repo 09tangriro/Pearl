@@ -1,3 +1,5 @@
+"""Methods for estimating the advantage function"""
+
 from typing import Tuple
 
 import numpy as np
