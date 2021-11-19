@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.common.utils import numpy_to_torch, torch_to_numpy
+from anvilrl.common.utils import numpy_to_torch
 from anvilrl.signal_processing.advantage_estimators import (
     generalized_advantage_estimate,
 )
@@ -14,6 +14,10 @@ from anvilrl.signal_processing.return_estimators import (
 from anvilrl.signal_processing.sample_estimators import (
     sample_forward_kl_divergence,
     sample_reverse_kl_divergence,
+)
+from anvilrl.signal_processing.selection_operators import (
+    roulette_selection,
+    tournament_selection,
 )
 
 
@@ -100,3 +104,23 @@ def test_soft_q_target(dtype):
     expected_target = np.array([3, 3, 3], dtype=np.float32)
 
     np.equal(actual_target, expected_target)
+
+
+def test_tournament_selection():
+    np.random.seed(8)
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    fitness = np.array([2, 1, 3])
+    actual_population = tournament_selection(population, fitness, 2)
+    expected_population = np.array([[4, 5, 6], [7, 8, 9], [7, 8, 9]])
+
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+
+def test_roulette_selection():
+    np.random.seed(8)
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    fitness = np.array([2, 1, 3])
+    actual_population = roulette_selection(population, fitness)
+    expected_population = np.array([[7, 8, 9], [7, 8, 9], [7, 8, 9]])
+
+    np.testing.assert_array_equal(actual_population, expected_population)
