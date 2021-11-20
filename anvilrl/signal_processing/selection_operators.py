@@ -27,9 +27,6 @@ def tournament_selection(
 
     # Sort the combined data structure to get sorted fitness scores and population
     sorted_fitness = np.flip(sorted(combined_data))
-    population = np.array(
-        [combined_data[fitness_score] for fitness_score in sorted_fitness]
-    )
 
     # Calculate probabilities of selecting an individual for tournament
     probabilities = np.array(
@@ -39,15 +36,18 @@ def tournament_selection(
     residual = 1 - np.sum(probabilities)
     probabilities[0] += residual
 
-    # Create the tournament population
-    tournament_indices = np.random.choice(
-        population.shape[0],
+    # Create the tournament
+    tournament_fitness = np.random.choice(
+        sorted_fitness,
         size=(population.shape[0], tournament_size),
         p=probabilities,
     )
-    tournament_population = population[tournament_indices]
+    winning_fitness = np.max(tournament_fitness, axis=1)
+    selected_individuals = np.array(
+        [combined_data[fitness_score] for fitness_score in winning_fitness]
+    )
 
-    return np.max(tournament_population, axis=1)
+    return selected_individuals
 
 
 def roulette_selection(

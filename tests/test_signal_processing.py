@@ -111,7 +111,7 @@ def test_tournament_selection():
     population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     fitness = np.array([2, 1, 3])
     actual_population = tournament_selection(population, fitness, 2)
-    expected_population = np.array([[4, 5, 6], [7, 8, 9], [7, 8, 9]])
+    expected_population = np.array([[1, 2, 3], [7, 8, 9], [7, 8, 9]])
 
     np.testing.assert_array_equal(actual_population, expected_population)
 
