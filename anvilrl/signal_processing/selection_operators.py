@@ -60,11 +60,8 @@ def roulette_selection(
     :param fitness_scores: the fitness scores of the individuals in the population
     :return: the selected individuals
     """
-    # Calculate the total fitness score of the population
-    total_fitness_score = np.sum(fitness_scores)
-
     # Calculate the probabilities of selecting an individual
-    fitness_scores = fitness_scores / total_fitness_score
+    fitness_scores = fitness_scores / np.sum(fitness_scores)
 
     # Select individuals based on the probabilities
     selected_indices = np.random.choice(
