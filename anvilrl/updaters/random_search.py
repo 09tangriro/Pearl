@@ -191,9 +191,9 @@ class GeneticUpdater(BaseSearchUpdater):
         selection_operator: selection_operators,
         crossover_operator: crossover_operators,
         mutation_operator: mutation_operators,
-        selection_args: Dict[str, Any] = {},
-        crossover_args: Dict[str, Any] = {},
-        mutation_args: Dict[str, Any] = {},
+        selection_settings: Dict[str, Any] = {},
+        crossover_settings: Dict[str, Any] = {},
+        mutation_settings: Dict[str, Any] = {},
         elitism: float = 0.1,
     ) -> UpdaterLog:
         """
@@ -203,6 +203,9 @@ class GeneticUpdater(BaseSearchUpdater):
         :param selection_operator: the selection operator function
         :param crossover_operator: the crossover operator function
         :param mutation_operator: the mutation operator function
+        :param selection_settings: the selection operator settings
+        :param crossover_settings: the crossover operator settings
+        :param mutation_settings: the mutation operator settings
         :param elitism: fraction of the population to keep as elite
         :return: the updater log
         """
@@ -217,10 +220,10 @@ class GeneticUpdater(BaseSearchUpdater):
         elite_population = old_population[elite_indices]
 
         # Main update
-        parents = selection_operator(self.population, rewards, **selection_args)
-        children = crossover_operator(parents, **crossover_args)
+        parents = selection_operator(self.population, rewards, **selection_settings)
+        children = crossover_operator(parents, **crossover_settings)
         self.population = mutation_operator(
-            children, self.env.single_action_space, **mutation_args
+            children, self.env.single_action_space, **mutation_settings
         )
         self.population[elite_indices] = elite_population
 

@@ -126,9 +126,9 @@ class MutationSettings:
     """
     Settings for the mutation process
 
-    :param mutation_prob: probability of a mutation
+    :param mutation_rate: probability of a mutation
     :param mutation_std: std of the mutation
     """
 
-    mutation_prob: float = 0.1
+    mutation_rate: float = 0.1
     mutation_std: Optional[float] = None
