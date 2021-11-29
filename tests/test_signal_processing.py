@@ -6,6 +6,7 @@ from anvilrl.common.utils import numpy_to_torch
 from anvilrl.signal_processing.advantage_estimators import (
     generalized_advantage_estimate,
 )
+from anvilrl.signal_processing.crossover_operators import crossover_one_point
 from anvilrl.signal_processing.return_estimators import (
     TD_lambda,
     TD_zero,
@@ -123,4 +124,17 @@ def test_roulette_selection():
     actual_population = roulette_selection(population, fitness)
     expected_population = np.array([[7, 8, 9], [7, 8, 9], [7, 8, 9]])
 
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+
+def test_one_point_crossover():
+    np.random.seed(8)
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+
+    actual_population = crossover_one_point(population, 1)
+    expected_population = np.array([[1, 5, 6], [4, 2, 3], [7, 8, 9]])
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+    actual_population = crossover_one_point(population)
+    expected_population = np.array([[4, 5, 6], [1, 2, 3], [7, 8, 9]])
     np.testing.assert_array_equal(actual_population, expected_population)
