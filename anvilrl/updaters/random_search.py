@@ -11,6 +11,11 @@ from torch.distributions import Normal, kl_divergence
 from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.common.type_aliases import UpdaterLog
 from anvilrl.common.utils import numpy_to_torch
+from anvilrl.signal_processing import (
+    crossover_operators,
+    mutation_operators,
+    selection_operators,
+)
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -88,6 +93,7 @@ class EvolutionaryUpdater(BaseSearchUpdater):
 
         :param rewards: the rewards for the current population
         :param lr: the learning rate
+        :return: the updater log
         """
         assert (
             self.mean is not None
@@ -123,10 +129,10 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         population_entropy = new_dist.entropy().mean()
         population_kl = kl_divergence(old_dist, new_dist).mean()
 
-        return UpdaterLog(kl_divergence=population_kl, entropy=population_entropy)
+        return UpdaterLog(divergence=population_kl, entropy=population_entropy)
 
 
-class GeneticAlgorithmUpdater(BaseSearchUpdater):
+class GeneticUpdater(BaseSearchUpdater):
     """
     Updater for the Genetic Algorithm
 
@@ -177,14 +183,46 @@ class GeneticAlgorithmUpdater(BaseSearchUpdater):
             raise ValueError(
                 f"The population initialization strategy {population_init_strategy} is not supported"
             )
+        return self.population
 
-    def __call__(self, rewards: np.ndarray) -> UpdaterLog:
+    def __call__(
+        self,
+        rewards: np.ndarray,
+        selection_operator: selection_operators,
+        crossover_operator: crossover_operators,
+        mutation_operator: mutation_operators,
+        elitism: float = 0.1,
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
         :param rewards: the rewards for the current population
-        :param lr: the learning rate
+        :param selection_operator: the selection operator function
+        :param crossover_operator: the crossover operator function
+        :param mutation_operator: the mutation operator function
+        :param elitism: fraction of the population to keep as elite
+        :return: the updater log
         """
         assert (
             self.population is not None
         ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
+
+        # Store elite population
+        old_population = self.population.copy()
+        num_elite = int(self.population_size * elitism)
+        elite_indices = np.argpartition(rewards, -num_elite)[-num_elite:]
+        elite_population = old_population[elite_indices]
+
+        # Main update
+        parents = selection_operator(self.population, rewards)
+        children = crossover_operator(parents)
+        self.population = mutation_operator(children, self.env.single_action_space)
+        self.population[elite_indices] = elite_population
+
+        # Calculate Log metrics
+        divergence = np.mean(np.abs(self.population - old_population))
+        entropy = np.mean(
+            np.abs(np.max(self.population, axis=0) - np.min(self.population, axis=0))
+        )
+
+        return UpdaterLog(divergence=divergence, entropy=entropy)

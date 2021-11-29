@@ -3,10 +3,16 @@ import numpy as np
 import pytest
 import torch as T
 
+from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.models import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import DiagGaussianPolicyHead, ValueHead
 from anvilrl.models.torsos import MLP
+from anvilrl.signal_processing import (
+    crossover_operators,
+    mutation_operators,
+    selection_operators,
+)
 from anvilrl.updaters.actors import (
     DeterministicPolicyGradient,
     PolicyGradient,
@@ -14,7 +20,7 @@ from anvilrl.updaters.actors import (
     SoftPolicyGradient,
 )
 from anvilrl.updaters.critics import QRegression, ValueRegression
-from anvilrl.updaters.random_search import EvolutionaryUpdater
+from anvilrl.updaters.random_search import EvolutionaryUpdater, GeneticUpdater
 
 ############################### SET UP MODELS ###############################
 
@@ -273,3 +279,29 @@ def test_evolutionary_updater():
     assert new_population.shape == (POPULATION_SIZE, 2)
     np.testing.assert_allclose(np.std(new_population, axis=0), np.ones(2), rtol=0.1)
     np.testing.assert_array_less(updater.mean, np.array([10, 10]))
+
+
+def test_genetic_updater():
+    np.random.seed(0)
+
+    # Assert population stats
+    updater = GeneticUpdater(env)
+    population = updater.initialize_population(
+        starting_point=np.array([10, 10]),
+        population_init_strategy=PopulationInitStrategy.NORMAL,
+    )
+    np.testing.assert_allclose(np.std(population, axis=0), np.ones(2), rtol=0.1)
+    np.testing.assert_allclose(
+        np.mean(population, axis=0), np.array([10, 10]), rtol=0.1
+    )
+
+    # Test call
+    _, rewards, _, _ = env.step(population)
+    updater(
+        rewards=rewards,
+        selection_operator=selection_operators.roulette_selection,
+        crossover_operator=crossover_operators.crossover_one_point,
+        mutation_operator=mutation_operators.uniform_mutation,
+    )
+
+    np.testing.assert_array_less(np.min(updater.population, axis=0), np.array([10, 10]))
