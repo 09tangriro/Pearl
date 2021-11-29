@@ -9,9 +9,9 @@ from anvilrl.signal_processing.advantage_estimators import (
 )
 from anvilrl.signal_processing.crossover_operators import crossover_one_point
 from anvilrl.signal_processing.mutation_operators import (
-    mutation_discrete,
-    mutation_gaussian,
-    mutation_uniform,
+    discrete_mutation,
+    gaussian_mutation,
+    uniform_mutation,
 )
 from anvilrl.signal_processing.return_estimators import (
     TD_lambda,
@@ -146,47 +146,47 @@ def test_one_point_crossover():
     np.testing.assert_array_equal(actual_population, expected_population)
 
 
-def test_mutation_gaussian():
+def test_gaussian_mutation():
     np.random.seed(8)
     action_space = gym.spaces.Box(low=-1, high=1, shape=(3,))
     population = np.full((3, 3), 1, dtype=np.float32)
 
-    actual_population = mutation_gaussian(population, action_space, mutation_rate=1)
+    actual_population = gaussian_mutation(population, action_space, mutation_rate=1)
     expected_population = np.array(
         [[1, 0.86956686, 0.6101016], [1, 1, 1], [0.6839435, 0.3276471, 0.84406894]]
     )
     np.testing.assert_array_almost_equal(actual_population, expected_population)
 
-    actual_population = mutation_gaussian(population, action_space, mutation_rate=0)
+    actual_population = gaussian_mutation(population, action_space, mutation_rate=0)
     expected_population = population
     np.testing.assert_array_almost_equal(actual_population, expected_population)
 
 
-def test_mutation_uniform():
+def test_uniform_mutation():
     np.random.seed(8)
     action_space = gym.spaces.Box(low=-1, high=1, shape=(3,))
     population = np.full((3, 3), 1, dtype=np.float32)
 
-    actual_population = mutation_uniform(population, action_space, mutation_rate=1)
+    actual_population = uniform_mutation(population, action_space, mutation_rate=1)
     expected_population = np.array(
         [[0.80385023, 1, 1], [0.8447016, 1, 1], [0.47887915, 0.75503397, 1]]
     )
     np.testing.assert_array_almost_equal(actual_population, expected_population)
 
-    actual_population = mutation_uniform(population, action_space, mutation_rate=0)
+    actual_population = uniform_mutation(population, action_space, mutation_rate=0)
     expected_population = population
     np.testing.assert_array_almost_equal(actual_population, expected_population)
 
 
-def test_mutation_discrete():
+def test_discrete_mutation():
     np.random.seed(8)
     action_space = gym.spaces.Discrete(3)
     population = np.full((3, 3), 1)
 
-    actual_population = mutation_discrete(population, action_space, mutation_rate=1)
+    actual_population = discrete_mutation(population, action_space, mutation_rate=1)
     expected_population = np.array([[1, 0, 1], [0, 1, 0], [1, 1, 0]])
     np.testing.assert_array_almost_equal(actual_population, expected_population)
 
-    actual_population = mutation_discrete(population, action_space, mutation_rate=0)
+    actual_population = discrete_mutation(population, action_space, mutation_rate=0)
     expected_population = population
     np.testing.assert_array_almost_equal(actual_population, expected_population)

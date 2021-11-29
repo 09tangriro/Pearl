@@ -28,7 +28,7 @@ def _sample_indices(
     return mutation_indices
 
 
-def mutation_gaussian(
+def gaussian_mutation(
     population: np.ndarray,
     action_space: Space,
     mutation_rate: float = 0.05,
@@ -54,7 +54,7 @@ def mutation_gaussian(
     return np.clip(new_population, action_space.low, action_space.high)
 
 
-def mutation_uniform(
+def uniform_mutation(
     population: np.ndarray,
     action_space: Space,
     mutation_rate: float = 0.05,
@@ -78,7 +78,7 @@ def mutation_uniform(
     return np.clip(new_population, action_space.low, action_space.high)
 
 
-def mutation_discrete(
+def discrete_mutation(
     population: np.ndarray,
     action_space: Space,
     mutation_rate: float = 0.05,
