@@ -95,3 +95,40 @@ class LoggerSettings:
     file_handler_level: int = logging.DEBUG
     stream_handler_level: int = logging.INFO
     verbose: bool = True
+
+
+@dataclass
+class SelectionSettings:
+    """
+    Settings for the selection process
+
+    :param tournament_size: size of the tournament (only used if strategy is 'tournament')
+    :param tournament_prob: probability of a random selection (only used if strategy is 'tournament')
+    """
+
+    tournament_size: Optional[int] = None
+    tournament_prob: Optional[float] = None
+
+
+@dataclass
+class CrossoverSettings:
+    """
+    Settings for the crossover process
+
+    :param crossover_index: crossover point index, if None then randomly selected
+    """
+
+    crossover_index: Optional[int] = None
+
+
+@dataclass
+class MutationSettings:
+    """
+    Settings for the mutation process
+
+    :param mutation_prob: probability of a mutation
+    :param mutation_std: std of the mutation
+    """
+
+    mutation_prob: float = 0.1
+    mutation_std: Optional[float] = None

@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import numpy as np
 from gym.spaces import Discrete
@@ -191,6 +191,9 @@ class GeneticUpdater(BaseSearchUpdater):
         selection_operator: selection_operators,
         crossover_operator: crossover_operators,
         mutation_operator: mutation_operators,
+        selection_args: Dict[str, Any] = {},
+        crossover_args: Dict[str, Any] = {},
+        mutation_args: Dict[str, Any] = {},
         elitism: float = 0.1,
     ) -> UpdaterLog:
         """
@@ -214,9 +217,11 @@ class GeneticUpdater(BaseSearchUpdater):
         elite_population = old_population[elite_indices]
 
         # Main update
-        parents = selection_operator(self.population, rewards)
-        children = crossover_operator(parents)
-        self.population = mutation_operator(children, self.env.single_action_space)
+        parents = selection_operator(self.population, rewards, **selection_args)
+        children = crossover_operator(parents, **crossover_args)
+        self.population = mutation_operator(
+            children, self.env.single_action_space, **mutation_args
+        )
         self.population[elite_indices] = elite_population
 
         # Calculate Log metrics
