@@ -117,7 +117,7 @@ class PolicyGradient(BaseActorUpdater):
         else:
             kl = None
 
-        return UpdaterLog(loss=loss.item(), kl_divergence=kl, entropy=entropy.item())
+        return UpdaterLog(loss=loss.item(), divergence=kl, entropy=entropy.item())
 
 
 class ProximalPolicyClip(BaseActorUpdater):
@@ -193,7 +193,7 @@ class ProximalPolicyClip(BaseActorUpdater):
         else:
             kl = None
 
-        return UpdaterLog(loss=loss.item(), kl_divergence=kl, entropy=entropy.item())
+        return UpdaterLog(loss=loss.item(), divergence=kl, entropy=entropy.item())
 
 
 class DeterministicPolicyGradient(BaseActorUpdater):

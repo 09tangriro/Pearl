@@ -61,7 +61,7 @@ class ES(BaseSearchAgent):
         self.logger.info(f"POPULATION MEAN={self.updater.mean}")
         self.buffer.reset()
 
-        return Log(kl_divergence=log.kl_divergence, entropy=log.entropy)
+        return Log(divergence=log.divergence, entropy=log.entropy)
 
 
 if __name__ == "__main__":

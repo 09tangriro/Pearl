@@ -20,7 +20,7 @@ def test_reset_episode_log():
     assert logger.episode_actor_losses == []
     assert logger.episode_critic_losses == []
     assert logger.episode_entropies == []
-    assert logger.episode_kl_divergences == []
+    assert logger.episode_divergences == []
 
 
 def test_make_episode_log():
@@ -40,7 +40,7 @@ def test_add_train_log():
     logger.add_train_log(train_log)
     assert logger.episode_actor_losses == []
     assert logger.episode_critic_losses == []
-    assert logger.episode_kl_divergences == []
+    assert logger.episode_divergences == []
     assert logger.episode_entropies == []
 
 

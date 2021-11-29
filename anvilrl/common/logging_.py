@@ -47,7 +47,7 @@ class Logger(object):
         self.num_envs = num_envs
         self.episode_actor_losses = []
         self.episode_critic_losses = []
-        self.episode_kl_divergences = []
+        self.episode_divergences = []
         self.episode_entropies = []
         self.episode_rewards = []
         # Keep track of which environments have completed an episode
@@ -56,7 +56,7 @@ class Logger(object):
     def reset_episode_log(self) -> None:
         self.episode_actor_losses = []
         self.episode_critic_losses = []
-        self.episode_kl_divergences = []
+        self.episode_divergences = []
         self.episode_entropies = []
         self.episode_rewards = []
         self.episode_dones = np.array([False for _ in range(self.num_envs)])
@@ -68,8 +68,8 @@ class Logger(object):
             self.episode_critic_losses.append(train_log.critic_loss)
         if train_log.entropy is not None:
             self.episode_entropies.append(train_log.entropy)
-        if train_log.kl_divergence is not None:
-            self.episode_kl_divergences.append(train_log.kl_divergence)
+        if train_log.divergence is not None:
+            self.episode_divergences.append(train_log.divergence)
 
     def add_reward(self, reward: Union[float, np.ndarray]) -> None:
         """Add step reward to the episode rewards"""
@@ -93,8 +93,8 @@ class Logger(object):
             episode_log.actor_loss = np.mean(self.episode_actor_losses)
         if self.episode_critic_losses:
             episode_log.critic_loss = np.mean(self.episode_critic_losses)
-        if self.episode_kl_divergences:
-            episode_log.kl_divergence = np.mean(self.episode_kl_divergences)
+        if self.episode_divergences:
+            episode_log.divergence = np.mean(self.episode_divergences)
         if self.episode_entropies:
             episode_log.entropy = np.mean(self.episode_entropies)
 
@@ -108,10 +108,8 @@ class Logger(object):
             self.writer.add_scalar("Loss/actor_loss", episode_log.actor_loss, step)
         if episode_log.critic_loss is not None:
             self.writer.add_scalar("Loss/critic_loss", episode_log.critic_loss, step)
-        if episode_log.kl_divergence is not None:
-            self.writer.add_scalar(
-                "Metrics/kl_divergence", episode_log.kl_divergence, step
-            )
+        if episode_log.divergence is not None:
+            self.writer.add_scalar("Metrics/divergence", episode_log.divergence, step)
         if episode_log.entropy is not None:
             self.writer.add_scalar("Metrics/entropy", episode_log.entropy, step)
 
