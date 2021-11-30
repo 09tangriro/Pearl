@@ -1,8 +1,15 @@
 import numpy as np
 import pytest
 import torch as T
+from gym import spaces
 
-from anvilrl.common.utils import extend_shape, numpy_to_torch, torch_to_numpy
+from anvilrl.common.utils import (
+    extend_shape,
+    get_space_range,
+    get_space_shape,
+    numpy_to_torch,
+    torch_to_numpy,
+)
 
 numpy_data = (np.zeros(shape=(2, 2)), np.zeros(shape=(3, 3)))
 torch_data = (T.zeros(2, 2), T.zeros(3, 3))
@@ -40,3 +47,49 @@ def test_extend_shape():
     expected_output = (5, 1, 1)
 
     assert actual_output == expected_output
+
+
+@pytest.mark.parametrize(
+    "space",
+    [
+        spaces.Box(low=-1, high=1, shape=(2, 2)),
+        spaces.Discrete(2),
+        spaces.MultiDiscrete([2, 2]),
+        spaces.MultiBinary(2),
+    ],
+)
+def test_get_space_shape(space):
+    actual_output = get_space_shape(space)
+
+    if isinstance(space, spaces.Box):
+        expected_output = (2, 2)
+    elif isinstance(space, spaces.Discrete):
+        expected_output = (1,)
+    else:
+        expected_output = (2,)
+    assert actual_output == expected_output
+
+
+@pytest.mark.parametrize(
+    "space",
+    [
+        spaces.Box(low=0, high=1, shape=(2, 2)),
+        spaces.Discrete(2),
+        spaces.MultiDiscrete([2, 2]),
+        spaces.MultiBinary(2),
+    ],
+)
+def test_get_space_range(space):
+    actual_output = get_space_range(space)
+
+    if isinstance(space, spaces.Box):
+        expected_output = (np.zeros((2, 2)), np.ones((2, 2)))
+        np.testing.assert_array_equal(actual_output[0], expected_output[0])
+        np.testing.assert_array_equal(actual_output[1], expected_output[1])
+    elif isinstance(space, spaces.MultiDiscrete):
+        expected_output = (np.zeros((2,)), np.ones((2,)))
+        np.testing.assert_array_equal(actual_output[0], expected_output[0])
+        np.testing.assert_array_equal(actual_output[1], expected_output[1])
+    else:
+        expected_output = (0, 1)
+        assert actual_output == expected_output

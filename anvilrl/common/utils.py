@@ -92,7 +92,28 @@ def get_space_shape(
         return (int(space.n),)
     elif isinstance(space, spaces.Dict):
         return get_space_shape(space["observation"])
+    else:
+        raise NotImplementedError(f"{space} observation space is not supported")
 
+
+def get_space_range(space: spaces.Space) -> Tuple[Any, Any]:
+    """
+    Get the range of a space (useful for the buffers).
+    :param space:
+    :return:
+    """
+    if isinstance(space, spaces.Tuple):
+        return get_space_range(space.spaces[0])
+    if isinstance(space, spaces.Box):
+        return space.low, space.high
+    elif isinstance(space, spaces.Discrete):
+        return 0, space.n - 1
+    elif isinstance(space, spaces.MultiDiscrete):
+        return np.zeros(space.nvec.shape), space.nvec - 1
+    elif isinstance(space, spaces.MultiBinary):
+        return 0, 1
+    elif isinstance(space, spaces.Dict):
+        return get_space_range(space["observation"])
     else:
         raise NotImplementedError(f"{space} observation space is not supported")
 
