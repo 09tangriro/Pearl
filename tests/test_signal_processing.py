@@ -161,6 +161,16 @@ def test_gaussian_mutation():
     np.testing.assert_array_almost_equal(actual_population, expected_population)
 
 
+def test_discrete_gaussian_mutation():
+    action_space = gym.spaces.Discrete(5)
+    population = np.full((3, 1), 1, dtype=np.int32)
+
+    actual_population = gaussian_mutation(population, action_space, mutation_rate=1)
+    expected_population = np.array([[1], [0], [2]])
+    assert np.issubdtype(actual_population.dtype, np.integer)
+    np.testing.assert_array_almost_equal(actual_population, expected_population)
+
+
 def test_uniform_mutation():
     np.random.seed(8)
     action_space = gym.spaces.Box(low=-1, high=1, shape=(3,))
@@ -174,4 +184,14 @@ def test_uniform_mutation():
 
     actual_population = uniform_mutation(population, action_space, mutation_rate=0)
     expected_population = population
+    np.testing.assert_array_almost_equal(actual_population, expected_population)
+
+
+def test_discrete_uniform_mutation():
+    action_space = gym.spaces.Discrete(5)
+    population = np.full((3, 1), 1, dtype=np.int32)
+
+    actual_population = uniform_mutation(population, action_space, mutation_rate=1)
+    expected_population = np.array([[2], [0], [1]])
+    assert np.issubdtype(actual_population.dtype, np.integer)
     np.testing.assert_array_almost_equal(actual_population, expected_population)

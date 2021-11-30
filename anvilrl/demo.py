@@ -127,7 +127,7 @@ def ga_demo():
         population_init_settings=PopulationInitializerSettings(strategy="uniform"),
         logger_settings=LoggerSettings(tensorboard_log_path="runs/GA-demo"),
     )
-    agent.fit(num_steps=15)
+    agent.fit(num_steps=25)
 
 
 if __name__ == "__main__":
