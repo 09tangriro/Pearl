@@ -308,6 +308,7 @@ def test_evolutionary_updater_discrete():
     # Assert population stats
     updater = EvolutionaryUpdater(env_discrete)
     population = updater.initialize_population(starting_point=np.array([5]))
+    assert np.issubdtype(population.dtype, np.integer)
     np.testing.assert_allclose(np.std(population, axis=0), np.ones(1), rtol=0.1)
     np.testing.assert_allclose(np.mean(population, axis=0), np.array([5]), rtol=0.1)
 
@@ -315,6 +316,7 @@ def test_evolutionary_updater_discrete():
     _, rewards, _, _ = env_discrete.step(population)
     updater(rewards=rewards, lr=1)
     new_population = updater.population
+    assert np.issubdtype(new_population.dtype, np.integer)
     assert new_population.shape == (POPULATION_SIZE, 1)
     np.testing.assert_allclose(np.std(new_population, axis=0), np.ones(1), rtol=0.1)
     np.testing.assert_array_less(updater.mean, np.array([5]))
@@ -344,3 +346,27 @@ def test_genetic_updater_continuous():
     )
 
     np.testing.assert_array_less(np.min(updater.population, axis=0), np.array([10, 10]))
+
+
+def test_genetic_updater_discrete():
+    np.random.seed(0)
+
+    # Assert population stats
+    updater = GeneticUpdater(env_discrete)
+    population = updater.initialize_population(
+        population_init_strategy=PopulationInitStrategy.UNIFORM,
+    )
+    assert np.issubdtype(population.dtype, np.integer)
+    np.testing.assert_allclose(np.mean(population, axis=0), np.array([5]), rtol=0.2)
+
+    # Test call
+    _, rewards, _, _ = env_discrete.step(population)
+    updater(
+        rewards=rewards,
+        selection_operator=selection_operators.roulette_selection,
+        crossover_operator=crossover_operators.crossover_one_point,
+        mutation_operator=mutation_operators.uniform_mutation,
+    )
+
+    new_population = updater.population
+    assert np.issubdtype(new_population.dtype, np.integer)

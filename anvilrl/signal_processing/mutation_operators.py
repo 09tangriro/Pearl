@@ -52,7 +52,7 @@ def gaussian_mutation(
     mutation_indices = _sample_indices(population, mutation_rate)
 
     # Mutate individuals
-    new_population = population.copy()
+    new_population = population.copy().astype(np.float32)
     for i in mutation_indices:
         new_population[i] += np.random.normal(0, mutation_std, population.shape[-1])
 
@@ -81,7 +81,7 @@ def uniform_mutation(
     mutation_indices = _sample_indices(population, mutation_rate)
 
     # Mutate individuals
-    new_population = population.copy()
+    new_population = population.copy().astype(np.float32)
     for i in mutation_indices:
         new_population[i] += np.random.uniform(-1, 1, population.shape[1])
 
