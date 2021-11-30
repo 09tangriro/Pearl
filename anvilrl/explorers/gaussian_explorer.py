@@ -33,5 +33,5 @@ class GaussianExplorer(BaseExplorer):
         if step >= self.start_steps:
             noises = np.random.normal(loc=0.0, scale=self.scale, size=self.action_size)
             actions = actions + noises
-            actions = np.clip(actions, self.action_space.low, self.action_space.high)
+            actions = np.clip(actions, self.action_range[0], self.action_range[1])
         return actions

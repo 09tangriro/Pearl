@@ -4,7 +4,7 @@ import numpy as np
 from gym import spaces
 
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import get_space_shape, torch_to_numpy
+from anvilrl.common.utils import get_space_range, get_space_shape, torch_to_numpy
 from anvilrl.models.actor_critics import Actor, ActorCritic
 from anvilrl.models.utils import get_mlp_size
 
@@ -26,14 +26,14 @@ class BaseExplorer(object):
         self.start_steps = start_steps
         self.action_space = action_space
         self.action_size = get_mlp_size(get_space_shape(action_space))
+        self.action_range = get_space_range(action_space)
 
     def __call__(
         self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
     ) -> np.ndarray:
         if step >= self.start_steps:
             action = torch_to_numpy(actor(observation))
-            if isinstance(self.action_space, spaces.Box):
-                action = np.clip(action, self.action_space.low, self.action_space.high)
+            action = np.clip(action, self.action_range[0], self.action_range[1])
         else:
             action = self.action_space.sample()
 
