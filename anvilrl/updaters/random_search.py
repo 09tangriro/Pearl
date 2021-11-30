@@ -87,11 +87,11 @@ class EvolutionaryUpdater(BaseSearchUpdater):
             self.population_size, *self.action_space_shape
         )
         population = self.mean + (population_std * self.normal_dist)
+        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+            population = np.round(population).astype(np.int32)
         self.population = np.clip(
             population, self.action_space_range[0], self.action_space_range[1]
         )
-        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
-            self.population = self.population.astype(np.int32)
         return self.population
 
     def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
@@ -125,11 +125,13 @@ class EvolutionaryUpdater(BaseSearchUpdater):
             self.population_size, self.env.single_action_space.shape[0]
         )
         population = self.mean + (self.population_std * self.normal_dist)
+
+        # Discretize and clip population as needed
+        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+            population = np.round(population).astype(np.int32)
         self.population = np.clip(
             population, self.action_space_range[0], self.action_space_range[1]
         )
-        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
-            self.population = self.population.astype(np.int32)
 
         # Calculate Log metrics
         new_dist = Normal(numpy_to_torch(self.mean), std)
@@ -160,36 +162,32 @@ class GeneticUpdater(BaseSearchUpdater):
         starting_point: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         if population_init_strategy == PopulationInitStrategy.UNIFORM:
-            if isinstance(self.env.single_action_space, Discrete):
-                self.population = np.random.randint(
-                    self.env.single_action_space.n, size=(self.population_size,)
-                )
-            else:
-                self.population = np.random.uniform(
-                    self.env.single_action_space.low,
-                    self.env.single_action_space.high,
-                    size=(self.population_size, self.env.single_action_space.shape[0]),
-                )
+            population = np.random.uniform(
+                self.action_space_range[0],
+                self.action_space_range[1],
+                (self.population_size, *self.action_space_shape),
+            )
         elif population_init_strategy == PopulationInitStrategy.NORMAL:
-            if isinstance(self.env.single_action_space, Discrete):
-                raise ValueError(
-                    "The normal population initialization strategy is not supported for discrete action spaces"
-                )
-            else:
-                mean = (
-                    starting_point
-                    if starting_point is not None
-                    else self.env.single_action_space.sample()
-                ).astype(np.float32)
-                self.population = np.random.normal(
-                    mean,
-                    population_std,
-                    (self.population_size, self.env.single_action_space.shape[0]),
-                )
+            mean = (
+                starting_point
+                if starting_point is not None
+                else self.env.single_action_space.sample()
+            ).astype(np.float32)
+            population = np.random.normal(
+                mean, population_std, (self.population_size, *self.action_space_shape)
+            )
         else:
             raise ValueError(
                 f"The population initialization strategy {population_init_strategy} is not supported"
             )
+
+        # Discretize and clip population as needed
+        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+            population = np.round(population).astype(np.int32)
+        self.population = np.clip(
+            population, self.action_space_range[0], self.action_space_range[1]
+        )
+
         return self.population
 
     def __call__(

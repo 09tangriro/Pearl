@@ -6,6 +6,7 @@ import numpy as np
 from anvilrl.agents.ddpg import DDPG
 from anvilrl.agents.dqn import DQN
 from anvilrl.agents.es import ES
+from anvilrl.agents.ga import GA
 from anvilrl.settings import (
     ExplorerSettings,
     LoggerSettings,
@@ -75,6 +76,60 @@ def es_demo():
     agent.fit(num_steps=15)
 
 
+def ga_demo():
+    class Mastermind(gym.Env):
+        """
+        Mastermind game for testing GA agent.
+        """
+
+        def __init__(self):
+            self.action_space = gym.spaces.MultiDiscrete([4, 4, 4, 4])
+            self.observation_space = gym.spaces.Discrete(1)
+            self.master = [0, 1, 2, 3]
+
+        def step(self, action):
+            print(action)
+            p1 = 0
+            p2 = 0
+            p1_map = [0] * 4
+            p2_map = [0] * 4
+            Mp2_map = [0] * 4
+
+            for i, colour in enumerate(action):
+                if colour == self.master[i]:
+                    p1_map[i] = 1
+                for el in self.master:
+                    if colour == el:
+                        p2_map[i] = 1
+                for i, el in enumerate(self.master):
+                    for colour in action:
+                        if colour == el:
+                            Mp2_map[i] = 1
+
+            Mp2_map = [m - n for m, n in zip(Mp2_map, p1_map)]
+            p2_map = [m - n for m, n in zip(p2_map, p1_map)]
+
+            p1 = sum(p1_map)
+            p2 = min(sum(p2_map), sum(Mp2_map))
+
+            return 0, p1 + 0.5 * p2, False, {}
+
+        def reset(self):
+            return 0
+
+    POPULATION_SIZE = 10
+    env = gym.vector.SyncVectorEnv(
+        [lambda: Mastermind() for _ in range(POPULATION_SIZE)]
+    )
+
+    agent = GA(
+        env=env,
+        population_init_settings=PopulationInitializerSettings(strategy="uniform"),
+        logger_settings=LoggerSettings(tensorboard_log_path="runs/GA-demo"),
+    )
+    agent.fit(num_steps=15)
+
+
 if __name__ == "__main__":
     parser = ArgumentParser(description="AnvilRL demo with preloaded hyperparameters")
     parser.add_argument("--agent", help="Agent to demo")
@@ -86,5 +141,7 @@ if __name__ == "__main__":
         ddpg_demo()
     elif kwargs.agent.lower() == "es":
         es_demo()
+    elif kwargs.agent.lower() == "ga":
+        ga_demo()
     else:
         raise ValueError(f"Agent {kwargs.agent} not found")

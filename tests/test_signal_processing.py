@@ -9,7 +9,6 @@ from anvilrl.signal_processing.advantage_estimators import (
 )
 from anvilrl.signal_processing.crossover_operators import crossover_one_point
 from anvilrl.signal_processing.mutation_operators import (
-    discrete_mutation,
     gaussian_mutation,
     uniform_mutation,
 )
@@ -174,19 +173,5 @@ def test_uniform_mutation():
     np.testing.assert_array_almost_equal(actual_population, expected_population)
 
     actual_population = uniform_mutation(population, action_space, mutation_rate=0)
-    expected_population = population
-    np.testing.assert_array_almost_equal(actual_population, expected_population)
-
-
-def test_discrete_mutation():
-    np.random.seed(8)
-    action_space = gym.spaces.Discrete(3)
-    population = np.full((3, 3), 1)
-
-    actual_population = discrete_mutation(population, action_space, mutation_rate=1)
-    expected_population = np.array([[1, 0, 1], [0, 1, 0], [1, 1, 0]])
-    np.testing.assert_array_almost_equal(actual_population, expected_population)
-
-    actual_population = discrete_mutation(population, action_space, mutation_rate=0)
     expected_population = population
     np.testing.assert_array_almost_equal(actual_population, expected_population)

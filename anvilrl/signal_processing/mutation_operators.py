@@ -5,6 +5,10 @@ https://www.tutorialspoint.com/genetic_algorithms/genetic_algorithms_mutation.ht
 
 import numpy as np
 from gym import Space
+from gym.spaces.discrete import Discrete
+from gym.spaces.multi_discrete import MultiDiscrete
+
+from anvilrl.common.utils import get_space_range
 
 
 def _sample_indices(
@@ -43,21 +47,26 @@ def gaussian_mutation(
     :param mutation_std: the standard deviation of the Gaussian distribution used to mutate an individual
     :return: the mutated population
     """
+    space_range = get_space_range(action_space)
     # Get indices of individuals to mutate
     mutation_indices = _sample_indices(population, mutation_rate)
 
     # Mutate individuals
     new_population = population.copy()
     for i in mutation_indices:
-        new_population[i] += np.random.normal(0, mutation_std, population.shape[1])
+        new_population[i] += np.random.normal(0, mutation_std, population.shape[-1])
 
-    return np.clip(new_population, action_space.low, action_space.high)
+    # Discretize population as required
+    if isinstance(action_space, (Discrete, MultiDiscrete)):
+        new_population = np.round(new_population).astype(np.int32)
+
+    return np.clip(new_population, space_range[0], space_range[1])
 
 
 def uniform_mutation(
     population: np.ndarray,
     action_space: Space,
-    mutation_rate: float = 0.05,
+    mutation_rate: float = 0.1,
 ) -> np.ndarray:
     """
     Mutates a population using a uniform mutation operator.
@@ -67,6 +76,7 @@ def uniform_mutation(
     :param mutation_rate: the probability of mutating an individual
     :return: the mutated population
     """
+    space_range = get_space_range(action_space)
     # Get indices of individuals to mutate
     mutation_indices = _sample_indices(population, mutation_rate)
 
@@ -75,28 +85,8 @@ def uniform_mutation(
     for i in mutation_indices:
         new_population[i] += np.random.uniform(-1, 1, population.shape[1])
 
-    return np.clip(new_population, action_space.low, action_space.high)
+    # Discretize population as required
+    if isinstance(action_space, (Discrete, MultiDiscrete)):
+        new_population = np.round(new_population).astype(np.int32)
 
-
-def discrete_mutation(
-    population: np.ndarray,
-    action_space: Space,
-    mutation_rate: float = 0.1,
-) -> np.ndarray:
-    """
-    Mutates a population using a discrete mutation operator.
-
-    :param population: the population of individuals to mutate
-    :param action_space: the action space of the environment
-    :param mutation_rate: the probability of mutating an individual
-    :return: the mutated population
-    """
-    # Get indices of individuals to mutate
-    mutation_indices = _sample_indices(population, mutation_rate)
-
-    # Mutate individuals
-    new_population = population.copy()
-    for i in mutation_indices:
-        new_population[i] += np.random.randint(-1, 1, population.shape[1])
-
-    return np.clip(new_population, 0, action_space.n)
+    return np.clip(new_population, space_range[0], space_range[1])
