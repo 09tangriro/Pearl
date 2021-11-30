@@ -126,10 +126,10 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         )
         population = self.mean + (self.population_std * self.normal_dist)
         self.population = np.clip(
-            population,
-            self.env.single_action_space.low,
-            self.env.single_action_space.high,
+            population, self.action_space_range[0], self.action_space_range[1]
         )
+        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+            self.population = self.population.astype(np.int32)
 
         # Calculate Log metrics
         new_dist = Normal(numpy_to_torch(self.mean), std)
