@@ -122,7 +122,7 @@ class EvolutionaryUpdater(BaseSearchUpdater):
 
         # Generate new population
         self.normal_dist = np.random.randn(
-            self.population_size, self.env.single_action_space.shape[0]
+            self.population_size, *self.action_space_shape
         )
         population = self.mean + (self.population_std * self.normal_dist)
 

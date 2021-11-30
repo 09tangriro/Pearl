@@ -257,15 +257,36 @@ class Sphere(gym.Env):
         return 0
 
 
+class DiscreteSphere(gym.Env):
+    """
+    Discrete Sphere(1) function for testing ES agent.
+    """
+
+    def __init__(self):
+        self.action_space = gym.spaces.Discrete(10)
+        self.observation_space = gym.spaces.Discrete(1)
+
+    def step(self, action):
+        return 0, -(action ** 2), False, {}
+
+    def reset(self):
+        return 0
+
+
 POPULATION_SIZE = 10000
-env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
+env_continuous = gym.vector.SyncVectorEnv(
+    [lambda: Sphere() for _ in range(POPULATION_SIZE)]
+)
+env_discrete = gym.vector.SyncVectorEnv(
+    [lambda: DiscreteSphere() for _ in range(POPULATION_SIZE)]
+)
 
 
-def test_evolutionary_updater():
+def test_evolutionary_updater_continuous():
     np.random.seed(0)
 
     # Assert population stats
-    updater = EvolutionaryUpdater(env)
+    updater = EvolutionaryUpdater(env_continuous)
     population = updater.initialize_population(starting_point=np.array([10, 10]))
     np.testing.assert_allclose(np.std(population, axis=0), np.ones(2), rtol=0.1)
     np.testing.assert_allclose(
@@ -273,7 +294,7 @@ def test_evolutionary_updater():
     )
 
     # Test call
-    _, rewards, _, _ = env.step(population)
+    _, rewards, _, _ = env_continuous.step(population)
     updater(rewards=rewards, lr=1)
     new_population = updater.population
     assert new_population.shape == (POPULATION_SIZE, 2)
@@ -281,11 +302,29 @@ def test_evolutionary_updater():
     np.testing.assert_array_less(updater.mean, np.array([10, 10]))
 
 
-def test_genetic_updater():
+def test_evolutionary_updater_discrete():
     np.random.seed(0)
 
     # Assert population stats
-    updater = GeneticUpdater(env)
+    updater = EvolutionaryUpdater(env_discrete)
+    population = updater.initialize_population(starting_point=np.array([5]))
+    np.testing.assert_allclose(np.std(population, axis=0), np.ones(1), rtol=0.1)
+    np.testing.assert_allclose(np.mean(population, axis=0), np.array([5]), rtol=0.1)
+
+    # Test call
+    _, rewards, _, _ = env_discrete.step(population)
+    updater(rewards=rewards, lr=1)
+    new_population = updater.population
+    assert new_population.shape == (POPULATION_SIZE, 1)
+    np.testing.assert_allclose(np.std(new_population, axis=0), np.ones(1), rtol=0.1)
+    np.testing.assert_array_less(updater.mean, np.array([5]))
+
+
+def test_genetic_updater_continuous():
+    np.random.seed(0)
+
+    # Assert population stats
+    updater = GeneticUpdater(env_continuous)
     population = updater.initialize_population(
         starting_point=np.array([10, 10]),
         population_init_strategy=PopulationInitStrategy.NORMAL,
@@ -296,7 +335,7 @@ def test_genetic_updater():
     )
 
     # Test call
-    _, rewards, _, _ = env.step(population)
+    _, rewards, _, _ = env_continuous.step(population)
     updater(
         rewards=rewards,
         selection_operator=selection_operators.roulette_selection,
