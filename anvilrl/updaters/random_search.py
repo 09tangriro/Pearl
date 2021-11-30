@@ -3,14 +3,14 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
-from gym.spaces import Discrete
+from gym.spaces import Discrete, MultiDiscrete
 from gym.vector import VectorEnv
 from sklearn.preprocessing import scale
 from torch.distributions import Normal, kl_divergence
 
 from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.common.type_aliases import UpdaterLog
-from anvilrl.common.utils import numpy_to_torch
+from anvilrl.common.utils import get_space_range, get_space_shape, numpy_to_torch
 from anvilrl.signal_processing import (
     crossover_operators,
     mutation_operators,
@@ -31,6 +31,8 @@ class BaseSearchUpdater(ABC):
         self.env = env
         self.population = None
         self.population_size = env.num_envs
+        self.action_space_shape = get_space_shape(env.single_action_space)
+        self.action_space_range = get_space_range(env.single_action_space)
 
     @abstractmethod
     def initialize_population(
@@ -82,14 +84,14 @@ class EvolutionaryUpdater(BaseSearchUpdater):
             else self.env.single_action_space.sample()
         ).astype(np.float32)
         self.normal_dist = np.random.randn(
-            self.population_size, *self.env.single_action_space.shape
+            self.population_size, *self.action_space_shape
         )
         population = self.mean + (population_std * self.normal_dist)
         self.population = np.clip(
-            population,
-            self.env.single_action_space.low,
-            self.env.single_action_space.high,
+            population, self.action_space_range[0], self.action_space_range[1]
         )
+        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+            self.population = self.population.astype(np.int32)
         return self.population
 
     def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
