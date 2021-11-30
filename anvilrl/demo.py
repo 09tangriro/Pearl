@@ -88,7 +88,6 @@ def ga_demo():
             self.master = [0, 1, 2, 3]
 
         def step(self, action):
-            print(action)
             p1 = 0
             p2 = 0
             p1_map = [0] * 4
