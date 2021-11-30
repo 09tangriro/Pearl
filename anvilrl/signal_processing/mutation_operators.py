@@ -9,7 +9,7 @@ from gym import Space
 
 def _sample_indices(
     population: np.ndarray,
-    mutation_rate: float = 0.05,
+    mutation_rate: float = 0.1,
 ) -> np.ndarray:
     """
     Samples mutation indices from a population.
@@ -31,7 +31,7 @@ def _sample_indices(
 def gaussian_mutation(
     population: np.ndarray,
     action_space: Space,
-    mutation_rate: float = 0.05,
+    mutation_rate: float = 0.1,
     mutation_std: float = 0.5,
 ) -> np.ndarray:
     """
@@ -81,7 +81,7 @@ def uniform_mutation(
 def discrete_mutation(
     population: np.ndarray,
     action_space: Space,
-    mutation_rate: float = 0.05,
+    mutation_rate: float = 0.1,
 ) -> np.ndarray:
     """
     Mutates a population using a discrete mutation operator.
