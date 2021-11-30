@@ -82,10 +82,15 @@ class EvolutionaryUpdater(BaseSearchUpdater):
             else self.env.single_action_space.sample()
         ).astype(np.float32)
         self.normal_dist = np.random.randn(
-            self.population_size, self.env.single_action_space.shape[0]
+            self.population_size, *self.env.single_action_space.shape
         )
-        self.population = self.mean + (population_std * self.normal_dist)
-        return self.mean + (population_std * self.normal_dist)
+        population = self.mean + (population_std * self.normal_dist)
+        self.population = np.clip(
+            population,
+            self.env.single_action_space.low,
+            self.env.single_action_space.high,
+        )
+        return self.population
 
     def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
         """
