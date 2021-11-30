@@ -31,6 +31,7 @@ addopts = """
     -m 'not integration'
     --tb=short -rEf
     --cov anvilrl
+    --cov-config=.coveragerc
     --cov-report xml:build/reports/coverage.xml
     --cov-report term
     --color=yes

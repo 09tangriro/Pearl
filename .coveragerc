@@ -1,0 +1,17 @@
+[report]
+exclude_lines =
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+
+    # Don't complain about abstract methods, they aren't run:
+    @(abc\.)?abstractmethod
+
+omit = 
+    anvilrl/demo.py
+    anvilrl/agents/templates.py
+    anvilrl/agents/ddpg.py
+    anvilrl/agents/dqn.py
+    anvilrl/agents/es.py
+    anvilrl/agents/ga.py
+    anvilrl/settings.py
