@@ -1,11 +1,9 @@
-import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
 
 import numpy as np
 from gym.spaces import Discrete, MultiDiscrete
 from gym.vector import VectorEnv
-from sklearn.preprocessing import scale
 from torch.distributions import Normal, kl_divergence
 
 from anvilrl.common.enumerations import PopulationInitStrategy
@@ -16,8 +14,6 @@ from anvilrl.signal_processing import (
     mutation_operators,
     selection_operators,
 )
-
-warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class BaseSearchUpdater(ABC):
@@ -94,12 +90,15 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         )
         return self.population
 
-    def __call__(self, rewards: np.ndarray, lr: float) -> UpdaterLog:
+    def __call__(
+        self, learning_rate: float, optimization_direction: np.ndarray
+    ) -> UpdaterLog:
         """
         Perform an optimization step
 
         :param rewards: the rewards for the current population
-        :param lr: the learning rate
+        :param learning_rate: the learning rate
+        :param optimization_direction: the optimization direction
         :return: the updater log
         """
         assert (
@@ -113,12 +112,9 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         # Snapshot current population dist for kl divergence
         # use copy() to avoid modifying the original
         old_dist = Normal(numpy_to_torch(self.mean.copy()), std)
-        scaled_rewards = scale(rewards.squeeze())
 
         # Main update
-        self.mean += (
-            lr / (np.mean(self.population_std) * self.population_size)
-        ) * np.dot(self.normal_dist.T, scaled_rewards)
+        self.mean += learning_rate * optimization_direction
 
         # Generate new population
         self.normal_dist = np.random.randn(

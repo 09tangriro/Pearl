@@ -1,8 +1,10 @@
+import warnings
 from typing import Type, Union
 
 import numpy as np
 import torch as T
 from gym.vector.vector_env import VectorEnv
+from sklearn.preprocessing import scale
 
 from anvilrl.agents.base_agents import BaseSearchAgent
 from anvilrl.buffers import RolloutBuffer
@@ -14,6 +16,8 @@ from anvilrl.settings import (
     PopulationInitializerSettings,
 )
 from anvilrl.updaters.random_search import BaseSearchUpdater, EvolutionaryUpdater
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class ES(BaseSearchAgent):
@@ -57,7 +61,12 @@ class ES(BaseSearchAgent):
 
     def _fit(self) -> Log:
         trajectories = self.buffer.all()
-        log = self.updater(rewards=trajectories.rewards, lr=self.learning_rate)
+        scaled_rewards = scale(trajectories.rewards.squeeze())
+        optimization_direction = np.dot(self.updater.normal_dist.T, scaled_rewards)
+        log = self.updater(
+            learning_rate=self.learning_rate,
+            optimization_direction=optimization_direction,
+        )
         self.logger.info(f"POPULATION MEAN={self.updater.mean}")
         self.buffer.reset()
 
