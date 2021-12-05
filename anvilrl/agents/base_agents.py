@@ -256,7 +256,7 @@ class BaseSearchAgent(ABC):
 
     :param env: the gym vecotrized environment
     :param updater_class: the class to use for the updater handling the actual update algorithm
-    :param population_initializer_settings: the settings object for population initialization
+    :param population_settings: the settings object for population initialization
     :param buffer_class: the buffer class for storing and sampling trajectories
     :param buffer_settings: settings for the buffer
     :param logger_settings: settings for the logger
@@ -268,7 +268,7 @@ class BaseSearchAgent(ABC):
         self,
         env: VectorEnv,
         updater_class: Type[BaseSearchUpdater],
-        population_initializer_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
+        population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
         buffer_class: BaseBuffer = BaseBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
@@ -276,7 +276,7 @@ class BaseSearchAgent(ABC):
     ) -> None:
         self.env = env
         self.updater = updater_class(env=env)
-        self.population_init_settings = population_initializer_settings
+        self.population_settings = population_settings
         buffer_settings = filter_dataclass_by_none(buffer_settings)
         self.buffer = buffer_class(env=env, device=device, **buffer_settings)
         self.step = 0
@@ -349,16 +349,16 @@ class BaseSearchAgent(ABC):
         if train_frequency[0] == TrainFrequencyType.STEP:
             num_steps = num_steps // train_frequency[1]
 
-        if isinstance(self.population_init_settings.strategy, str):
+        if isinstance(self.population_settings.strategy, str):
             population_init_strategy = PopulationInitStrategy(
-                self.population_init_settings.strategy.lower()
+                self.population_settings.strategy.lower()
             )
         else:
-            population_init_strategy = self.population_init_settings.strategy
+            population_init_strategy = self.population_settings.strategy
         self.population = self.updater.initialize_population(
             population_init_strategy=population_init_strategy,
-            population_std=self.population_init_settings.population_std,
-            starting_point=self.population_init_settings.starting_point,
+            population_std=self.population_settings.population_std,
+            starting_point=self.population_settings.starting_point,
         )
         for _ in range(num_steps):
             # Step for number of steps specified

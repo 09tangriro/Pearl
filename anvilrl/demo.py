@@ -67,7 +67,7 @@ def es_demo():
 
     agent = ES(
         env=env,
-        population_init_settings=PopulationInitializerSettings(
+        population_settings=PopulationInitializerSettings(
             starting_point=np.array([10, 10])
         ),
         learning_rate=1,
@@ -123,7 +123,7 @@ def ga_demo():
 
     agent = GA(
         env=env,
-        population_init_settings=PopulationInitializerSettings(strategy="uniform"),
+        population_settings=PopulationInitializerSettings(strategy="uniform"),
         logger_settings=LoggerSettings(tensorboard_log_path="runs/GA-demo"),
     )
     agent.fit(num_steps=25)

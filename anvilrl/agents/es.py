@@ -27,7 +27,7 @@ class ES(BaseSearchAgent):
 
     :param env: the gym vecotrized environment
     :param updater_class: the class to use for the updater handling the actual update algorithm
-    :param population_initializer_settings: the settings object for population initialization
+    :param population_settings: the settings object for population initialization
     :param buffer_class: the buffer class for storing and sampling trajectories
     :param buffer_settings: settings for the buffer
     :param logger_settings: settings for the logger
@@ -41,7 +41,7 @@ class ES(BaseSearchAgent):
         env: VectorEnv,
         updater_class: Type[BaseSearchUpdater] = EvolutionaryUpdater,
         learning_rate: float = 0.001,
-        population_init_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
+        population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
         buffer_class: BaseBuffer = RolloutBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
@@ -50,7 +50,7 @@ class ES(BaseSearchAgent):
         super().__init__(
             env=env,
             updater_class=updater_class,
-            population_initializer_settings=population_init_settings,
+            population_settings=population_settings,
             buffer_class=buffer_class,
             buffer_settings=buffer_settings,
             logger_settings=logger_settings,
@@ -63,7 +63,7 @@ class ES(BaseSearchAgent):
         trajectories = self.buffer.all()
         scaled_rewards = scale(trajectories.rewards.squeeze())
         learning_rate = self.learning_rate / (
-            np.mean(self.population_init_settings.population_std) * self.env.num_envs
+            np.mean(self.population_settings.population_std) * self.env.num_envs
         )
         optimization_direction = np.dot(self.updater.normal_dist.T, scaled_rewards)
         log = self.updater(
