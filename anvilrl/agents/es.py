@@ -62,9 +62,12 @@ class ES(BaseSearchAgent):
     def _fit(self) -> Log:
         trajectories = self.buffer.all()
         scaled_rewards = scale(trajectories.rewards.squeeze())
+        learning_rate = self.learning_rate / (
+            np.mean(self.population_init_settings.population_std) * self.env.num_envs
+        )
         optimization_direction = np.dot(self.updater.normal_dist.T, scaled_rewards)
         log = self.updater(
-            learning_rate=self.learning_rate,
+            learning_rate=learning_rate,
             optimization_direction=optimization_direction,
         )
         self.logger.info(f"POPULATION MEAN={self.updater.mean}")

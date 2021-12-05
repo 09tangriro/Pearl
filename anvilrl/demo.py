@@ -70,10 +70,10 @@ def es_demo():
         population_init_settings=PopulationInitializerSettings(
             starting_point=np.array([10, 10])
         ),
-        learning_rate=0.05,
+        learning_rate=1,
         logger_settings=LoggerSettings(tensorboard_log_path="runs/ES-demo"),
     )
-    agent.fit(num_steps=100)
+    agent.fit(num_steps=15)
 
 
 def ga_demo():
