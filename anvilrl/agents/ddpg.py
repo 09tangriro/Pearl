@@ -139,22 +139,3 @@ class DDPG(BaseDeepAgent):
             actor_loss=np.mean(actor_losses),
             critic_loss=np.mean(critic_losses),
         )
-
-
-if __name__ == "__main__":
-    import gym
-
-    env = gym.make("Pendulum-v0")
-    agent = DDPG(
-        env=env,
-        model=None,
-        logger_settings=LoggerSettings(tensorboard_log_path="runs/DDPG-demo"),
-        explorer_settings=ExplorerSettings(start_steps=1000, scale=0.1),
-    )
-    agent.fit(
-        num_steps=100000,
-        batch_size=64,
-        critic_epochs=1,
-        actor_epochs=1,
-        train_frequency=("step", 1),
-    )

@@ -112,20 +112,3 @@ class DQN(BaseDeepAgent):
         self.model.assign_targets()
 
         return Log(critic_loss=np.mean(critic_losses))
-
-
-if __name__ == "__main__":
-    import gym
-
-    env = gym.make("CartPole-v0")
-    agent = DQN(
-        env=env,
-        model=None,
-        logger_settings=LoggerSettings(
-            tensorboard_log_path="runs/DQN-demo", verbose=True
-        ),
-        explorer_settings=ExplorerSettings(start_steps=1000),
-    )
-    agent.fit(
-        num_steps=50000, batch_size=32, critic_epochs=16, train_frequency=("episode", 1)
-    )
