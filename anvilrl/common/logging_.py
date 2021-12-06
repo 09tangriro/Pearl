@@ -11,6 +11,8 @@ def get_logger(file_handler_level: int, stream_handler_level: int) -> logging.Lo
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
+    if logger.hasHandlers():
+        logger.handlers.clear()
     file_handler = logging.FileHandler("agent.log", mode="w")
     file_handler.setLevel(file_handler_level)
     stream_handler = logging.StreamHandler()
