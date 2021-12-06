@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 from gym import spaces
 
-from anvilrl.common.type_aliases import Tensor
+from anvilrl.common.type_aliases import Observation
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import Actor, ActorCritic
 
@@ -27,7 +27,7 @@ class GaussianExplorer(BaseExplorer):
         self.scale = scale
 
     def __call__(
-        self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
+        self, actor: Union[Actor, ActorCritic], observation: Observation, step: int
     ) -> np.ndarray:
         actions = super().__call__(actor, observation, step)
         if step >= self.start_steps:

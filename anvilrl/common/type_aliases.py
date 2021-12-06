@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 import torch as T
 
 Tensor = Union[np.ndarray, T.Tensor]
+Observation = Union[np.ndarray, Dict[str, np.ndarray]]
 
 
 @dataclass
@@ -15,6 +16,17 @@ class Trajectories:
     actions: Tensor
     rewards: Tensor
     next_observations: Tensor
+    dones: Tensor
+
+
+@dataclass
+class DictTrajectories:
+    """Sample trajectory data with dictionary observations needed for algorithms"""
+
+    observations: Dict[str, Tensor]
+    actions: Tensor
+    rewards: Tensor
+    next_observations: Dict[str, Tensor]
     dones: Tensor
 
 

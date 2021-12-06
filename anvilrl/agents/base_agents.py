@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict
-from typing import List, Optional, Tuple, Type, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as T
@@ -11,8 +11,8 @@ from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.enumerations import PopulationInitStrategy, TrainFrequencyType
 from anvilrl.common.logging_ import Logger
-from anvilrl.common.type_aliases import Log, Tensor, Trajectories
-from anvilrl.common.utils import filter_dataclass_by_none, get_device, numpy_to_torch
+from anvilrl.common.type_aliases import Log, Observation, Tensor, Trajectories
+from anvilrl.common.utils import filter_dataclass_by_none, get_device
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import ActorCritic
 from anvilrl.settings import (
@@ -99,26 +99,28 @@ class BaseDeepAgent(ABC):
         device = get_device(device)
         self.logger.info(f"Using device {device}")
 
-    def predict(self, observations: Tensor) -> T.Tensor:
+    def predict(self, observations: Union[Tensor, Dict[str, Tensor]]) -> T.Tensor:
         """Run the agent actor model"""
         self.model.eval()
         return self.model(observations)
 
     def get_action_distribution(
-        self, observations: Tensor
+        self, observations: Union[Tensor, Dict[str, Tensor]]
     ) -> T.distributions.Distribution:
         """Get the policy distribution given an observation"""
         self.model.eval()
         return self.model.get_action_distribution(observations)
 
     def critic(
-        self, observations: Tensor, actions: Optional[Tensor] = None
+        self,
+        observations: Union[Tensor, Dict[str, Tensor]],
+        actions: Optional[Tensor] = None,
     ) -> T.Tensor:
         """Run the agent critic model"""
         self.model.eval()
         return self.model.critic(observations, actions)
 
-    def step_env(self, observation: np.ndarray, num_steps: int = 1) -> np.ndarray:
+    def step_env(self, observation: Observation, num_steps: int = 1) -> np.ndarray:
         """
         Step the agent in the environment
 

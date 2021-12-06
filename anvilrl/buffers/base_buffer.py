@@ -9,7 +9,7 @@ from gym import Env
 from gym.vector import VectorEnv
 
 from anvilrl.common.enumerations import TrajectoryType
-from anvilrl.common.type_aliases import Trajectories
+from anvilrl.common.type_aliases import Observation, Trajectories
 from anvilrl.common.utils import get_device, get_space_shape
 
 
@@ -162,10 +162,10 @@ class BaseBuffer(ABC):
     @abstractmethod
     def add_trajectory(
         self,
-        observation: np.ndarray,
+        observation: Observation,
         action: Union[np.ndarray, int],
         reward: Union[float, np.ndarray],
-        next_observation: np.ndarray,
+        next_observation: Observation,
         done: Union[bool, np.ndarray],
     ) -> None:
         """

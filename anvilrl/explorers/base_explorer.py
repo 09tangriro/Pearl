@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 from gym import spaces
 
-from anvilrl.common.type_aliases import Tensor
+from anvilrl.common.type_aliases import Observation
 from anvilrl.common.utils import get_space_range, get_space_shape, torch_to_numpy
 from anvilrl.models.actor_critics import Actor, ActorCritic
 from anvilrl.models.utils import get_mlp_size
@@ -29,7 +29,7 @@ class BaseExplorer(object):
         self.action_range = get_space_range(action_space)
 
     def __call__(
-        self, actor: Union[Actor, ActorCritic], observation: Tensor, step: int
+        self, actor: Union[Actor, ActorCritic], observation: Observation, step: int
     ) -> np.ndarray:
         if step >= self.start_steps:
             action = torch_to_numpy(actor(observation))

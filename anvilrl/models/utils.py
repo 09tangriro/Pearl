@@ -87,8 +87,8 @@ def is_image_space(
     return False
 
 
-def concat_obs_actions(observations: Tensor, actions: Optional[Tensor]) -> Tensor:
+def concat_obs_actions(observations: Tensor, actions: Optional[Tensor]) -> T.Tensor:
     if actions is not None:
         observations, actions = numpy_to_torch(observations, actions)
         return T.cat([observations, actions], dim=-1)
-    return observations
+    return numpy_to_torch(observations)

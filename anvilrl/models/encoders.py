@@ -1,10 +1,9 @@
-from typing import Optional, Type
+from typing import Dict, Optional, Type
 
 import torch as T
 from gym import spaces
 
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import numpy_to_torch
 from anvilrl.models.utils import concat_obs_actions, is_image_space
 
 
@@ -19,7 +18,7 @@ class IdentityEncoder(T.nn.Module):
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
         observations = concat_obs_actions(observations, actions)
-        return numpy_to_torch(observations)
+        return observations
 
 
 class FlattenEncoder(T.nn.Module):
@@ -33,9 +32,8 @@ class FlattenEncoder(T.nn.Module):
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        observations = concat_obs_actions(observations, actions)
         # Make sure observations is a torch tensor, get error if numpy for some reason??
-        observations = numpy_to_torch(observations)
+        observations = concat_obs_actions(observations, actions)
         return self.flatten(observations)
 
 
@@ -98,3 +96,18 @@ class CNNEncoder(T.nn.Module):
 
     def forward(self, observations: Tensor) -> T.Tensor:
         return self.linear(self.cnn(observations))
+
+
+class DictEncoder(T.nn.Module):
+    """Handles dictionary observations, e.g. from GoalEnv"""
+
+    def __init__(self, encoder: T.nn.Module = IdentityEncoder()) -> None:
+        super().__init__()
+        self.encoder = encoder
+
+    def forward(
+        self, observations: Dict[str, Tensor], actions: Optional[Tensor] = None
+    ) -> T.Tensor:
+        # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
+        observations = observations["observations"]
+        return self.encoder(observations, actions)
