@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import torch as T
@@ -6,7 +6,7 @@ from gym.core import GoalEnv
 
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.common.enumerations import GoalSelectionStrategy, TrajectoryType
-from anvilrl.common.type_aliases import Trajectories
+from anvilrl.common.type_aliases import DictTrajectories, Tensor
 
 
 class HERBuffer(BaseBuffer):
@@ -163,7 +163,7 @@ class HERBuffer(BaseBuffer):
     def _sample_trajectories(
         self,
         batch_inds: np.ndarray,
-    ) -> Trajectories:
+    ) -> Tuple[Dict, Tensor, Tensor, Dict, Tensor]:
         """
         Get the trajectories based on batch indices calculated
 
@@ -190,13 +190,14 @@ class HERBuffer(BaseBuffer):
 
         desired_goals = np.concatenate([her_goals, self.desired_goals[replay_inds]])
         rewards = np.concatenate([her_rewards, self.rewards[replay_inds]])
-        observations = np.concatenate(
-            [self.observations[batch_inds], desired_goals], axis=len(self.batch_shape)
-        )
-        next_observations = np.concatenate(
-            [self.observations[(batch_inds + 1) % self.buffer_size], desired_goals],
-            axis=len(self.batch_shape),
-        )
+        observations = {
+            "observation": self.observations[batch_inds],
+            "desired_goal": desired_goals,
+        }
+        next_observations = {
+            "observation": self.observations[(batch_inds + 1) % self.buffer_size],
+            "desired_goal": desired_goals,
+        }
         actions = self.actions[batch_inds]
         dones = self.dones[batch_inds]
 
@@ -207,7 +208,7 @@ class HERBuffer(BaseBuffer):
         batch_size: int,
         flatten_env: bool = True,
         dtype: Union[str, TrajectoryType] = "numpy",
-    ) -> Trajectories:
+    ) -> DictTrajectories:
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
 
@@ -221,14 +222,20 @@ class HERBuffer(BaseBuffer):
             batch_inds = np.random.randint(0, end_idx, size=batch_size)
 
         trajectories = self._sample_trajectories(batch_inds)
-        return self._transform_samples(flatten_env, dtype, *trajectories)
+        return DictTrajectories(
+            observations=trajectories[0],
+            actions=trajectories[1],
+            rewards=trajectories[2],
+            next_observations=trajectories[3],
+            dones=trajectories[4],
+        )
 
     def last(
         self,
         batch_size: int,
         flatten_env: bool = True,
         dtype: Union[str, TrajectoryType] = "numpy",
-    ) -> Trajectories:
+    ) -> DictTrajectories:
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
         assert batch_size < self.buffer_size
@@ -246,13 +253,25 @@ class HERBuffer(BaseBuffer):
             )
 
         trajectories = self._sample_trajectories(batch_inds)
-        return self._transform_samples(flatten_env, dtype, *trajectories)
+        return DictTrajectories(
+            observations=trajectories[0],
+            actions=trajectories[1],
+            rewards=trajectories[2],
+            next_observations=trajectories[3],
+            dones=trajectories[4],
+        )
 
-    def all(self):
-        return Trajectories(
-            observations=self.observations[: self.pos],
+    def all(self) -> DictTrajectories:
+        return DictTrajectories(
+            observations={
+                "observation": self.observations[: self.pos],
+                "desired_goal": self.desired_goals[: self.pos],
+            },
             actions=self.actions[: self.pos],
             rewards=self.rewards[: self.pos],
-            next_observations=self.observations[: (self.pos + 1) % self.buffer_size],
+            next_observations={
+                "observation": self.observations[: (self.pos + 1) % self.buffer_size],
+                "desired_goal": self.desired_goals[: (self.pos + 1) % self.buffer_size],
+            },
             dones=self.dones[: self.pos],
         )

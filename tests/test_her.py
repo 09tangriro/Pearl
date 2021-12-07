@@ -291,13 +291,9 @@ def test_her_sample(goal_selection_strategy, buffer_size):
     observations[pos] = next_observations[pos - 1]
 
     trajectories = buffer.sample(4)
-    sampled_observations = trajectories.observations.reshape(4, NUM_BITS * 2)[
-        :, :NUM_BITS
-    ]
-    sampled_next_observations = trajectories.next_observations.reshape(4, NUM_BITS * 2)[
-        :, :NUM_BITS
-    ]
-    her_sampled_goals = trajectories.observations.reshape(4, NUM_BITS * 2)[:, NUM_BITS:]
+    sampled_observations = trajectories.observations["observation"]
+    sampled_next_observations = trajectories.next_observations["observation"]
+    her_sampled_goals = trajectories.observations["desired_goal"]
     # Check if sampled next observations are actually the next observations
     for i, obs in enumerate(sampled_observations):
         array_idx = np.where(observations == obs)[0]
@@ -349,7 +345,7 @@ def test_her_last(buffer_size, goal_selection_strategy):
 
     # Don't assert rewards since these can change with HER sampled goals
     np.testing.assert_array_almost_equal(
-        most_recent.observations[:, :NUM_BITS],
+        most_recent.observations["observation"],
         observations[last_episode_pos - 1 : last_episode_pos + 1],
     )
     np.testing.assert_array_almost_equal(
