@@ -1,9 +1,11 @@
 from typing import Dict, Optional, Type
 
+import numpy as np
 import torch as T
 from gym import spaces
 
 from anvilrl.common.type_aliases import Tensor
+from anvilrl.common.utils import torch_to_numpy
 from anvilrl.models.utils import concat_obs_actions, is_image_space
 
 
@@ -99,7 +101,11 @@ class CNNEncoder(T.nn.Module):
 
 
 class DictEncoder(T.nn.Module):
-    """Handles dictionary observations, e.g. from GoalEnv"""
+    """
+    Handles dictionary observations, e.g. from GoalEnv
+
+    :param encoder: encoder module to run after extracting array from dictionary
+    """
 
     def __init__(self, encoder: T.nn.Module = IdentityEncoder()) -> None:
         super().__init__()
@@ -109,5 +115,8 @@ class DictEncoder(T.nn.Module):
         self, observations: Dict[str, Tensor], actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        observations = observations["observations"]
+        obs = observations["observation"]
+        goals = observations["desired_goal"]
+        obs, goals = torch_to_numpy(obs, goals)
+        observations = np.concatenate([obs, goals], axis=len(obs.shape) - 1)
         return self.encoder(observations, actions)
