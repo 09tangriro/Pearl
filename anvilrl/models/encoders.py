@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Type
+from typing import Dict, List, Optional, Type
 
 import numpy as np
 import torch as T
@@ -107,16 +107,20 @@ class DictEncoder(T.nn.Module):
     :param encoder: encoder module to run after extracting array from dictionary
     """
 
-    def __init__(self, encoder: T.nn.Module = IdentityEncoder()) -> None:
+    def __init__(
+        self,
+        labels: List[str] = ["observation", "desired_goal"],
+        encoder: T.nn.Module = IdentityEncoder(),
+    ) -> None:
         super().__init__()
+        self.labels = labels
         self.encoder = encoder
 
     def forward(
         self, observations: Dict[str, Tensor], actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        obs = observations["observation"]
-        goals = observations["desired_goal"]
-        obs, goals = torch_to_numpy(obs, goals)
-        observations = np.concatenate([obs, goals], axis=len(obs.shape) - 1)
+        data = [observations[label] for label in self.labels]
+        data = torch_to_numpy(*data)
+        observations = np.concatenate(data, axis=len(data[0].shape) - 1)
         return self.encoder(observations, actions)
