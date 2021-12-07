@@ -144,7 +144,6 @@ class BaseBuffer(ABC):
     def reset(self) -> None:
         """Reset the buffer"""
 
-        self.episode = 0
         self.pos = 0
         self.full = False
 

@@ -48,9 +48,9 @@ class HERBuffer(BaseBuffer):
         )
 
         # Keep track of where in the data structure episodes end
-        self.episode_end_indices = np.zeros(self.batch_shape, dtype=np.int8)
+        self.episode_end_indices = np.zeros(self.batch_shape, dtype=np.int32)
         # Keep track of which transitions belong to which episodes.
-        self.index_episode_map = np.zeros(self.batch_shape, dtype=np.int8)
+        self.index_episode_map = np.zeros(self.batch_shape, dtype=np.int32)
         self.episode = 0
 
         self._check_system_memory(
@@ -74,6 +74,7 @@ class HERBuffer(BaseBuffer):
 
     def reset(self) -> None:
         super().reset()
+        self.episode = 0
 
         self.desired_goals = np.zeros(
             (self.buffer_size,) + self.obs_shape,
