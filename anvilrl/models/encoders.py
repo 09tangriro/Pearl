@@ -104,6 +104,7 @@ class DictEncoder(T.nn.Module):
     """
     Handles dictionary observations, e.g. from GoalEnv
 
+    :param labels: dictionary labels to extract for model
     :param encoder: encoder module to run after extracting array from dictionary
     """
 
@@ -119,9 +120,9 @@ class DictEncoder(T.nn.Module):
     def forward(
         self, observations: Dict[str, Tensor], actions: Optional[Tensor] = None
     ) -> T.Tensor:
-        # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
         shape_length = len(observations[self.labels[0]].shape)
-        data = [observations[label] for label in self.labels]
-        data = torch_to_numpy(*data)
-        observations = np.concatenate(data, axis=shape_length - 1)
-        return self.encoder(observations, actions)
+        obs = [observations[label] for label in self.labels]
+        obs = torch_to_numpy(*obs)
+        if len(self.labels) > 1:
+            obs = np.concatenate(obs, axis=shape_length - 1)
+        return self.encoder(obs, actions)

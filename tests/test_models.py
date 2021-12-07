@@ -9,7 +9,12 @@ from anvilrl.models import (
     EpsilonGreedyActor,
     TwinActorCritic,
 )
-from anvilrl.models.encoders import FlattenEncoder, IdentityEncoder, MLPEncoder
+from anvilrl.models.encoders import (
+    DictEncoder,
+    FlattenEncoder,
+    IdentityEncoder,
+    MLPEncoder,
+)
 from anvilrl.models.heads import (
     ContinuousQHead,
     DeterministicPolicyHead,
@@ -28,16 +33,24 @@ def test_mlp():
     assert output.shape == (1,)
 
 
-@pytest.mark.parametrize("encoder_class", [IdentityEncoder, FlattenEncoder, MLPEncoder])
+@pytest.mark.parametrize(
+    "encoder_class", [IdentityEncoder, FlattenEncoder, MLPEncoder, DictEncoder]
+)
 def test_encoder(encoder_class):
     input = T.Tensor([[2, 2], [1, 1]])
+    if encoder_class == DictEncoder:
+        input = {"observation": T.Tensor([[2, 2], [1, 1]])}
     if encoder_class == MLPEncoder:
         encoder = encoder_class(input_size=2, output_size=2)
+    elif encoder_class == DictEncoder:
+        encoder = encoder_class(labels=["observation"])
     else:
         encoder = encoder_class()
     output = encoder(input)
-    if isinstance(encoder, IdentityEncoder):
+    if isinstance(encoder, (IdentityEncoder)):
         assert T.equal(input, output)
+    elif encoder_class == DictEncoder:
+        assert T.equal(input["observation"], output)
     elif isinstance(encoder, FlattenEncoder):
         assert len(output.shape) == 2
 
