@@ -120,7 +120,8 @@ class DictEncoder(T.nn.Module):
         self, observations: Dict[str, Tensor], actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
+        shape_length = len(observations[self.labels[0]].shape)
         data = [observations[label] for label in self.labels]
         data = torch_to_numpy(*data)
-        observations = np.concatenate(data, axis=len(data[0].shape) - 1)
+        observations = np.concatenate(data, axis=shape_length - 1)
         return self.encoder(observations, actions)
