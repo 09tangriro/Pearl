@@ -180,10 +180,10 @@ class BaseBuffer(ABC):
 
     def add_batch_trajectories(
         self,
-        observations: np.ndarray,
+        observations: Observation,
         actions: np.ndarray,
         rewards: np.ndarray,
-        next_observations: np.ndarray,
+        next_observations: Observation,
         dones: np.ndarray,
     ) -> None:
         """
