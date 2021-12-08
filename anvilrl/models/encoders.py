@@ -120,9 +120,9 @@ class DictEncoder(T.nn.Module):
     def forward(
         self, observations: Dict[str, Tensor], actions: Optional[Tensor] = None
     ) -> T.Tensor:
-        shape_length = len(observations[self.labels[0]].shape)
         obs = [observations[label] for label in self.labels]
         obs = torch_to_numpy(*obs)
         if len(self.labels) > 1:
+            shape_length = len(observations[self.labels[0]].shape)
             obs = np.concatenate(obs, axis=shape_length - 1)
         return self.encoder(obs, actions)
