@@ -93,8 +93,8 @@ def plot(
     y_axis: str = "value",
     log_y: bool = False,
     save_types: List[str] = ["pdf"],
+    save_path: Optional[str] = os.path.join(os.getcwd(), "plot"),
 ) -> None:
-    save_path: Optional[str] = os.path.join(os.getcwd(), "plot")
     """
     Plots the given data.
     :param paths: the paths to the tensorboard data
