@@ -148,7 +148,9 @@ if __name__ == "__main__":
     parser.add_argument("--y-axis", type=str, default="value")
     parser.add_argument("--log-y", action="store_true")
     parser.add_argument("--save-types", nargs="+", type=str, default=["pdf"])
-    parser.add_argument("--save-path", type=str, default=None)
+    parser.add_argument(
+        "--save-path", type=str, default=os.path.join(os.getcwd(), "plot")
+    )
 
     args = parser.parse_args()
 
