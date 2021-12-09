@@ -2,7 +2,6 @@ import gym
 import numpy as np
 import pytest
 import torch as T
-from sklearn.preprocessing import scale
 
 from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.models import Actor, ActorCritic, Critic
@@ -296,7 +295,7 @@ def test_evolutionary_updater_continuous():
 
     # Test call
     _, rewards, _, _ = env_continuous.step(population)
-    scaled_rewards = scale(rewards.squeeze())
+    scaled_rewards = (rewards - np.mean(rewards)) / np.std(rewards)
     optimization_direction = np.dot(updater.normal_dist.T, scaled_rewards)
     updater(learning_rate=0.01, optimization_direction=optimization_direction)
     new_population = updater.population
@@ -317,7 +316,7 @@ def test_evolutionary_updater_discrete():
 
     # Test call
     _, rewards, _, _ = env_discrete.step(population)
-    scaled_rewards = scale(rewards.squeeze())
+    scaled_rewards = (rewards - np.mean(rewards)) / np.std(rewards)
     optimization_direction = np.dot(updater.normal_dist.T, scaled_rewards)
     updater(learning_rate=1e-5, optimization_direction=optimization_direction)
     new_population = updater.population
