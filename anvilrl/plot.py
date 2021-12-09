@@ -1,9 +1,9 @@
-import math
 import os
 from enum import Enum
 from typing import Any, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
+import numpy as np
 from tensorboard.backend.event_processing import event_accumulator
 
 
@@ -83,7 +83,7 @@ def get_axis_data(
 
 
 def plot(
-    paths: List[str],
+    paths: List[List[str]],
     metric: str,
     titles: List[str],
     num_cols: int,
@@ -108,22 +108,22 @@ def plot(
     :param save_path: where to save the plots
     """
     num_plots = len(paths)
-    num_rows = math.ceil(num_plots / num_cols)
+    num_rows = int(np.ceil(num_plots / num_cols))
     plt.figure
 
-    for i, path in enumerate(paths):
-        data = read_tensorboard_data(path, metric)
-        x_data, y_data = get_axis_data(data, x_axis, y_axis)
-
+    for i, collection in enumerate(paths):
         plt.subplot(num_rows, num_cols, i + 1)
-        plt.plot(x_data, y_data)
         plt.xlabel(xlabel)
         plt.ylabel(ylabel)
         plt.title(titles[i])
         plt.grid(True)
+        plt.tight_layout()
         if log_y:
             plt.yscale("log")
-        plt.tight_layout()
+        for path in collection:
+            data = read_tensorboard_data(path, metric)
+            x_data, y_data = get_axis_data(data, x_axis, y_axis)
+            plt.plot(x_data, y_data)
 
     if save_path:
         if not os.path.exists(os.path.dirname(save_path)):
@@ -138,7 +138,9 @@ if __name__ == "__main__":
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument("--paths", nargs="+", type=str, required=True)
+    parser.add_argument(
+        "-p", "--paths", nargs="+", type=str, action="append", required=True
+    )
     parser.add_argument("--metric", type=str, required=True)
     parser.add_argument("--titles", nargs="+", type=str, required=True)
     parser.add_argument("--num-cols", type=int, required=True)
@@ -154,8 +156,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    paths = [args.paths] if np.array(args.paths).ndim == 1 else args.paths
+
     plot(
-        args.paths,
+        paths,
         args.metric,
         args.titles,
         args.num_cols,
