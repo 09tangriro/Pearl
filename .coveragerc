@@ -15,3 +15,4 @@ omit =
     anvilrl/agents/es.py
     anvilrl/agents/ga.py
     anvilrl/settings.py
+    anvilrl/plot.py
