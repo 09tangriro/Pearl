@@ -145,6 +145,11 @@ def plot(
     Plots the given data.
     :param paths: the paths to the tensorboard data
     :param metric: the metric to plot
+    :param titles: the titles of the plots
+    :param num_cols: the number of columns to use
+    :param interval: the interval to use
+    :param legend: the legend to use
+    :param window: the window size
     :param xlabel: the x axis tag
     :param ylabel: the y axis tag
     :param x_axis: the x axis data
