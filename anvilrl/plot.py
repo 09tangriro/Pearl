@@ -271,10 +271,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    paths = [args.paths] if np.array(args.paths).ndim == 1 else args.paths
-
     plot(
-        paths,
+        args.paths,
         args.metric,
         args.titles,
         args.num_cols,
