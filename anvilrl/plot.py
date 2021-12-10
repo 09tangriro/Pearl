@@ -246,7 +246,7 @@ def plot(
         if not os.path.exists(os.path.dirname(save_path)):
             os.makedirs(os.path.dirname(save_path))
         for save_type in save_types:
-            plt.savefig(f"{save_path}.{save_type}")
+            plt.savefig(f"{save_path}.{save_type}", bbox_inches="tight")
 
     plt.show()
 
