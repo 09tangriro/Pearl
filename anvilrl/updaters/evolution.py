@@ -16,7 +16,7 @@ from anvilrl.signal_processing import (
 )
 
 
-class BaseSearchUpdater(ABC):
+class BaseEvolutionUpdater(ABC):
     """
     The base random search updater class with pre-defined methods for derived classes
 
@@ -51,7 +51,7 @@ class BaseSearchUpdater(ABC):
         """Run an optimization step"""
 
 
-class EvolutionaryUpdater(BaseSearchUpdater):
+class NoisyGradientAscent(BaseEvolutionUpdater):
     """
     Updater for the Natural Evolutionary Strategy
 
@@ -137,7 +137,7 @@ class EvolutionaryUpdater(BaseSearchUpdater):
         return UpdaterLog(divergence=population_kl, entropy=population_entropy)
 
 
-class GeneticUpdater(BaseSearchUpdater):
+class GeneticUpdater(BaseEvolutionUpdater):
     """
     Updater for the Genetic Algorithm
 

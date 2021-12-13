@@ -4,7 +4,7 @@ import numpy as np
 import torch as T
 from gym.vector.vector_env import VectorEnv
 
-from anvilrl.agents.base_agents import BaseSearchAgent
+from anvilrl.agents.base_agents import BaseEvolutionAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.common.type_aliases import Log
@@ -22,10 +22,10 @@ from anvilrl.signal_processing import (
     mutation_operators,
     selection_operators,
 )
-from anvilrl.updaters.random_search import BaseSearchUpdater, GeneticUpdater
+from anvilrl.updaters.evolution import BaseEvolutionUpdater, GeneticUpdater
 
 
-class GA(BaseSearchAgent):
+class GA(BaseEvolutionAgent):
     """
     Genetic Algorithm
     https://www.geeksforgeeks.org/genetic-algorithms/
@@ -44,7 +44,7 @@ class GA(BaseSearchAgent):
     def __init__(
         self,
         env: VectorEnv,
-        updater_class: Type[BaseSearchUpdater] = GeneticUpdater,
+        updater_class: Type[BaseEvolutionUpdater] = GeneticUpdater,
         selection_operator: selection_operators = selection_operators.roulette_selection,
         selection_settings: SelectionSettings = SelectionSettings(),
         crossover_operator: crossover_operators = crossover_operators.crossover_one_point,

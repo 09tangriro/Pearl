@@ -1,5 +1,5 @@
 from anvilrl.updaters.actors import BaseActorUpdater
 from anvilrl.updaters.critics import BaseCriticUpdater
-from anvilrl.updaters.random_search import BaseSearchUpdater
+from anvilrl.updaters.evolution import BaseEvolutionUpdater
 
-__all__ = ["BaseActorUpdater", "BaseCriticUpdater", "BaseSearchUpdater"]
+__all__ = ["BaseActorUpdater", "BaseCriticUpdater", "BaseEvolutionUpdater"]

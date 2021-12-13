@@ -6,7 +6,7 @@ import torch as T
 from gym.vector.vector_env import VectorEnv
 from sklearn.preprocessing import scale
 
-from anvilrl.agents.base_agents import BaseSearchAgent
+from anvilrl.agents.base_agents import BaseEvolutionAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.common.type_aliases import Log
@@ -15,12 +15,12 @@ from anvilrl.settings import (
     LoggerSettings,
     PopulationInitializerSettings,
 )
-from anvilrl.updaters.random_search import BaseSearchUpdater, EvolutionaryUpdater
+from anvilrl.updaters.evolution import BaseEvolutionUpdater, NoisyGradientAscent
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-class ES(BaseSearchAgent):
+class ES(BaseEvolutionAgent):
     """
     Natural Evolutionary Strategy
     https://towardsdatascience.com/evolutionary-strategy-a-theoretical-implementation-guide-9176217e7ed8
@@ -39,7 +39,7 @@ class ES(BaseSearchAgent):
     def __init__(
         self,
         env: VectorEnv,
-        updater_class: Type[BaseSearchUpdater] = EvolutionaryUpdater,
+        updater_class: Type[BaseEvolutionUpdater] = NoisyGradientAscent,
         learning_rate: float = 0.001,
         population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
         buffer_class: BaseBuffer = RolloutBuffer,

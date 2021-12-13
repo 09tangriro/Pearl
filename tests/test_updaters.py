@@ -20,7 +20,7 @@ from anvilrl.updaters.actors import (
     SoftPolicyGradient,
 )
 from anvilrl.updaters.critics import QRegression, ValueRegression
-from anvilrl.updaters.random_search import EvolutionaryUpdater, GeneticUpdater
+from anvilrl.updaters.evolution import GeneticUpdater, NoisyGradientAscent
 
 ############################### SET UP MODELS ###############################
 
@@ -286,7 +286,7 @@ def test_evolutionary_updater_continuous():
     np.random.seed(0)
 
     # Assert population stats
-    updater = EvolutionaryUpdater(env_continuous)
+    updater = NoisyGradientAscent(env_continuous)
     population = updater.initialize_population(starting_point=np.array([10, 10]))
     np.testing.assert_allclose(np.std(population, axis=0), np.ones(2), rtol=0.1)
     np.testing.assert_allclose(
@@ -308,7 +308,7 @@ def test_evolutionary_updater_discrete():
     np.random.seed(0)
 
     # Assert population stats
-    updater = EvolutionaryUpdater(env_discrete)
+    updater = NoisyGradientAscent(env_discrete)
     population = updater.initialize_population(starting_point=np.array([5]))
     assert np.issubdtype(population.dtype, np.integer)
     np.testing.assert_allclose(np.std(population, axis=0), np.ones(1), rtol=0.1)

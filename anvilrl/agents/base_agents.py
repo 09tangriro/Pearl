@@ -22,7 +22,7 @@ from anvilrl.settings import (
     LoggerSettings,
     PopulationInitializerSettings,
 )
-from anvilrl.updaters.random_search import BaseSearchUpdater
+from anvilrl.updaters.evolution import BaseEvolutionUpdater
 
 
 class BaseDeepAgent(ABC):
@@ -244,9 +244,9 @@ class BaseDeepAgent(ABC):
             self.logger.add_train_log(train_log)
 
 
-class BaseSearchAgent(ABC):
+class BaseEvolutionAgent(ABC):
     """
-    The BaseSearchAgent class is given to handle all the stuff around the actual random search
+    The BaseEvolutionAgent class is given to handle all the stuff around the actual random search
     algorithm. It's recommended to inherit this class when implementing your own random search
     agent. You'll need to implement the _fit() abstract method and override the __init__ to add
     any extra hyperparameters.
@@ -269,7 +269,7 @@ class BaseSearchAgent(ABC):
     def __init__(
         self,
         env: VectorEnv,
-        updater_class: Type[BaseSearchUpdater],
+        updater_class: Type[BaseEvolutionUpdater],
         population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
         buffer_class: BaseBuffer = BaseBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
