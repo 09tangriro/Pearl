@@ -1,6 +1,5 @@
 from typing import List, Optional, Type, Union
 
-import numpy as np
 import torch as T
 from gym import Env
 from gym.vector import VectorEnv
