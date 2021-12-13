@@ -102,7 +102,7 @@ class Logger(object):
 
         return episode_log
 
-    def write_episode_log(self, step: int) -> None:
+    def write_log(self, step: int) -> None:
         """Write a log to tensorboard and python logging"""
         episode_log = self._make_episode_log()
         self.writer.add_scalar("Reward/episode_reward", episode_log.reward, step)

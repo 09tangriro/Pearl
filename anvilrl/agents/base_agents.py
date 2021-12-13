@@ -157,7 +157,7 @@ class BaseDeepAgent(ABC):
             self.logger.episode_dones[done_indices] = True
             # If all environment episodes are done, we write an episode log and reset it.
             if all(self.logger.episode_dones):
-                self.logger.write_episode_log(self.step)
+                self.logger.write_log(self.step)
                 self.logger.reset_episode_log()
                 self.episode += 1
 
@@ -319,7 +319,7 @@ class BaseEvolutionAgent(ABC):
         trajectories = self.buffer.all()
         max_reward = np.max(trajectories.rewards)
         self.logger.add_reward(max_reward)
-        self.logger.write_episode_log(self.step)
+        self.logger.write_log(self.step)
         self.logger.reset_episode_log()
 
     @abstractmethod
