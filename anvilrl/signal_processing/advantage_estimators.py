@@ -27,6 +27,8 @@ def generalized_advantage_estimate(
     :param dones: the done values of each step of the trajectory, indicates whether to bootstrap
     :param gamma: trajectory discount
     :param gae_lambda: exponential mean discount
+    :return advantage: the advantage of taking actions in the environment
+    :return value: the value of taking actions in the environment
     """
     rewards, old_values, new_values, dones = torch_to_numpy(
         rewards, old_values, new_values, dones
