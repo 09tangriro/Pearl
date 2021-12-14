@@ -262,6 +262,8 @@ class BaseEvolutionAgent(ABC):
     :param buffer_class: the buffer class for storing and sampling trajectories
     :param buffer_settings: settings for the buffer
     :param logger_settings: settings for the logger
+    :param callbacks: a list of callbacks to be called at certain points in the training process
+    :param callbacks_settings: settings for the callbacks
     :param device: device to run on, accepts "auto", "cuda" or "cpu" (needed to pass to buffer,
         can mostly be ignored)
     """
@@ -274,6 +276,8 @@ class BaseEvolutionAgent(ABC):
         buffer_class: BaseBuffer = BaseBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
+        callbacks: Optional[List[Type[BaseCallback]]] = None,
+        callback_settings: Optional[List[CallbackSettings]] = None,
         device: Union[str, T.device] = "auto",
     ) -> None:
         self.env = env
@@ -291,6 +295,20 @@ class BaseEvolutionAgent(ABC):
             num_envs=env.num_envs,
         )
         self.population = None
+
+        if callbacks is not None:
+            assert len(callbacks) == len(
+                callback_settings
+            ), "There should be a CallbackSetting object for each callback"
+            callback_settings = [
+                filter_dataclass_by_none(setting) for setting in callback_settings
+            ]
+            self.callbacks = [
+                callback(self.logger, self.model, **asdict(settings))
+                for callback, settings in zip(callbacks, callback_settings)
+            ]
+        else:
+            self.callbacks = None
 
         device = get_device(device)
         self.logger.info(f"Using device {device}")
@@ -310,6 +328,12 @@ class BaseEvolutionAgent(ABC):
                 next_observation=self.env.observation_space.sample(),
                 done=dones,
             )
+            if self.callbacks is not None:
+                if not all(
+                    [callback.on_step(self.step) for callback in self.callbacks]
+                ):
+                    self.done = True
+                    break
             self.step += 1
 
     def evaluate_agent(self) -> None:
