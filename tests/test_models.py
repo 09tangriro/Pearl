@@ -16,6 +16,7 @@ from anvilrl.models.encoders import (
     MLPEncoder,
 )
 from anvilrl.models.heads import (
+    CategoricalHead,
     ContinuousQHead,
     DeterministicHead,
     DiagGaussianHead,
@@ -72,18 +73,23 @@ def test_critic_head(head_class, input_shape):
         assert output.shape == (1,)
 
 
-@pytest.mark.parametrize("head_class", [DeterministicHead, DiagGaussianHead])
+@pytest.mark.parametrize(
+    "head_class", [DeterministicHead, CategoricalHead, DiagGaussianHead]
+)
 @pytest.mark.parametrize("input_shape", [5, (5,)])
 def test_actor_head(head_class, input_shape):
     input = T.Tensor([1, 1, 1, 1, 1])
-    if head_class == DeterministicHead:
+    if head_class == DiagGaussianHead:
+        head = head_class(input_shape=input_shape, action_size=2)
+    else:
         head = head_class(input_shape, action_shape=2)
-    elif head_class == DiagGaussianHead:
-        head = head_class(input_shape, action_size=2)
 
     output = head(input)
 
-    assert output.shape == (2,)
+    if head_class == CategoricalHead:
+        assert output.shape == T.Size([])
+    else:
+        assert output.shape == (2,)
 
 
 def test_critic():

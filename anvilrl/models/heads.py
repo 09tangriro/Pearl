@@ -144,6 +144,31 @@ class DeterministicHead(BaseActorHead):
         return None
 
 
+class CategoricalHead(BaseActorHead):
+    def __init__(
+        self,
+        input_shape: Union[int, Tuple[int]],
+        action_shape: Union[int, Tuple[int]],
+        network_type: str = "mlp",
+        activation_fn: Optional[Type[T.nn.Module]] = None,
+    ):
+        super().__init__()
+        network_type = NetworkType(network_type.lower())
+        if network_type == NetworkType.MLP:
+            input_size = get_mlp_size(input_shape)
+            action_size = get_mlp_size(action_shape)
+            self.model = MLP(
+                layer_sizes=[input_size, action_size], activation_fn=activation_fn
+            )
+        else:
+            raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
+
+    def get_action_distribution(
+        self, input: T.Tensor
+    ) -> Optional[T.distributions.Distribution]:
+        return T.distributions.Categorical(logits=self.model(input))
+
+
 class DiagGaussianHead(BaseActorHead):
     """
     Use this head if you want a policy obeying a diagonal gaussian distribution.
