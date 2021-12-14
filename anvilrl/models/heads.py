@@ -110,7 +110,7 @@ class DiscreteQHead(BaseCriticHead):
 ################################### ACTOR HEADS ###################################
 
 
-class DeterministicPolicyHead(BaseActorHead):
+class DeterministicHead(BaseActorHead):
     """
     Use this head if you want a deterministic actor.
 
@@ -144,7 +144,7 @@ class DeterministicPolicyHead(BaseActorHead):
         return None
 
 
-class DiagGaussianPolicyHead(BaseActorHead):
+class DiagGaussianHead(BaseActorHead):
     """
     Use this head if you want a policy obeying a diagonal gaussian distribution.
 

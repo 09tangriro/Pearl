@@ -18,7 +18,7 @@ from anvilrl.models.actor_critics import (
     Critic,
 )
 from anvilrl.models.encoders import IdentityEncoder
-from anvilrl.models.heads import ContinuousQHead, DeterministicPolicyHead
+from anvilrl.models.heads import ContinuousQHead, DeterministicHead
 from anvilrl.models.torsos import MLP
 from anvilrl.models.utils import get_mlp_size
 from anvilrl.settings import (
@@ -44,7 +44,7 @@ def get_default_model(env: Env) -> ActorCriticWithTargets:
     torso_critic = MLP(
         layer_sizes=[observation_size + action_size, 400, 300], activation_fn=T.nn.ReLU
     )
-    head_actor = DeterministicPolicyHead(
+    head_actor = DeterministicHead(
         input_shape=300, action_shape=action_shape, activation_fn=T.nn.Tanh
     )
     head_critic = ContinuousQHead(input_shape=300)

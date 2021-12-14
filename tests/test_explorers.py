@@ -4,7 +4,7 @@ import pytest
 from anvilrl.explorers import BaseExplorer, GaussianExplorer
 from anvilrl.models.actor_critics import Actor
 from anvilrl.models.encoders import IdentityEncoder
-from anvilrl.models.heads import DeterministicPolicyHead
+from anvilrl.models.heads import DeterministicHead
 from anvilrl.models.torsos import MLP
 from anvilrl.models.utils import get_mlp_size
 
@@ -17,7 +17,7 @@ def test_base_explorer(explorer_class):
     observation_size = get_mlp_size(env.observation_space.shape)
     encoder = IdentityEncoder()
     torso = MLP([observation_size, 10, 10])
-    head = DeterministicPolicyHead(
+    head = DeterministicHead(
         input_shape=10, action_shape=env.action_space.shape, activation_fn=None
     )
     actor = Actor(encoder=encoder, torso=torso, head=head)

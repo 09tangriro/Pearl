@@ -135,7 +135,7 @@ class ActorCritic(T.nn.Module):
         encoder_actor = IdentityEncoder()
         torso_critic = MLP([2, 2])
         torso_actor = MLP([2, 2])
-        head_actor = DiagGaussianPolicyHead(input_shape=2, action_size=1)
+        head_actor = DiagGaussianHead(input_shape=2, action_size=1)
         head_critic = ValueHead(input_shape=2, activation_fn=None)
         actor = Actor(encoder=encoder_actor, torso=torso_actor, head=head_actor)
         critic = Critic(encoder=encoder_actor, torso=torso_critic, head=head_critic)
@@ -144,7 +144,7 @@ class ActorCritic(T.nn.Module):
     Shared architecture:
         encoder = IdentityEncoder()
         torso = MLP([2, 2])
-        head_actor = DiagGaussianPolicyHead(input_shape=2, action_size=1)
+        head_actor = DiagGaussianHead(input_shape=2, action_size=1)
         head_critic = ValueHead(input_shape=2, activation_fn=None)
         actor = Actor(encoder=encoder, torso=torso, head=head_actor)
         critic = Critic(encoder=encoder, torso=torso, head=head_critic)

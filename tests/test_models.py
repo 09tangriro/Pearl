@@ -17,8 +17,8 @@ from anvilrl.models.encoders import (
 )
 from anvilrl.models.heads import (
     ContinuousQHead,
-    DeterministicPolicyHead,
-    DiagGaussianPolicyHead,
+    DeterministicHead,
+    DiagGaussianHead,
     DiscreteQHead,
     ValueHead,
 )
@@ -72,15 +72,13 @@ def test_critic_head(head_class, input_shape):
         assert output.shape == (1,)
 
 
-@pytest.mark.parametrize(
-    "head_class", [DeterministicPolicyHead, DiagGaussianPolicyHead]
-)
+@pytest.mark.parametrize("head_class", [DeterministicHead, DiagGaussianHead])
 @pytest.mark.parametrize("input_shape", [5, (5,)])
 def test_actor_head(head_class, input_shape):
     input = T.Tensor([1, 1, 1, 1, 1])
-    if head_class == DeterministicPolicyHead:
+    if head_class == DeterministicHead:
         head = head_class(input_shape, action_shape=2)
-    elif head_class == DiagGaussianPolicyHead:
+    elif head_class == DiagGaussianHead:
         head = head_class(input_shape, action_size=2)
 
     output = head(input)
@@ -104,7 +102,7 @@ def test_actor():
     input = T.Tensor([1, 1, 1, 1, 1])
     encoder = IdentityEncoder()
     torso = MLP([5, 5])
-    head = DeterministicPolicyHead(input_shape=5, action_shape=1)
+    head = DeterministicHead(input_shape=5, action_shape=1)
 
     actor = Actor(encoder, torso, head)
 
@@ -121,7 +119,7 @@ def test_actor_critic_shared_arch(actor_critic_class):
     actor = Actor(
         encoder=encoder,
         torso=MLP([2, 3, 2]),
-        head=DeterministicPolicyHead(input_shape=2, action_shape=1, activation_fn=None),
+        head=DeterministicHead(input_shape=2, action_shape=1, activation_fn=None),
     )
 
     critic = Critic(

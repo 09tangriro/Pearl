@@ -6,7 +6,7 @@ import torch as T
 from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.models import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
-from anvilrl.models.heads import DiagGaussianPolicyHead, ValueHead
+from anvilrl.models.heads import DiagGaussianHead, ValueHead
 from anvilrl.models.torsos import MLP
 from anvilrl.signal_processing import (
     crossover_operators,
@@ -29,7 +29,7 @@ encoder_critic_continuous = MLPEncoder(input_size=3, output_size=2)
 encoder_actor = IdentityEncoder()
 torso_critic = MLP(layer_sizes=[2, 2])
 torso_actor = MLP(layer_sizes=[2, 2])
-head_actor = DiagGaussianPolicyHead(input_shape=2, action_size=1)
+head_actor = DiagGaussianHead(input_shape=2, action_size=1)
 head_critic = ValueHead(input_shape=2, activation_fn=None)
 
 actor = Actor(encoder=encoder_actor, torso=torso_actor, head=head_actor)
