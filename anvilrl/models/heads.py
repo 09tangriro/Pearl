@@ -145,6 +145,15 @@ class DeterministicHead(BaseActorHead):
 
 
 class CategoricalHead(BaseActorHead):
+    """
+    Use this head for a categorical actor.
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param action_size: the dimension of the action vector
+    :param network_type: the type of network used
+    :param activation_fn: the activation function after each layer
+    """
+
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
