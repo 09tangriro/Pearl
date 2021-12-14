@@ -148,7 +148,7 @@ class CategoricalHead(BaseActorHead):
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
-        action_shape: Union[int, Tuple[int]],
+        action_size: int,
         network_type: str = "mlp",
         activation_fn: Optional[Type[T.nn.Module]] = None,
     ):
@@ -156,7 +156,6 @@ class CategoricalHead(BaseActorHead):
         network_type = NetworkType(network_type.lower())
         if network_type == NetworkType.MLP:
             input_size = get_mlp_size(input_shape)
-            action_size = get_mlp_size(action_shape)
             self.model = MLP(
                 layer_sizes=[input_size, action_size], activation_fn=activation_fn
             )

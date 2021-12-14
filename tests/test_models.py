@@ -79,10 +79,10 @@ def test_critic_head(head_class, input_shape):
 @pytest.mark.parametrize("input_shape", [5, (5,)])
 def test_actor_head(head_class, input_shape):
     input = T.Tensor([1, 1, 1, 1, 1])
-    if head_class == DiagGaussianHead:
-        head = head_class(input_shape=input_shape, action_size=2)
-    else:
+    if head_class == DeterministicHead:
         head = head_class(input_shape, action_shape=2)
+    else:
+        head = head_class(input_shape=input_shape, action_size=2)
 
     output = head(input)
 
