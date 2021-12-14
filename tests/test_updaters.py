@@ -19,7 +19,7 @@ from anvilrl.updaters.actors import (
     ProximalPolicyClip,
     SoftPolicyGradient,
 )
-from anvilrl.updaters.critics import QRegression, ValueRegression
+from anvilrl.updaters.critics import DiscreteQRegression, ValueRegression
 from anvilrl.updaters.evolution import GeneticUpdater, NoisyGradientAscent
 
 ############################### SET UP MODELS ###############################
@@ -216,16 +216,17 @@ def test_value_regression(model):
 @pytest.mark.parametrize(
     "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared]
 )
-def test_q_regression(model):
-    observation = T.rand(2)
+def test_discrete_q_regression(model):
+    observation = T.rand(1, 2)
+    actions = T.randint(0, 1, (1, 1))
     returns = T.rand(1)
     out_before = model.forward_critic(observation)
     with T.no_grad():
         actor_before = model.get_action_distribution(observation)
 
-    updater = QRegression(max_grad=0.5)
+    updater = DiscreteQRegression(max_grad=0.5)
 
-    updater(model, observation, returns)
+    updater(model, observation, returns, actions)
 
     out_after = model.forward_critic(observation)
     with T.no_grad():

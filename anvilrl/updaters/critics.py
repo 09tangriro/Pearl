@@ -108,9 +108,59 @@ class ValueRegression(BaseCriticUpdater):
         return UpdaterLog(loss=loss.detach().item())
 
 
-class QRegression(BaseCriticUpdater):
+class ContinuousQRegression(BaseCriticUpdater):
     """
-    Regression for a Q function estimator
+    Regression for a continuous Q function estimator
+
+    :param loss_class: the distance loss class for regression, defaults to MSE
+    :param optimizer_class: the type of optimizer to use, defaults to Adam
+    :param lr: the learning rate for the optimizer algorithm
+    :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
+    """
+
+    def __init__(
+        self,
+        loss_class: T.nn.Module = T.nn.MSELoss(),
+        optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
+        lr: float = 0.001,
+        max_grad: float = 0,
+    ) -> None:
+        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
+        self.loss_class = loss_class
+
+    def __call__(
+        self,
+        model: Union[Critic, ActorCritic],
+        observations: Tensor,
+        actions: Tensor,
+        returns: T.Tensor,
+    ) -> UpdaterLog:
+        """
+        Perform an optimization step
+
+        :param model: the model on which the optimization should be run
+        :param observations: observation inputs
+        :param actions: action inputs needed for continuous Q function modelling
+        :param returns: the target to regress to (e.g. TD Values, Monte-Carlo Values)
+        """
+        critic_parameters = self._get_model_parameters(model)
+        optimizer = self.optimizer_class(critic_parameters, lr=self.lr)
+
+        if isinstance(model, Critic):
+            q_values = model(observations, actions)
+        else:
+            q_values = model.forward_critic(observations, actions)
+
+        loss = self.loss_class(q_values, returns)
+
+        self.run_optimizer(optimizer, loss, critic_parameters)
+
+        return UpdaterLog(loss=loss.detach().item())
+
+
+class DiscreteQRegression(BaseCriticUpdater):
+    """
+    Regression for a discrete Q function estimator
 
     :param loss_class: the distance loss class for regression, defaults to MSE
     :param optimizer_class: the type of optimizer to use, defaults to Adam
@@ -133,8 +183,7 @@ class QRegression(BaseCriticUpdater):
         model: Union[Critic, ActorCritic],
         observations: Tensor,
         returns: T.Tensor,
-        actions: Optional[Tensor] = None,
-        actions_index: Optional[Tensor] = None,
+        actions_index: Tensor,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -142,20 +191,18 @@ class QRegression(BaseCriticUpdater):
         :param model: the model on which the optimization should be run
         :param observations: observation inputs
         :param returns: the target to regress to (e.g. TD Values, Monte-Carlo Values)
-        :param actions: optional action inputs, defaults to None, needed for continuous Q function modelling
-        :param actions_index: optional discrete action values to use as indices, defaults to None. Needed to
-            filter the Q values for actions experienced.
+        :param actions_index: discrete action values to use as indices, needed to filter
+            the Q values for actions experienced.
         """
         critic_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(critic_parameters, lr=self.lr)
 
         if isinstance(model, Critic):
-            q_values = model(observations, actions)
+            q_values = model(observations)
         else:
-            q_values = model.forward_critic(observations, actions)
-        if actions_index is not None:
-            actions_index = numpy_to_torch(actions_index)
-            q_values = T.gather(q_values, dim=-1, index=actions_index.long())
+            q_values = model.forward_critic(observations)
+        actions_index = numpy_to_torch(actions_index)
+        q_values = T.gather(q_values, dim=-1, index=actions_index.long())
 
         loss = self.loss_class(q_values, returns)
 

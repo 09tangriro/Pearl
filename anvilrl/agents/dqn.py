@@ -29,7 +29,7 @@ from anvilrl.settings import (
     OptimizerSettings,
 )
 from anvilrl.signal_processing.return_estimators import TD_zero
-from anvilrl.updaters.critics import BaseCriticUpdater, QRegression
+from anvilrl.updaters.critics import BaseCriticUpdater, DiscreteQRegression
 
 
 def get_default_model(env: Env):
@@ -54,7 +54,7 @@ class DQN(BaseDeepAgent):
         self,
         env: Env,
         model: ActorCritic,
-        updater_class: Type[BaseCriticUpdater] = QRegression,
+        updater_class: Type[BaseCriticUpdater] = DiscreteQRegression,
         optimizer_settings: OptimizerSettings = OptimizerSettings(),
         buffer_class: Type[BaseBuffer] = ReplayBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
@@ -105,7 +105,7 @@ class DQN(BaseDeepAgent):
                 self.model,
                 trajectories.observations,
                 target_q_values,
-                actions_index=trajectories.actions,
+                trajectories.actions,
             )
             critic_losses[i] = updater_log.loss
 

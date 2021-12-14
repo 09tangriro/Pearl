@@ -30,7 +30,7 @@ from anvilrl.settings import (
 )
 from anvilrl.signal_processing.return_estimators import TD_zero
 from anvilrl.updaters.actors import BaseActorUpdater, DeterministicPolicyGradient
-from anvilrl.updaters.critics import BaseCriticUpdater, QRegression
+from anvilrl.updaters.critics import BaseCriticUpdater, ContinuousQRegression
 
 
 def get_default_model(env: Env) -> ActorCriticWithTargets:
@@ -61,7 +61,7 @@ class DDPG(BaseDeepAgent):
         model: Optional[ActorCritic],
         actor_updater_class: Type[BaseActorUpdater] = DeterministicPolicyGradient,
         actor_optimizer_settings: OptimizerSettings = OptimizerSettings(),
-        critic_updater_class: Type[BaseCriticUpdater] = QRegression,
+        critic_updater_class: Type[BaseCriticUpdater] = ContinuousQRegression,
         critic_optimizer_settings: OptimizerSettings = OptimizerSettings(),
         buffer_class: Type[BaseBuffer] = ReplayBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
@@ -119,18 +119,16 @@ class DDPG(BaseDeepAgent):
             critic_log = self.critic_updater(
                 self.model,
                 trajectories.observations,
-                target_q_values,
                 trajectories.actions,
+                target_q_values,
             )
             critic_losses[i] = critic_log.loss
-        self.logger.debug(f"critic losses: {critic_losses[:5], critic_losses[-5:]}")
 
         # Train actor for actor_epochs
         for i in range(actor_epochs):
             trajectories = self.buffer.sample(batch_size=batch_size)
             actor_log = self.actor_updater(self.model, trajectories.observations)
             actor_losses[i] = actor_log.loss
-        self.logger.debug(f"actor losses: {actor_losses[:5], actor_losses[-5:]}")
 
         # Update target networks
         self.model.update_targets()
