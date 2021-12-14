@@ -45,7 +45,7 @@ For more examples, see specific agent implementations under `anvilrl/agents`.
 To see training performance, use the command `tensorboard --logdir runs` or `tensorboard --logdir <tensorboard_log_path>` defined in your algorithm class initialization.
 
 ### Python Scripts
-To run these you'll need to install the library via `git clone` and then `cd AnvilRL`.
+To run these you'll need to go to wherever the library is installed, `cd AnvilRL`.
 
 - `demo.py`: script to run very basic demos of agents with pre-defined hyperparameters, run `python3 -m anvilrl.demo -h` for more info
 - `plot.py`: script to plot more complex plots that can't be obtained via Tensorboard (e.g. multiple subplots), run `python3 -m anvilrl.plot -h` for more info
