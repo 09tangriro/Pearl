@@ -83,7 +83,6 @@ class PolicyGradient(BaseActorUpdater):
         observations: Tensor,
         actions: T.Tensor,
         advantages: T.Tensor,
-        old_log_probs: Optional[Tensor] = None,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -92,32 +91,31 @@ class PolicyGradient(BaseActorUpdater):
         :param observations:
         :param actions:
         :param advantages:
-        :param old_log_probs:
         """
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
         distributions = model.get_action_distribution(observations)
-        new_log_probs = distributions.log_prob(actions).sum(dim=-1)
+        old_log_probs = distributions.log_prob(actions).sum(dim=-1)
         entropy = distributions.entropy().mean()
 
-        batch_loss = -(advantages * new_log_probs).mean()
+        batch_loss = -(advantages * old_log_probs).mean()
         entropy_loss = -self.entropy_coeff * entropy
 
         loss = batch_loss + entropy_loss
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
+        distributions = model.get_action_distribution(observations)
+        new_log_probs = distributions.log_prob(actions).sum(dim=-1).detach()
         loss = loss.detach()
         entropy = entropy.detach()
-        if old_log_probs is not None:
-            old_log_probs = numpy_to_torch(old_log_probs)
-            kl = sample_reverse_kl_divergence(
-                old_log_probs.exp().detach(), new_log_probs.exp().detach()
-            ).item()
-        else:
-            kl = None
+        kl = sample_reverse_kl_divergence(
+            old_log_probs.exp(), new_log_probs.exp()
+        ).mean()
 
-        return UpdaterLog(loss=loss.item(), divergence=kl, entropy=entropy.item())
+        return UpdaterLog(
+            loss=loss.item(), divergence=kl.item(), entropy=entropy.item()
+        )
 
 
 class ProximalPolicyClip(BaseActorUpdater):
@@ -167,10 +165,10 @@ class ProximalPolicyClip(BaseActorUpdater):
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
         distributions = model.get_action_distribution(observations)
-        new_log_probs = distributions.log_prob(actions).sum(dim=-1)
+        log_probs = distributions.log_prob(actions).sum(dim=-1)
         entropy = distributions.entropy().mean()
 
-        ratios = (new_log_probs - old_log_probs).exp()
+        ratios = (log_probs - old_log_probs).exp()
 
         raw_loss = ratios * advantages
         clipped_loss = (
@@ -184,16 +182,17 @@ class ProximalPolicyClip(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
+        distributions = model.get_action_distribution(observations)
+        new_log_probs = distributions.log_prob(actions).sum(dim=-1).detach()
         loss = loss.detach()
         entropy = entropy.detach()
-        if old_log_probs is not None:
-            kl = sample_reverse_kl_divergence(
-                old_log_probs.exp().detach(), new_log_probs.exp().detach()
-            ).item()
-        else:
-            kl = None
+        kl = sample_reverse_kl_divergence(
+            old_log_probs.exp(), new_log_probs.exp()
+        ).mean()
 
-        return UpdaterLog(loss=loss.item(), divergence=kl, entropy=entropy.item())
+        return UpdaterLog(
+            loss=loss.item(), divergence=kl.item(), entropy=entropy.item()
+        )
 
 
 class DeterministicPolicyGradient(BaseActorUpdater):
