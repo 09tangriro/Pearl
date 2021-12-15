@@ -53,6 +53,31 @@ def get_default_model(env: Env) -> ActorCritic:
 
 
 class A2C(BaseDeepAgent):
+    """
+    Actor-Critic Algorithm
+
+    :param env: the gym-like environment to be used
+    :param model: the neural network model
+    :param entropy_coefficient: entropy weight
+    :param gae_lambda: GAE exponential average coefficient
+    :param gae_gamma: trajectory discount factor
+    :param value_coefficient: value loss weight
+    :param actor_updater_class: actor updater class
+    :param actor_optimizer_settings: actor optimizer settings
+    :param critic_updater_class: critic updater class
+    :param critic_optimizer_settings: critic optimizer settings
+    :param buffer_class: the buffer class for storing and sampling trajectories
+    :param buffer_settings: settings for the buffer
+    :param action_explorer_class: the explorer class for random search at beginning of training and
+        adding noise to actions
+    :param explorer_settings: settings for the action explorer
+    :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
+    :param callback_settings: settings for callbacks
+    :param logger_settings: settings for the logger
+    :param device: device to run on, accepts "auto", "cuda" or "cpu"
+    :param render: whether to render the environment or not
+    """
+
     def __init__(
         self,
         env: Env,
