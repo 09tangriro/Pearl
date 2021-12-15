@@ -1,6 +1,6 @@
 [![pipeline status](https://github.com/LondonNode/AnvilRL/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/AnvilRL/actions/workflows/ci.yaml)
-[![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![codecov](https://codecov.io/gh/LondonNode/AnvilRL/branch/main/graph/badge.svg?token=M3OUCWYAWM)](https://codecov.io/gh/LondonNode/AnvilRL)
+[![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <img src="docs/images/logo.png" align="right" width="50%"/>
 
