@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Optional, Type, Union
+from typing import Iterator, Type, Union
 
 import numpy as np
 import torch as T
@@ -67,6 +67,7 @@ class ValueRegression(BaseCriticUpdater):
     :param loss_class: the distance loss class for regression, defaults to MSE
     :param optimizer_class: the type of optimizer to use, defaults to Adam
     :param lr: the learning rate for the optimizer algorithm
+    :param loss_coeff: the coefficient for the value loss, defaults to 1
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
@@ -75,10 +76,12 @@ class ValueRegression(BaseCriticUpdater):
         loss_class: T.nn.Module = T.nn.MSELoss(),
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
         lr: float = 0.001,
+        loss_coeff: float = 1,
         max_grad: float = 0,
     ) -> None:
         super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.loss_class = loss_class
+        self.loss_coeff = loss_coeff
 
     def __call__(
         self,
@@ -101,7 +104,7 @@ class ValueRegression(BaseCriticUpdater):
         else:
             values = model.forward_critic(observations)
 
-        loss = self.loss_class(values, returns)
+        loss = self.loss_coeff * self.loss_class(values, returns)
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
@@ -115,6 +118,7 @@ class ContinuousQRegression(BaseCriticUpdater):
     :param loss_class: the distance loss class for regression, defaults to MSE
     :param optimizer_class: the type of optimizer to use, defaults to Adam
     :param lr: the learning rate for the optimizer algorithm
+    :param loss_coeff: the coefficient for the Q loss, defaults to 1
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
@@ -123,10 +127,12 @@ class ContinuousQRegression(BaseCriticUpdater):
         loss_class: T.nn.Module = T.nn.MSELoss(),
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
         lr: float = 0.001,
+        loss_coeff: float = 1,
         max_grad: float = 0,
     ) -> None:
         super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.loss_class = loss_class
+        self.loss_coeff = loss_coeff
 
     def __call__(
         self,
@@ -151,7 +157,7 @@ class ContinuousQRegression(BaseCriticUpdater):
         else:
             q_values = model.forward_critic(observations, actions)
 
-        loss = self.loss_class(q_values, returns)
+        loss = self.loss_coeff * self.loss_class(q_values, returns)
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
@@ -165,6 +171,7 @@ class DiscreteQRegression(BaseCriticUpdater):
     :param loss_class: the distance loss class for regression, defaults to MSE
     :param optimizer_class: the type of optimizer to use, defaults to Adam
     :param lr: the learning rate for the optimizer algorithm
+    :param loss_coeff: the coefficient for the Q loss, defaults to 1
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
@@ -173,10 +180,12 @@ class DiscreteQRegression(BaseCriticUpdater):
         loss_class: T.nn.Module = T.nn.MSELoss(),
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
         lr: float = 0.001,
+        loss_coeff: float = 1,
         max_grad: float = 0,
     ) -> None:
         super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.loss_class = loss_class
+        self.loss_coeff = loss_coeff
 
     def __call__(
         self,
@@ -204,7 +213,7 @@ class DiscreteQRegression(BaseCriticUpdater):
         actions_index = numpy_to_torch(actions_index)
         q_values = T.gather(q_values, dim=-1, index=actions_index.long())
 
-        loss = self.loss_class(q_values, returns)
+        loss = self.loss_coeff * self.loss_class(q_values, returns)
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
@@ -217,10 +226,12 @@ class SoftQRegression(BaseCriticUpdater):
         loss_class: T.nn.Module = T.nn.MSELoss(),
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
         lr: float = 0.001,
+        loss_coeff: float = 1,
         max_grad: float = 0,
     ) -> None:
         super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.loss_class = loss_class
+        self.loss_coeff = loss_coeff
 
     def __call__(
         self,
@@ -262,9 +273,13 @@ class SoftQRegression(BaseCriticUpdater):
             rewards, dones, q_values.numpy(), log_probs.numpy(), alpha, gamma
         )
 
-        loss = self.loss_class(model.critic(observations, actions), q_target)
+        loss = self.loss_coeff * self.loss_class(
+            model.critic(observations, actions), q_target
+        )
         if hasattr(model, "critic2"):
-            loss += self.loss_class(model.critic2(observations, actions), q_target)
+            loss += self.loss_coeff * self.loss_class(
+                model.critic2(observations, actions), q_target
+            )
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
