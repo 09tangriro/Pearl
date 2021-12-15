@@ -101,5 +101,7 @@ def test_filter_dataclass_by_none():
     dataclass_example = ExplorerSettings()
     actual_output = filter_dataclass_by_none(dataclass_example)
     expected_output = {"start_steps": 1000}
+    assert actual_output == expected_output
 
+    actual_output = dataclass_example.filter_none()
     assert actual_output == expected_output

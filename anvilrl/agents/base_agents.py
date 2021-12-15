@@ -12,7 +12,7 @@ from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.enumerations import PopulationInitStrategy, TrainFrequencyType
 from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Observation, Tensor, Trajectories
-from anvilrl.common.utils import filter_dataclass_by_none, get_device
+from anvilrl.common.utils import get_device
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import ActorCritic
 from anvilrl.settings import (
@@ -66,11 +66,11 @@ class BaseDeepAgent(ABC):
         self.env = env
         self.model = model
         self.render = render
-        explorer_settings = filter_dataclass_by_none(explorer_settings)
+        explorer_settings = explorer_settings.filter_none()
         self.action_explorer = action_explorer_class(
             action_space=env.action_space, **explorer_settings
         )
-        buffer_settings = filter_dataclass_by_none(buffer_settings)
+        buffer_settings = buffer_settings.filter_none()
         self.buffer = buffer_class(env=env, device=device, **buffer_settings)
         self.step = 0
         self.episode = 0
@@ -86,9 +86,7 @@ class BaseDeepAgent(ABC):
             assert len(callbacks) == len(
                 callback_settings
             ), "There should be a CallbackSetting object for each callback"
-            callback_settings = [
-                filter_dataclass_by_none(setting) for setting in callback_settings
-            ]
+            callback_settings = [setting.filter_none() for setting in callback_settings]
             self.callbacks = [
                 callback(self.logger, self.model, **asdict(settings))
                 for callback, settings in zip(callbacks, callback_settings)
@@ -283,7 +281,7 @@ class BaseEvolutionAgent(ABC):
         self.env = env
         self.updater = updater_class(env=env)
         self.population_settings = population_settings
-        buffer_settings = filter_dataclass_by_none(buffer_settings)
+        buffer_settings = buffer_settings.filter_none()
         self.buffer = buffer_class(env=env, device=device, **buffer_settings)
         self.step = 0
         self.episode = 0
@@ -300,9 +298,7 @@ class BaseEvolutionAgent(ABC):
             assert len(callbacks) == len(
                 callback_settings
             ), "There should be a CallbackSetting object for each callback"
-            callback_settings = [
-                filter_dataclass_by_none(setting) for setting in callback_settings
-            ]
+            callback_settings = [setting.filter_none() for setting in callback_settings]
             self.callbacks = [
                 callback(self.logger, self.model, **asdict(settings))
                 for callback, settings in zip(callbacks, callback_settings)

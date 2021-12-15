@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Optional, Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 import numpy as np
 import torch as T
@@ -25,6 +25,9 @@ class OptimizerSettings:
     learning_rate: float = 1e-3
     max_grad: float = 0.5
 
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
 
 @dataclass
 class PopulationInitializerSettings:
@@ -40,6 +43,9 @@ class PopulationInitializerSettings:
     population_std: Optional[Union[float, np.ndarray]] = 1
     starting_point: Optional[np.ndarray] = None
 
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
 
 @dataclass
 class ExplorerSettings:
@@ -53,6 +59,9 @@ class ExplorerSettings:
     start_steps: int = 1000
     scale: Optional[float] = None
 
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
 
 @dataclass
 class BufferSettings:
@@ -63,6 +72,9 @@ class BufferSettings:
     """
 
     buffer_size: int = int(1e6)
+
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
 @dataclass
@@ -78,6 +90,9 @@ class CallbackSettings:
     save_freq: Optional[int] = None
     save_path: Optional[str] = None
     name_prefix: Optional[str] = None
+
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
 @dataclass
@@ -96,6 +111,9 @@ class LoggerSettings:
     stream_handler_level: int = logging.INFO
     verbose: bool = True
 
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
 
 @dataclass
 class SelectionSettings:
@@ -109,6 +127,9 @@ class SelectionSettings:
     tournament_size: Optional[int] = None
     tournament_prob: Optional[float] = None
 
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
+
 
 @dataclass
 class CrossoverSettings:
@@ -119,6 +140,9 @@ class CrossoverSettings:
     """
 
     crossover_index: Optional[int] = None
+
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
 
 
 @dataclass
@@ -132,3 +156,6 @@ class MutationSettings:
 
     mutation_rate: float = 0.1
     mutation_std: Optional[float] = None
+
+    def filter_none(self) -> Dict[str, Any]:
+        return {k: v for k, v in self.__dict__.items() if v is not None}
