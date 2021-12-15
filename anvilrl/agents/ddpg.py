@@ -59,6 +59,8 @@ class DDPG(BaseDeepAgent):
         self,
         env: Env,
         model: Optional[ActorCritic],
+        td_gamma: float = 0.99,
+        value_coefficient: float = 0.5,
         actor_updater_class: Type[BaseActorUpdater] = DeterministicPolicyGradient,
         actor_optimizer_settings: OptimizerSettings = OptimizerSettings(),
         critic_updater_class: Type[BaseCriticUpdater] = ContinuousQRegression,
@@ -97,8 +99,11 @@ class DDPG(BaseDeepAgent):
         self.critic_updater = critic_updater_class(
             optimizer_class=critic_optimizer_settings.optimizer_class,
             lr=critic_optimizer_settings.learning_rate,
+            loss_coeff=value_coefficient,
             max_grad=critic_optimizer_settings.max_grad,
         )
+
+        self.td_gamma = td_gamma
 
     def _fit(self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1):
         critic_losses = np.zeros(shape=(critic_epochs))
@@ -115,6 +120,7 @@ class DDPG(BaseDeepAgent):
                     trajectories.rewards,
                     torch_to_numpy(next_q_values),
                     trajectories.dones,
+                    gamma=self.td_gamma,
                 )
             critic_log = self.critic_updater(
                 self.model,

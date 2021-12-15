@@ -54,6 +54,7 @@ class DQN(BaseDeepAgent):
         self,
         env: Env,
         model: ActorCritic,
+        td_gamma: float = 0.99,
         updater_class: Type[BaseCriticUpdater] = DiscreteQRegression,
         optimizer_settings: OptimizerSettings = OptimizerSettings(),
         buffer_class: Type[BaseBuffer] = ReplayBuffer,
@@ -86,6 +87,8 @@ class DQN(BaseDeepAgent):
             max_grad=optimizer_settings.max_grad,
         )
 
+        self.td_gamma = td_gamma
+
     def _fit(
         self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1
     ) -> Log:
@@ -98,7 +101,10 @@ class DQN(BaseDeepAgent):
                 next_q_values, _ = next_q_values.max(dim=-1)
                 next_q_values = torch_to_numpy(next_q_values.reshape(-1, 1))
                 target_q_values = TD_zero(
-                    trajectories.rewards, next_q_values, trajectories.dones
+                    trajectories.rewards,
+                    next_q_values,
+                    trajectories.dones,
+                    self.td_gamma,
                 )
 
             updater_log = self.updater(
