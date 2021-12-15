@@ -218,54 +218,67 @@ def test_value_regression(model):
 
 
 @pytest.mark.parametrize(
-    "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+    "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared, critic]
 )
 def test_discrete_q_regression(model):
     observation = T.rand(1, 2)
     actions = T.randint(0, 1, (1, 1))
     returns = T.rand(1)
-    out_before = model.forward_critic(observation)
-    with T.no_grad():
-        actor_before = model.get_action_distribution(observation)
+    if model == critic:
+        out_before = model(observation)
+    else:
+        out_before = model.forward_critic(observation)
+        with T.no_grad():
+            actor_before = model.get_action_distribution(observation)
 
     updater = DiscreteQRegression(max_grad=0.5)
 
     updater(model, observation, returns, actions)
 
-    out_after = model.forward_critic(observation)
-    with T.no_grad():
-        actor_after = model.get_action_distribution(observation)
+    if model == critic:
+        out_after = model(observation)
+    else:
+        out_after = model.forward_critic(observation)
+        with T.no_grad():
+            actor_after = model.get_action_distribution(observation)
 
     assert out_after != out_before
     if model == actor_critic_shared:
         assert not assert_same_distribution(actor_before, actor_after)
-    else:
+    elif model != critic:
         assert assert_same_distribution(actor_before, actor_after)
 
 
 @pytest.mark.parametrize(
-    "model", [continuous_actor_critic, continuous_actor_critic_shared]
+    "model",
+    [continuous_actor_critic, continuous_actor_critic_shared, continuous_critic],
 )
 def test_continuous_q_regression(model):
     observation = T.rand(1, 2)
     actions = T.rand(1, 1)
     returns = T.rand(1)
-    out_before = model.forward_critic(observation, actions)
-    with T.no_grad():
-        actor_before = model.get_action_distribution(observation)
+    if model == continuous_critic:
+        out_before = model(observation, actions)
+    else:
+        out_before = model.forward_critic(observation, actions)
+        with T.no_grad():
+            actor_before = model.get_action_distribution(observation)
 
     updater = ContinuousQRegression(max_grad=0.5)
 
     updater(model, observation, actions, returns)
 
-    out_after = model.forward_critic(observation, actions)
-    with T.no_grad():
-        actor_after = model.get_action_distribution(observation)
+    if model == continuous_critic:
+        out_after = model(observation, actions)
+    else:
+        out_after = model.forward_critic(observation, actions)
+        with T.no_grad():
+            actor_after = model.get_action_distribution(observation)
 
     assert out_after != out_before
     if model == continuous_actor_critic_shared:
         assert not assert_same_distribution(actor_before, actor_after)
-    else:
+    elif model == continuous_actor_critic:
         assert assert_same_distribution(actor_before, actor_after)
 
 
