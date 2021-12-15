@@ -36,7 +36,9 @@ def generalized_advantage_estimate(
     dones = 1 - dones
     batch_size = rewards.shape[0]
 
-    advantage = np.zeros(batch_size + 1)
+    advantage = (
+        np.zeros(batch_size + 1) if rewards.ndim == 1 else np.zeros((batch_size + 1, 1))
+    )
 
     for t in reversed(range(batch_size)):
         delta = rewards[t] + (gamma * new_values[t] * dones[t]) - old_values[t]
