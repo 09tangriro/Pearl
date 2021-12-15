@@ -55,7 +55,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         directory: ./build/reports/
         env_vars: OS,PYTHON
-        fail_ci_if_error: true
         files: ./build/reports/coverage.xml
         path_to_write_report: ./build/codecov_report.txt
         verbose: true
