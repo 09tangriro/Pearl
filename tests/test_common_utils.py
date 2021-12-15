@@ -5,11 +5,13 @@ from gym import spaces
 
 from anvilrl.common.utils import (
     extend_shape,
+    filter_dataclass_by_none,
     get_space_range,
     get_space_shape,
     numpy_to_torch,
     torch_to_numpy,
 )
+from anvilrl.settings import ExplorerSettings
 
 numpy_data = (np.zeros(shape=(2, 2)), np.zeros(shape=(3, 3)))
 torch_data = (T.zeros(2, 2), T.zeros(3, 3))
@@ -93,3 +95,11 @@ def test_get_space_range(space):
     else:
         expected_output = (0, 1)
         assert actual_output == expected_output
+
+
+def test_filter_dataclass_by_none():
+    dataclass_example = ExplorerSettings()
+    actual_output = filter_dataclass_by_none(dataclass_example)
+    expected_output = {"start_steps": 1000}
+
+    assert actual_output == expected_output

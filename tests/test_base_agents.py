@@ -4,16 +4,22 @@ import gym
 import numpy as np
 import torch as T
 
-from anvilrl.agents.base_agents import BaseDeepAgent
+from anvilrl.agents.base_agents import BaseDeepAgent, BaseEvolutionAgent
 from anvilrl.buffers import ReplayBuffer
 from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import ContinuousQHead
 from anvilrl.models.torsos import MLP
 from anvilrl.settings import ExplorerSettings, LoggerSettings
+from anvilrl.updaters.evolution import NoisyGradientAscent
 
 
 class MockDeepAgent(BaseDeepAgent):
+    def _fit():
+        pass
+
+
+class MockEvolutionAgent(BaseEvolutionAgent):
     def _fit():
         pass
 
@@ -28,20 +34,26 @@ model = ActorCritic(
     actor=Actor(encoder, torso, head), critic=Critic(encoder, torso, head)
 )
 
-agent = MockDeepAgent(
+deep_agent = MockDeepAgent(
     env=env,
     model=model,
     buffer_class=ReplayBuffer,
     explorer_settings=ExplorerSettings(start_steps=0),
     logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
 )
-vec_agent = MockDeepAgent(
+vec_deep_agent = MockDeepAgent(
     env=envs,
     model=model,
     buffer_class=ReplayBuffer,
     explorer_settings=ExplorerSettings(start_steps=0),
     logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
 )
+evolution_agent = MockEvolutionAgent(
+    env=envs,
+    updater_class=NoisyGradientAscent,
+    buffer_class=ReplayBuffer,
+)
+
 shutil.rmtree("runs/tests")
 
 
@@ -50,13 +62,13 @@ def test_step_env():
     observation = env.reset()
     action = model(observation).detach().numpy()
     expected_next_obs, _, _, _ = env.step(action)
-    actual_next_obs = agent.step_env(observation)
+    actual_next_obs = deep_agent.step_env(observation)
 
     assert isinstance(actual_next_obs, np.ndarray)
 
     observation = envs.reset()
     action = model(observation).detach().numpy()
     expected_next_obs, _, _, _ = env.step(action)
-    actual_next_obs = vec_agent.step_env(observation)
+    actual_next_obs = vec_deep_agent.step_env(observation)
 
     assert isinstance(actual_next_obs, np.ndarray)
