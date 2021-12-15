@@ -14,5 +14,6 @@ omit =
     anvilrl/agents/dqn.py
     anvilrl/agents/es.py
     anvilrl/agents/ga.py
+    anvilrl/agents/a2c.py
     anvilrl/settings.py
     anvilrl/plot.py

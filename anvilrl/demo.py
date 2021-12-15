@@ -5,6 +5,7 @@ import gym
 import numpy as np
 import torch as T
 
+from anvilrl.agents.a2c import A2C
 from anvilrl.agents.ddpg import DDPG
 from anvilrl.agents.dqn import DQN
 from anvilrl.agents.es import ES
@@ -22,6 +23,7 @@ from anvilrl.settings import (
     BufferSettings,
     ExplorerSettings,
     LoggerSettings,
+    OptimizerSettings,
     PopulationInitializerSettings,
 )
 
@@ -384,6 +386,27 @@ def her_demo():
     )
 
 
+def a2c_demo():
+    env = gym.make("CartPole-v0")
+    batch_size = 5
+
+    agent = A2C(
+        env=env,
+        buffer_settings=BufferSettings(buffer_size=batch_size),
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/A2C-demo", verbose=True
+        ),
+        entropy_coefficient=0,
+    )
+
+    agent.fit(
+        num_steps=100000,
+        batch_size=batch_size,
+        critic_epochs=1,
+        train_frequency=("step", batch_size),
+    )
+
+
 if __name__ == "__main__":
     parser = ArgumentParser(description="AnvilRL demo with preloaded hyperparameters")
     parser.add_argument("--agent", help="Agent to demo")
@@ -399,5 +422,7 @@ if __name__ == "__main__":
         ga_demo()
     elif kwargs.agent.lower() == "her":
         her_demo()
+    elif kwargs.agent.lower() == "a2c":
+        a2c_demo()
     else:
         raise ValueError(f"Agent {kwargs.agent} not found")
