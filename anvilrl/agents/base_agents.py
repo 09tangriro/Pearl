@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from dataclasses import asdict
 from typing import Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
@@ -88,7 +87,7 @@ class BaseDeepAgent(ABC):
             ), "There should be a CallbackSetting object for each callback"
             callback_settings = [setting.filter_none() for setting in callback_settings]
             self.callbacks = [
-                callback(self.logger, self.model, **asdict(settings))
+                callback(self.logger, self.model, **settings)
                 for callback, settings in zip(callbacks, callback_settings)
             ]
         else:
@@ -300,7 +299,7 @@ class BaseEvolutionAgent(ABC):
             ), "There should be a CallbackSetting object for each callback"
             callback_settings = [setting.filter_none() for setting in callback_settings]
             self.callbacks = [
-                callback(self.logger, self.model, **asdict(settings))
+                callback(self.logger, self.model, **settings)
                 for callback, settings in zip(callbacks, callback_settings)
             ]
         else:
