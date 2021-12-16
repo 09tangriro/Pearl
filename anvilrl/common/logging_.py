@@ -47,40 +47,38 @@ class Logger(object):
         self.logger = get_logger(file_handler_level, stream_handler_level)
         self.verbose = verbose
         self.num_envs = num_envs
-        self.episode_actor_losses = []
-        self.episode_critic_losses = []
-        self.episode_divergences = []
-        self.episode_entropies = []
-        self.episode_rewards = []
+        self.actor_losses = []
+        self.critic_losses = []
+        self.divergences = []
+        self.entropies = []
+        self.rewards = []
         # Keep track of which environments have completed an episode
         self.episode_dones = np.array([False for _ in range(num_envs)])
 
-    def reset_episode_log(self) -> None:
-        self.episode_actor_losses = []
-        self.episode_critic_losses = []
-        self.episode_divergences = []
-        self.episode_entropies = []
-        self.episode_rewards = []
+    def reset_log(self) -> None:
+        self.actor_losses = []
+        self.critic_losses = []
+        self.divergences = []
+        self.entropies = []
+        self.rewards = []
         self.episode_dones = np.array([False for _ in range(self.num_envs)])
 
     def add_train_log(self, train_log: Log) -> None:
         if train_log.actor_loss is not None:
-            self.episode_actor_losses.append(train_log.actor_loss)
+            self.actor_losses.append(train_log.actor_loss)
         if train_log.critic_loss is not None:
-            self.episode_critic_losses.append(train_log.critic_loss)
+            self.critic_losses.append(train_log.critic_loss)
         if train_log.entropy is not None:
-            self.episode_entropies.append(train_log.entropy)
+            self.entropies.append(train_log.entropy)
         if train_log.divergence is not None:
-            self.episode_divergences.append(train_log.divergence)
+            self.divergences.append(train_log.divergence)
 
     def add_reward(self, reward: Union[float, np.ndarray]) -> None:
         """Add step reward to the episode rewards"""
         if isinstance(reward, (float, np.floating)):
-            self.episode_rewards.append(reward)
+            self.rewards.append(reward)
         elif isinstance(reward, np.ndarray):
-            self.episode_rewards.append(
-                reward[np.where(self.episode_dones == False)[0]]
-            )
+            self.rewards.append(reward[np.where(self.episode_dones == False)[0]])
         else:
             raise TypeError(
                 f"Reward must be a float or numpy array, got {type(reward)}"
@@ -89,16 +87,16 @@ class Logger(object):
     def _make_episode_log(self) -> Log:
         """Make an episode log out of the collected stats"""
         episode_log = Log(
-            reward=np.sum(self.episode_rewards),
+            reward=np.sum(self.rewards),
         )
-        if self.episode_actor_losses:
-            episode_log.actor_loss = np.mean(self.episode_actor_losses)
-        if self.episode_critic_losses:
-            episode_log.critic_loss = np.mean(self.episode_critic_losses)
-        if self.episode_divergences:
-            episode_log.divergence = np.mean(self.episode_divergences)
-        if self.episode_entropies:
-            episode_log.entropy = np.mean(self.episode_entropies)
+        if self.actor_losses:
+            episode_log.actor_loss = np.mean(self.actor_losses)
+        if self.critic_losses:
+            episode_log.critic_loss = np.mean(self.critic_losses)
+        if self.divergences:
+            episode_log.divergence = np.mean(self.divergences)
+        if self.entropies:
+            episode_log.entropy = np.mean(self.entropies)
 
         return episode_log
 
