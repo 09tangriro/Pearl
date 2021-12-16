@@ -42,7 +42,7 @@ class ES(BaseEvolutionAgent):
         updater_class: Type[BaseEvolutionUpdater] = NoisyGradientAscent,
         learning_rate: float = 0.001,
         population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
-        buffer_class: BaseBuffer = RolloutBuffer,
+        buffer_class: Type[BaseBuffer] = RolloutBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[str, T.device] = "auto",
