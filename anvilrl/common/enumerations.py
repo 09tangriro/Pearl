@@ -11,7 +11,7 @@ class TrajectoryType(Enum):
     TORCH = "torch"
 
 
-class TrainFrequencyType(Enum):
+class FrequencyType(Enum):
     EPISODE = "episode"
     STEP = "step"
 
