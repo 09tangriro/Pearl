@@ -85,7 +85,9 @@ def es_demo():
             starting_point=np.array([10, 10])
         ),
         learning_rate=1,
-        logger_settings=LoggerSettings(tensorboard_log_path="runs/ES-demo"),
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/ES-demo", log_frequency=("step", 1)
+        ),
     )
     agent.fit(num_steps=15)
 
@@ -138,7 +140,9 @@ def ga_demo():
     agent = GA(
         env=env,
         population_settings=PopulationInitializerSettings(strategy="uniform"),
-        logger_settings=LoggerSettings(tensorboard_log_path="runs/GA-demo"),
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/GA-demo", log_frequency=("step", 1)
+        ),
     )
     agent.fit(num_steps=25)
 

@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch as T
@@ -107,6 +107,7 @@ class LoggerSettings:
     """
 
     tensorboard_log_path: Optional[str] = None
+    log_frequency: Tuple[str, int] = ("episode", 1)
     file_handler_level: int = logging.DEBUG
     stream_handler_level: int = logging.INFO
     verbose: bool = True

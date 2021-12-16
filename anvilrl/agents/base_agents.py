@@ -8,7 +8,7 @@ from gym.vector import VectorEnv
 
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
-from anvilrl.common.enumerations import PopulationInitStrategy, TrainFrequencyType
+from anvilrl.common.enumerations import FrequencyType, PopulationInitStrategy
 from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Observation, Tensor, Trajectories
 from anvilrl.common.utils import get_device
@@ -81,6 +81,10 @@ class BaseDeepAgent(ABC):
             verbose=logger_settings.verbose,
             num_envs=env.num_envs if isinstance(env, VectorEnv) else 1,
         )
+        self.log_frequency = (
+            FrequencyType(logger_settings.log_frequency[0].lower()),
+            logger_settings.log_frequency[1],
+        )
         if callbacks is not None:
             assert len(callbacks) == len(
                 callback_settings
@@ -117,6 +121,13 @@ class BaseDeepAgent(ABC):
         self.model.eval()
         return self.model.critic(observations, actions)
 
+    def dump_log(self) -> None:
+        """
+        Write and reset the logger
+        """
+        self.logger.write_log(self.step)
+        self.logger.reset_log()
+
     def step_env(self, observation: Observation, num_steps: int = 1) -> np.ndarray:
         """
         Step the agent in the environment
@@ -152,12 +163,16 @@ class BaseDeepAgent(ABC):
             # For vectorized environments, we keep track of individual episodes as they finish
             # also applies to single environments
             self.logger.episode_dones[done_indices] = True
-            # If all environment episodes are done, we write an episode log and reset it.
+            # If all environment episodes are done, check if we should dump the log
             if all(self.logger.episode_dones):
-                self.logger.write_log(self.step)
-                self.logger.reset_episode_log()
+                if self.log_frequency[0] == FrequencyType.EPISODE:
+                    if self.episode % self.log_frequency[1] == 0:
+                        self.dump_log()
                 self.episode += 1
 
+            if self.log_frequency[0] == FrequencyType.STEP:
+                if self.step % self.log_frequency[1] == 0:
+                    self.dump_log()
             if self.callbacks is not None:
                 if not all(
                     [callback.on_step(self.step) for callback in self.callbacks]
@@ -200,11 +215,11 @@ class BaseDeepAgent(ABC):
             To run every n steps, use `("step", n)`.
         """
         train_frequency = (
-            TrainFrequencyType(train_frequency[0].lower()),
+            FrequencyType(train_frequency[0].lower()),
             train_frequency[1],
         )
         # We can pre-calculate how many training steps to run if train_frequency is in steps rather than episodes
-        if train_frequency[0] == TrainFrequencyType.STEP:
+        if train_frequency[0] == FrequencyType.STEP:
             num_steps = num_steps // train_frequency[1]
 
         observation = self.env.reset()
@@ -215,12 +230,12 @@ class BaseDeepAgent(ABC):
                     observation=observation, num_steps=batch_size
                 )
             # Step for number of steps specified
-            elif train_frequency[0] == TrainFrequencyType.STEP:
+            elif train_frequency[0] == FrequencyType.STEP:
                 observation = self.step_env(
                     observation=observation, num_steps=train_frequency[1]
                 )
             # Step for number of episodes specified
-            elif train_frequency[0] == TrainFrequencyType.EPISODE:
+            elif train_frequency[0] == FrequencyType.EPISODE:
                 start_episode = self.episode
                 end_episode = start_episode + train_frequency[1]
                 while self.episode != end_episode:
@@ -292,6 +307,10 @@ class BaseEvolutionAgent(ABC):
             num_envs=env.num_envs,
         )
         self.population = None
+        self.log_frequency = (
+            FrequencyType(logger_settings.log_frequency[0].lower()),
+            logger_settings.log_frequency[1],
+        )
 
         if callbacks is not None:
             assert len(callbacks) == len(
@@ -323,6 +342,24 @@ class BaseEvolutionAgent(ABC):
                 next_observation=self.env.observation_space.sample(),
                 done=dones,
             )
+            self.logger.add_reward(np.max(rewards))
+            # Get indices of episodes that are done, especially useful for vectorized environments
+            done_indices = np.where(dones)[0]
+
+            # For vectorized environments, we keep track of individual episodes as they finish
+            # also applies to single environments
+            self.logger.episode_dones[done_indices] = True
+            # If all environment episodes are done, check if we should dump the log
+            if all(self.logger.episode_dones):
+                if self.log_frequency[0] == FrequencyType.EPISODE:
+                    if self.episode % self.log_frequency[1] == 0:
+                        self.dump_log()
+                self.episode += 1
+
+            if self.log_frequency[0] == FrequencyType.STEP:
+                if self.step % self.log_frequency[1] == 0:
+                    self.dump_log()
+
             if self.callbacks is not None:
                 if not all(
                     [callback.on_step(self.step) for callback in self.callbacks]
@@ -331,15 +368,12 @@ class BaseEvolutionAgent(ABC):
                     break
             self.step += 1
 
-    def evaluate_agent(self) -> None:
+    def dump_log(self) -> None:
         """
-        Evaluate the agent and write a log
+        Write and reset the logger
         """
-        trajectories = self.buffer.all()
-        max_reward = np.max(trajectories.rewards)
-        self.logger.add_reward(max_reward)
         self.logger.write_log(self.step)
-        self.logger.reset_episode_log()
+        self.logger.reset_log()
 
     @abstractmethod
     def _fit(self) -> Log:
@@ -363,11 +397,11 @@ class BaseEvolutionAgent(ABC):
             To run every n steps, use `("step", n)`.
         """
         train_frequency = (
-            TrainFrequencyType(train_frequency[0].lower()),
+            FrequencyType(train_frequency[0].lower()),
             train_frequency[1],
         )
         # We can pre-calculate how many training steps to run if train_frequency is in steps rather than episodes
-        if train_frequency[0] == TrainFrequencyType.STEP:
+        if train_frequency[0] == FrequencyType.STEP:
             num_steps = num_steps // train_frequency[1]
 
         if isinstance(self.population_settings.strategy, str):
@@ -383,10 +417,10 @@ class BaseEvolutionAgent(ABC):
         )
         for _ in range(num_steps):
             # Step for number of steps specified
-            if train_frequency[0] == TrainFrequencyType.STEP:
+            if train_frequency[0] == FrequencyType.STEP:
                 self.step_env(num_steps=train_frequency[1])
             # Step for number of episodes specified
-            elif train_frequency[0] == TrainFrequencyType.EPISODE:
+            elif train_frequency[0] == FrequencyType.EPISODE:
                 start_episode = self.episode
                 end_episode = start_episode + train_frequency[1]
                 while self.episode != end_episode:
@@ -394,7 +428,6 @@ class BaseEvolutionAgent(ABC):
                 if self.step >= num_steps:
                     break
 
-            self.evaluate_agent()
             log = self._fit()
             self.population = self.updater.population
             self.logger.add_train_log(log)
