@@ -345,9 +345,6 @@ class Individual(T.nn.Module):
     def set_state(self, state: np.ndarray) -> None:
         self.state = state
 
-    def set_model(self) -> None:
-        pass
-
     def numpy(self) -> np.ndarray:
         return self.state
 
@@ -387,7 +384,7 @@ class DeepIndividual(T.nn.Module):
             self.state_info[k] = (v.shape, (start_idx, start_idx + v.numel()))
             start_idx += v.numel()
 
-    def set_model(self, state: np.ndarray) -> None:
+    def set_state(self, state: np.ndarray) -> None:
         self.state = state
         state = numpy_to_torch(state, device=self.device)
         self.model.load_state_dict(self.model.state_dict())

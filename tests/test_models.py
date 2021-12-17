@@ -209,7 +209,7 @@ def test_deep_individual():
 
     expected_state = np.array([0.1, 0.2, 0.3])
     expected_model = copy.deepcopy(model.model)
-    model.set_model(expected_state)
+    model.set_state(expected_state)
     actual_state = model.numpy()
     assert model.model != expected_model
     np.testing.assert_array_almost_equal(actual_state, expected_state)
