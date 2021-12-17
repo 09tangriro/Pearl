@@ -1,10 +1,19 @@
 import copy
 from typing import List, Optional, Tuple, Union
 
+import numpy as np
 import torch as T
+from gym.spaces import Box, Space
+from gym.vector import VectorEnv
 
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import get_device
+from anvilrl.common.utils import (
+    get_device,
+    get_space_range,
+    get_space_shape,
+    numpy_to_torch,
+    torch_to_numpy,
+)
 from anvilrl.models.heads import BaseActorHead, BaseCriticHead
 from anvilrl.models.utils import trainable_parameters
 
@@ -322,3 +331,74 @@ class TwinActorCritic(ActorCritic):
     def forward_target_actor(self, observations: Tensor) -> T.Tensor:
         """Run a forward pass to get the target actor output"""
         return self.target_actor(observations)
+
+
+class Individual(T.nn.Module):
+    def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
+        super().__init__()
+        self.space = space
+        self.model_ = None
+        self.space_shape = get_space_shape(self.space)
+        self.space_range = get_space_range(self.space)
+        self.state = state if state is not None else space.sample()
+
+    def set_state(self, state: np.ndarray) -> None:
+        self.state = state
+
+    def set_model(self) -> None:
+        pass
+
+    def numpy(self) -> np.ndarray:
+        return self.state
+
+    def forward(self, observation: Tensor) -> np.ndarray:
+        return self.state
+
+
+class DeepIndividual(T.nn.Module):
+    def __init__(
+        self,
+        encoder: T.nn.Module,
+        torso: T.nn.Module,
+        head: BaseActorHead,
+        space: Optional[Space] = None,
+        device: Union[T.device, str] = "auto",
+    ) -> None:
+        super().__init__()
+        self.device = get_device(device)
+        self.model = Actor(encoder, torso, head, device=device)
+        self.state_info = {}
+        self.make_state_info()
+        self.state = np.concatenate(
+            [torch_to_numpy(d.flatten()) for d in self.model.state_dict().values()]
+        )
+        self.space = (
+            space
+            if space is not None
+            else Box(low=-1e6, high=1e6, shape=self.state.shape)
+        )
+        self.space_shape = get_space_shape(self.space)
+        self.space_range = get_space_range(self.space)
+
+    def make_state_info(self) -> None:
+        self.state_info = {}
+        start_idx = 0
+        for k, v in self.model.state_dict().items():
+            self.state_info[k] = (v.shape, (start_idx, start_idx + v.numel()))
+            start_idx += v.numel()
+
+    def set_model(self, state: np.ndarray) -> None:
+        self.state = state
+        state = numpy_to_torch(state, device=self.device)
+        self.model.load_state_dict(self.model.state_dict())
+        state_dict = {
+            k: state[v[1][0] : v[1][1]].reshape(v[0])
+            for k, v in zip(self.state_info.keys(), self.state_info.values())
+        }
+        self.model.load_state_dict(state_dict)
+
+    def numpy(self) -> np.ndarray:
+        return self.state
+
+    def forward(self, observation: Tensor) -> T.Tensor:
+        return self.model(observation)

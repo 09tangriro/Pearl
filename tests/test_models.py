@@ -1,3 +1,7 @@
+import copy
+
+import gym
+import numpy as np
 import pytest
 import torch as T
 
@@ -9,6 +13,7 @@ from anvilrl.models import (
     EpsilonGreedyActor,
     TwinActorCritic,
 )
+from anvilrl.models.actor_critics import DeepIndividual, Individual
 from anvilrl.models.encoders import (
     DictEncoder,
     FlattenEncoder,
@@ -187,3 +192,42 @@ def test_trainable_parameters():
     all_params = T.cat((T.flatten(weights), biases))
 
     assert all_params.shape == T.Size([9])
+
+
+def test_deep_individual():
+    T.manual_seed(0)
+    model = DeepIndividual(
+        encoder=IdentityEncoder(),
+        torso=MLP([2]),
+        head=DeterministicHead(input_shape=2, action_shape=1),
+    )
+
+    actual_state = model.numpy()
+    expected_state = np.array([-0.00529397, 0.37932295, -0.58198076])
+
+    np.testing.assert_array_almost_equal(actual_state, expected_state)
+
+    expected_state = np.array([0.1, 0.2, 0.3])
+    expected_model = copy.deepcopy(model.model)
+    model.set_model(expected_state)
+    actual_state = model.numpy()
+    assert model.model != expected_model
+    np.testing.assert_array_almost_equal(actual_state, expected_state)
+
+
+def test_individual():
+    env = gym.make("CartPole-v0")
+    T.manual_seed(0)
+    expected_state = env.action_space.sample()
+    model = Individual(space=env.action_space, state=expected_state)
+
+    actual_state = model.numpy()
+    np.testing.assert_array_almost_equal(actual_state, expected_state)
+
+    expected_state = env.action_space.sample()
+    model.set_state(expected_state)
+
+    np.testing.assert_array_almost_equal(model.numpy(), expected_state)
+
+    actual_state = model(env.observation_space.sample())
+    np.testing.assert_array_almost_equal(actual_state, expected_state)
