@@ -36,12 +36,10 @@ class PopulationInitializerSettings:
 
     :param population_init_strategy: strategy for population initialization, accepts 'normal' or 'uniform'
     :param population_std: std for population initialization (only used if strategy is 'normal')
-    :param starting_point: central starting point of the population (only used if strategy is 'normal')
     """
 
     strategy: Union[str, PopulationInitStrategy] = PopulationInitStrategy.NORMAL
     population_std: Optional[Union[float, np.ndarray]] = 1
-    starting_point: Optional[np.ndarray] = None
 
     def filter_none(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}

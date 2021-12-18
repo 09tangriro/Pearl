@@ -341,8 +341,9 @@ class Individual(T.nn.Module):
         self.space_range = get_space_range(self.space)
         self.state = state if state is not None else space.sample()
 
-    def set_state(self, state: np.ndarray) -> None:
+    def set_state(self, state: np.ndarray) -> "Individual":
         self.state = state
+        return self
 
     def numpy(self) -> np.ndarray:
         return self.state
@@ -381,7 +382,7 @@ class DeepIndividual(Actor):
             self.state_info[k] = (v.shape, (start_idx, start_idx + v.numel()))
             start_idx += v.numel()
 
-    def set_state(self, state: np.ndarray) -> None:
+    def set_state(self, state: np.ndarray) -> "DeepIndividual":
         self.state = state
         state = numpy_to_torch(state, device=self.device)
         self.load_state_dict(self.state_dict())
@@ -390,6 +391,7 @@ class DeepIndividual(Actor):
             for k, v in zip(self.state_info.keys(), self.state_info.values())
         }
         self.load_state_dict(state_dict)
+        return self
 
     def numpy(self) -> np.ndarray:
         return self.state

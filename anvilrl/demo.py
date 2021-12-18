@@ -15,6 +15,7 @@ from anvilrl.models.actor_critics import (
     ActorCriticWithCriticTarget,
     Critic,
     EpsilonGreedyActor,
+    Individual,
 )
 from anvilrl.models.encoders import DictEncoder
 from anvilrl.models.heads import DiscreteQHead
@@ -78,12 +79,11 @@ def es_demo():
 
     POPULATION_SIZE = 10
     env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
+    model = Individual(env.single_action_space, np.array([10, 10]))
 
     agent = ES(
         env=env,
-        population_settings=PopulationInitializerSettings(
-            starting_point=np.array([10, 10])
-        ),
+        model=model,
         learning_rate=1,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/ES-demo", log_frequency=("step", 1)

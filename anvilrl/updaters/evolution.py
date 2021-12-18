@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Union
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 from gym.spaces import Discrete, MultiDiscrete
@@ -8,7 +9,8 @@ from torch.distributions import Normal, kl_divergence
 
 from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.common.type_aliases import UpdaterLog
-from anvilrl.common.utils import get_space_range, get_space_shape, numpy_to_torch
+from anvilrl.common.utils import numpy_to_torch
+from anvilrl.models.actor_critics import DeepIndividual, Individual
 from anvilrl.signal_processing import (
     crossover_operators,
     mutation_operators,
@@ -23,12 +25,12 @@ class BaseEvolutionUpdater(ABC):
     :param env: the vector environment
     """
 
-    def __init__(self, env: VectorEnv) -> None:
-        self.env = env
+    def __init__(
+        self, env: VectorEnv, model: Union[Individual, DeepIndividual]
+    ) -> None:
+        self.model = model
         self.population = None
         self.population_size = env.num_envs
-        self.action_space_shape = get_space_shape(env.single_action_space)
-        self.action_space_range = get_space_range(env.single_action_space)
 
     @abstractmethod
     def initialize_population(
@@ -36,7 +38,7 @@ class BaseEvolutionUpdater(ABC):
         population_init_strategy: PopulationInitStrategy,
         population_std: Optional[Union[float, np.ndarray]] = 1,
         starting_point: Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> List[Union[Individual, DeepIndividual]]:
         """
         Initialize the population
 
@@ -61,8 +63,9 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
     def __init__(
         self,
         env: VectorEnv,
+        model: Union[Individual, DeepIndividual],
     ) -> None:
-        super().__init__(env)
+        super().__init__(env, model)
         self.normal_dist = None
         self.mean = None
         self.population_std = None
@@ -72,23 +75,19 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         population_init_strategy: PopulationInitStrategy = PopulationInitStrategy.NORMAL,
         population_std: Union[float, np.ndarray] = 1,
         starting_point: Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> List[Union[Individual, DeepIndividual]]:
         self.population_std = population_std
-        self.mean = (
-            starting_point
-            if starting_point is not None
-            else self.env.single_action_space.sample()
-        ).astype(np.float32)
+        self.mean = starting_point.astype(np.float32)
         self.normal_dist = np.random.randn(
-            self.population_size, *self.action_space_shape
+            self.population_size, *self.model.space_shape
         )
         population = self.mean + (population_std * self.normal_dist)
-        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+        if isinstance(self.model.space, (Discrete, MultiDiscrete)):
             population = np.round(population).astype(np.int32)
         self.population = np.clip(
-            population, self.action_space_range[0], self.action_space_range[1]
+            population, self.model.space_range[0], self.model.space_range[1]
         )
-        return self.population
+        return [deepcopy(self.model).set_state(ind) for ind in self.population]
 
     def __call__(
         self, learning_rate: float, optimization_direction: np.ndarray
@@ -118,15 +117,15 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
 
         # Generate new population
         self.normal_dist = np.random.randn(
-            self.population_size, *self.action_space_shape
+            self.population_size, *self.model.space_shape
         )
         population = self.mean + (self.population_std * self.normal_dist)
 
         # Discretize and clip population as needed
-        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+        if isinstance(self.model.space, (Discrete, MultiDiscrete)):
             population = np.round(population).astype(np.int32)
         self.population = np.clip(
-            population, self.action_space_range[0], self.action_space_range[1]
+            population, self.model.space_range[0], self.model.space_range[1]
         )
 
         # Calculate Log metrics
