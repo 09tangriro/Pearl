@@ -136,9 +136,11 @@ def ga_demo():
     env = gym.vector.SyncVectorEnv(
         [lambda: Mastermind() for _ in range(POPULATION_SIZE)]
     )
+    model = Individual(env.single_action_space)
 
     agent = GA(
         env=env,
+        model=model,
         population_settings=PopulationInitializerSettings(strategy="uniform"),
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/GA-demo", log_frequency=("step", 1)

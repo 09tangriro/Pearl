@@ -82,11 +82,13 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
             self.population_size, *self.model.space_shape
         )
         population = self.mean + (population_std * self.normal_dist)
+
         if isinstance(self.model.space, (Discrete, MultiDiscrete)):
             population = np.round(population).astype(np.int32)
         self.population = np.clip(
             population, self.model.space_range[0], self.model.space_range[1]
         )
+
         return [deepcopy(self.model).set_state(ind) for ind in self.population]
 
     def __call__(
@@ -146,8 +148,9 @@ class GeneticUpdater(BaseEvolutionUpdater):
     def __init__(
         self,
         env: VectorEnv,
+        model: Union[Individual, DeepIndividual],
     ) -> None:
-        super().__init__(env)
+        super().__init__(env, model)
         self.population_std = None
 
     def initialize_population(
@@ -158,18 +161,14 @@ class GeneticUpdater(BaseEvolutionUpdater):
     ) -> np.ndarray:
         if population_init_strategy == PopulationInitStrategy.UNIFORM:
             population = np.random.uniform(
-                self.action_space_range[0],
-                self.action_space_range[1],
-                (self.population_size, *self.action_space_shape),
+                self.model.space_range[0],
+                self.model.space_range[1],
+                (self.population_size, *self.model.space_shape),
             )
         elif population_init_strategy == PopulationInitStrategy.NORMAL:
-            mean = (
-                starting_point
-                if starting_point is not None
-                else self.env.single_action_space.sample()
-            ).astype(np.float32)
+            mean = (starting_point).astype(np.float32)
             population = np.random.normal(
-                mean, population_std, (self.population_size, *self.action_space_shape)
+                mean, population_std, (self.population_size, *self.model.space_shape)
             )
         else:
             raise ValueError(
@@ -177,13 +176,13 @@ class GeneticUpdater(BaseEvolutionUpdater):
             )
 
         # Discretize and clip population as needed
-        if isinstance(self.env.single_action_space, (Discrete, MultiDiscrete)):
+        if isinstance(self.model.space, (Discrete, MultiDiscrete)):
             population = np.round(population).astype(np.int32)
         self.population = np.clip(
-            population, self.action_space_range[0], self.action_space_range[1]
+            population, self.model.space_range[0], self.model.space_range[1]
         )
 
-        return self.population
+        return [deepcopy(self.model).set_state(ind) for ind in self.population]
 
     def __call__(
         self,
@@ -223,7 +222,7 @@ class GeneticUpdater(BaseEvolutionUpdater):
         parents = selection_operator(self.population, rewards, **selection_settings)
         children = crossover_operator(parents, **crossover_settings)
         self.population = mutation_operator(
-            children, self.env.single_action_space, **mutation_settings
+            children, self.model.space, **mutation_settings
         )
         self.population[elite_indices] = elite_population
 

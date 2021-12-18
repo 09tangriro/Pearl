@@ -9,6 +9,7 @@ from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.common.type_aliases import Log
 from anvilrl.common.utils import filter_dataclass_by_none
+from anvilrl.models.actor_critics import DeepIndividual, Individual
 from anvilrl.settings import (
     BufferSettings,
     CrossoverSettings,
@@ -44,6 +45,7 @@ class GA(BaseEvolutionAgent):
     def __init__(
         self,
         env: VectorEnv,
+        model: Union[Individual, DeepIndividual],
         updater_class: Type[BaseEvolutionUpdater] = GeneticUpdater,
         selection_operator: selection_operators = selection_operators.roulette_selection,
         selection_settings: SelectionSettings = SelectionSettings(),
@@ -60,6 +62,7 @@ class GA(BaseEvolutionAgent):
     ) -> None:
         super().__init__(
             env=env,
+            model=model,
             updater_class=updater_class,
             population_settings=population_settings,
             buffer_class=buffer_class,
