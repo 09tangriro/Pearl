@@ -6,7 +6,7 @@ import torch as T
 
 from anvilrl.agents.base_agents import BaseDeepAgent, BaseEvolutionAgent
 from anvilrl.buffers import ReplayBuffer
-from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
+from anvilrl.models.actor_critics import Actor, ActorCritic, Critic, Individual
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import ContinuousQHead
 from anvilrl.models.torsos import MLP
@@ -33,6 +33,7 @@ head = ContinuousQHead(input_shape=32)
 model = ActorCritic(
     actor=Actor(encoder, torso, head), critic=Critic(encoder, torso, head)
 )
+individual = Individual(space=env.action_space)
 
 deep_agent = MockDeepAgent(
     env=env,
@@ -50,6 +51,7 @@ vec_deep_agent = MockDeepAgent(
 )
 evolution_agent = MockEvolutionAgent(
     env=envs,
+    model=individual,
     updater_class=NoisyGradientAscent,
     buffer_class=ReplayBuffer,
 )

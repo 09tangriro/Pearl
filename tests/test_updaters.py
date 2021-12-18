@@ -5,6 +5,7 @@ import torch as T
 
 from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.models import Actor, ActorCritic, Critic
+from anvilrl.models.actor_critics import Individual
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import DiagGaussianHead, ValueHead
 from anvilrl.models.torsos import MLP
@@ -317,28 +318,32 @@ class DiscreteSphere(gym.Env):
         return 0
 
 
-POPULATION_SIZE = 10000
+POPULATION_SIZE = 1000
 env_continuous = gym.vector.SyncVectorEnv(
     [lambda: Sphere() for _ in range(POPULATION_SIZE)]
 )
 env_discrete = gym.vector.SyncVectorEnv(
     [lambda: DiscreteSphere() for _ in range(POPULATION_SIZE)]
 )
+model_continuous = Individual(
+    space=env_continuous.single_action_space, state=np.array([10, 10])
+)
+model_discrete = Individual(space=env_discrete.single_action_space, state=np.array([5]))
 
 
 def test_evolutionary_updater_continuous():
     np.random.seed(0)
 
     # Assert population stats
-    updater = NoisyGradientAscent(env_continuous)
-    population = updater.initialize_population(starting_point=np.array([10, 10]))
-    np.testing.assert_allclose(np.std(population, axis=0), np.ones(2), rtol=0.1)
+    updater = NoisyGradientAscent(env_continuous, model_continuous)
+    updater.initialize_population(starting_point=model_continuous.numpy())
+    np.testing.assert_allclose(np.std(updater.population, axis=0), np.ones(2), rtol=0.1)
     np.testing.assert_allclose(
-        np.mean(population, axis=0), np.array([10, 10]), rtol=0.1
+        np.mean(updater.population, axis=0), np.array([10, 10]), rtol=0.1
     )
 
     # Test call
-    _, rewards, _, _ = env_continuous.step(population)
+    _, rewards, _, _ = env_continuous.step(updater.population)
     scaled_rewards = (rewards - np.mean(rewards)) / np.std(rewards)
     optimization_direction = np.dot(updater.normal_dist.T, scaled_rewards)
     updater(learning_rate=0.01, optimization_direction=optimization_direction)
@@ -352,14 +357,16 @@ def test_evolutionary_updater_discrete():
     np.random.seed(0)
 
     # Assert population stats
-    updater = NoisyGradientAscent(env_discrete)
-    population = updater.initialize_population(starting_point=np.array([5]))
-    assert np.issubdtype(population.dtype, np.integer)
-    np.testing.assert_allclose(np.std(population, axis=0), np.ones(1), rtol=0.1)
-    np.testing.assert_allclose(np.mean(population, axis=0), np.array([5]), rtol=0.1)
+    updater = NoisyGradientAscent(env_discrete, model_discrete)
+    updater.initialize_population(starting_point=model_discrete.numpy())
+    assert np.issubdtype(updater.population.dtype, np.integer)
+    np.testing.assert_allclose(np.std(updater.population, axis=0), np.ones(1), rtol=0.1)
+    np.testing.assert_allclose(
+        np.mean(updater.population, axis=0), np.array([5]), rtol=0.1
+    )
 
     # Test call
-    _, rewards, _, _ = env_discrete.step(population)
+    _, rewards, _, _ = env_discrete.step(updater.population)
     scaled_rewards = (rewards - np.mean(rewards)) / np.std(rewards)
     optimization_direction = np.dot(updater.normal_dist.T, scaled_rewards)
     updater(learning_rate=1e-5, optimization_direction=optimization_direction)
@@ -374,18 +381,18 @@ def test_genetic_updater_continuous():
     np.random.seed(0)
 
     # Assert population stats
-    updater = GeneticUpdater(env_continuous)
-    population = updater.initialize_population(
-        starting_point=np.array([10, 10]),
+    updater = GeneticUpdater(env_continuous, model_continuous)
+    updater.initialize_population(
+        starting_point=model_continuous.numpy(),
         population_init_strategy=PopulationInitStrategy.NORMAL,
     )
-    np.testing.assert_allclose(np.std(population, axis=0), np.ones(2), rtol=0.1)
+    np.testing.assert_allclose(np.std(updater.population, axis=0), np.ones(2), rtol=0.1)
     np.testing.assert_allclose(
-        np.mean(population, axis=0), np.array([10, 10]), rtol=0.1
+        np.mean(updater.population, axis=0), np.array([10, 10]), rtol=0.1
     )
 
     # Test call
-    _, rewards, _, _ = env_continuous.step(population)
+    _, rewards, _, _ = env_continuous.step(updater.population)
     updater(
         rewards=rewards,
         selection_operator=selection_operators.roulette_selection,
@@ -400,15 +407,17 @@ def test_genetic_updater_discrete():
     np.random.seed(0)
 
     # Assert population stats
-    updater = GeneticUpdater(env_discrete)
-    population = updater.initialize_population(
+    updater = GeneticUpdater(env_discrete, model_discrete)
+    updater.initialize_population(
         population_init_strategy=PopulationInitStrategy.UNIFORM,
     )
-    assert np.issubdtype(population.dtype, np.integer)
-    np.testing.assert_allclose(np.mean(population, axis=0), np.array([5]), rtol=0.2)
+    assert np.issubdtype(updater.population.dtype, np.integer)
+    np.testing.assert_allclose(
+        np.mean(updater.population, axis=0), np.array([5]), rtol=0.2
+    )
 
     # Test call
-    _, rewards, _, _ = env_discrete.step(population)
+    _, rewards, _, _ = env_discrete.step(updater.population)
     updater(
         rewards=rewards,
         selection_operator=selection_operators.roulette_selection,
