@@ -13,7 +13,7 @@ from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Observation, Tensor, Trajectories
 from anvilrl.common.utils import get_device
 from anvilrl.explorers.base_explorer import BaseExplorer
-from anvilrl.models.actor_critics import ActorCritic
+from anvilrl.models.actor_critics import ActorCritic, DeepIndividual, Individual
 from anvilrl.settings import (
     BufferSettings,
     CallbackSettings,
@@ -283,6 +283,7 @@ class BaseEvolutionAgent(ABC):
     def __init__(
         self,
         env: VectorEnv,
+        model: Union[Individual, DeepIndividual],
         updater_class: Type[BaseEvolutionUpdater],
         population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
         buffer_class: Type[BaseBuffer] = BaseBuffer,
@@ -293,7 +294,8 @@ class BaseEvolutionAgent(ABC):
         device: Union[str, T.device] = "auto",
     ) -> None:
         self.env = env
-        self.updater = updater_class(env=env)
+        self.model = model
+        self.updater = updater_class(env=env, model=model)
         self.population_settings = population_settings
         buffer_settings = buffer_settings.filter_none()
         self.buffer = buffer_class(env=env, device=device, **buffer_settings)
@@ -327,24 +329,29 @@ class BaseEvolutionAgent(ABC):
         device = get_device(device)
         self.logger.info(f"Using device {device}")
 
-    def step_env(self, num_steps: int = 1) -> None:
+    def step_env(self, observations: Observation, num_steps: int = 1) -> None:
         """
         Step the agent in the environment
 
         :param num_steps: how many steps to take
         """
         for _ in range(num_steps):
-            _, rewards, dones, _ = self.env.step(self.population)
+            actions = [model(observations) for model in self.population]
+            next_observations, rewards, dones, _ = self.env.step(actions)
             self.buffer.add_trajectory(
                 observation=self.env.observation_space.sample(),
-                action=self.population,
+                action=actions,
                 reward=rewards,
-                next_observation=self.env.observation_space.sample(),
+                next_observation=next_observations,
                 done=dones,
             )
             self.logger.add_reward(np.max(rewards))
             # Get indices of episodes that are done, especially useful for vectorized environments
             done_indices = np.where(dones)[0]
+
+            not_done_indices = np.where(~dones)[0]
+            observations[done_indices] = self.env.reset()[done_indices]
+            observations[not_done_indices] = next_observations[not_done_indices]
 
             # For vectorized environments, we keep track of individual episodes as they finish
             # also applies to single environments
@@ -367,6 +374,7 @@ class BaseEvolutionAgent(ABC):
                     self.done = True
                     break
             self.step += 1
+        return observations
 
     def dump_log(self) -> None:
         """
@@ -410,24 +418,30 @@ class BaseEvolutionAgent(ABC):
             )
         else:
             population_init_strategy = self.population_settings.strategy
+        # Needs to return an array of numpy model representations
+        # each individual represents a model
         self.population = self.updater.initialize_population(
             population_init_strategy=population_init_strategy,
             population_std=self.population_settings.population_std,
-            starting_point=self.population_settings.starting_point,
+            starting_point=self.model.numpy(),
         )
+        observations = self.env.reset()
         for _ in range(num_steps):
             # Step for number of steps specified
             if train_frequency[0] == FrequencyType.STEP:
-                self.step_env(num_steps=train_frequency[1])
+                observations = self.step_env(observations, num_steps=train_frequency[1])
             # Step for number of episodes specified
             elif train_frequency[0] == FrequencyType.EPISODE:
                 start_episode = self.episode
                 end_episode = start_episode + train_frequency[1]
                 while self.episode != end_episode:
-                    self.step_env()
+                    observations = self.step_env(observations)
                 if self.step >= num_steps:
                     break
 
             log = self._fit()
-            self.population = self.updater.population
+            self.population = [
+                model.set_state(state)
+                for model, state in zip(self.population, self.updater.population)
+            ]
             self.logger.add_train_log(log)
