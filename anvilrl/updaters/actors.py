@@ -1,13 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Optional, Type, Union
+from typing import Iterator, Type, Union
 
 import torch as T
+from torch.distributions import kl_divergence
 from torch.nn.parameter import Parameter
 
 from anvilrl.common.type_aliases import Tensor, UpdaterLog
-from anvilrl.common.utils import numpy_to_torch
 from anvilrl.models.actor_critics import Actor, ActorCritic
-from anvilrl.signal_processing.sample_estimators import sample_reverse_kl_divergence
 
 
 class BaseActorUpdater(ABC):
@@ -94,24 +93,21 @@ class PolicyGradient(BaseActorUpdater):
         """
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        distributions = model.get_action_distribution(observations)
-        old_log_probs = distributions.log_prob(actions).sum(dim=-1)
-        entropy = distributions.entropy().mean()
+        old_distributions = model.get_action_distribution(observations)
+        log_probs = old_distributions.log_prob(actions).sum(dim=-1)
+        entropy = old_distributions.entropy().mean()
 
-        batch_loss = -(advantages * old_log_probs).mean()
+        batch_loss = -(advantages * log_probs).mean()
         entropy_loss = -self.entropy_coeff * entropy
 
         loss = batch_loss + entropy_loss
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        distributions = model.get_action_distribution(observations)
-        new_log_probs = distributions.log_prob(actions).sum(dim=-1).detach()
+        new_distributions = model.get_action_distribution(observations)
         loss = loss.detach()
         entropy = entropy.detach()
-        kl = sample_reverse_kl_divergence(
-            old_log_probs.exp(), new_log_probs.exp()
-        ).mean()
+        kl = kl_divergence(new_distributions, old_distributions).mean()
 
         return UpdaterLog(
             loss=loss.item(), divergence=kl.item(), entropy=entropy.item()
@@ -164,9 +160,9 @@ class ProximalPolicyClip(BaseActorUpdater):
         """
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        distributions = model.get_action_distribution(observations)
-        log_probs = distributions.log_prob(actions).sum(dim=-1)
-        entropy = distributions.entropy().mean()
+        old_distributions = model.get_action_distribution(observations)
+        log_probs = old_distributions.log_prob(actions).sum(dim=-1)
+        entropy = old_distributions.entropy().mean()
 
         ratios = (log_probs - old_log_probs).exp()
 
@@ -182,13 +178,10 @@ class ProximalPolicyClip(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        distributions = model.get_action_distribution(observations)
-        new_log_probs = distributions.log_prob(actions).sum(dim=-1).detach()
+        new_distributions = model.get_action_distribution(observations)
         loss = loss.detach()
         entropy = entropy.detach()
-        kl = sample_reverse_kl_divergence(
-            old_log_probs.exp(), new_log_probs.exp()
-        ).mean()
+        kl = kl_divergence(new_distributions, old_distributions).mean()
 
         return UpdaterLog(
             loss=loss.item(), divergence=kl.item(), entropy=entropy.item()
