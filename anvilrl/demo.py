@@ -24,7 +24,6 @@ from anvilrl.settings import (
     BufferSettings,
     ExplorerSettings,
     LoggerSettings,
-    OptimizerSettings,
     PopulationInitializerSettings,
 )
 
