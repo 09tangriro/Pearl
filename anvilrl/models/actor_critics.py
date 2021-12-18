@@ -35,10 +35,10 @@ class Actor(T.nn.Module):
         device: Union[T.device, str] = "auto",
     ):
         super().__init__()
-        device = get_device(device)
-        self.encoder = encoder.to(device)
-        self.torso = torso.to(device)
-        self.head = head.to(device)
+        self.device = get_device(device)
+        self.encoder = encoder.to(self.device)
+        self.torso = torso.to(self.device)
+        self.head = head.to(self.device)
 
     def get_action_distribution(
         self, observations: Tensor
@@ -337,7 +337,6 @@ class Individual(T.nn.Module):
     def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
         super().__init__()
         self.space = space
-        self.model_ = None
         self.space_shape = get_space_shape(self.space)
         self.space_range = get_space_range(self.space)
         self.state = state if state is not None else space.sample()
@@ -352,7 +351,7 @@ class Individual(T.nn.Module):
         return self.state
 
 
-class DeepIndividual(T.nn.Module):
+class DeepIndividual(Actor):
     def __init__(
         self,
         encoder: T.nn.Module,
@@ -361,13 +360,11 @@ class DeepIndividual(T.nn.Module):
         space: Optional[Space] = None,
         device: Union[T.device, str] = "auto",
     ) -> None:
-        super().__init__()
-        self.device = get_device(device)
-        self.model = Actor(encoder, torso, head, device=device)
+        super().__init__(encoder=encoder, torso=torso, head=head, device=device)
         self.state_info = {}
         self.make_state_info()
         self.state = np.concatenate(
-            [torch_to_numpy(d.flatten()) for d in self.model.state_dict().values()]
+            [torch_to_numpy(d.flatten()) for d in self.state_dict().values()]
         )
         self.space = (
             space
@@ -380,22 +377,19 @@ class DeepIndividual(T.nn.Module):
     def make_state_info(self) -> None:
         self.state_info = {}
         start_idx = 0
-        for k, v in self.model.state_dict().items():
+        for k, v in self.state_dict().items():
             self.state_info[k] = (v.shape, (start_idx, start_idx + v.numel()))
             start_idx += v.numel()
 
     def set_state(self, state: np.ndarray) -> None:
         self.state = state
         state = numpy_to_torch(state, device=self.device)
-        self.model.load_state_dict(self.model.state_dict())
+        self.load_state_dict(self.state_dict())
         state_dict = {
             k: state[v[1][0] : v[1][1]].reshape(v[0])
             for k, v in zip(self.state_info.keys(), self.state_info.values())
         }
-        self.model.load_state_dict(state_dict)
+        self.load_state_dict(state_dict)
 
     def numpy(self) -> np.ndarray:
         return self.state
-
-    def forward(self, observation: Tensor) -> T.Tensor:
-        return self.model(observation)

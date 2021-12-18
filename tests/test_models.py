@@ -201,17 +201,27 @@ def test_deep_individual():
         torso=MLP([2]),
         head=DeterministicHead(input_shape=2, action_shape=1),
     )
-
     actual_state = model.numpy()
     expected_state = np.array([-0.00529397, 0.37932295, -0.58198076])
 
     np.testing.assert_array_almost_equal(actual_state, expected_state)
 
     expected_state = np.array([0.1, 0.2, 0.3])
-    expected_model = copy.deepcopy(model.model)
+    expected_model = copy.deepcopy(model)
     model.set_state(expected_state)
     actual_state = model.numpy()
-    assert model.model != expected_model
+    for head, expected_head in zip(
+        model.head.parameters(), expected_model.head.parameters()
+    ):
+        assert not T.any(T.eq(head.data, expected_head.data))
+    for torso, expected_torso in zip(
+        model.torso.parameters(), expected_model.torso.parameters()
+    ):
+        assert not T.any(T.eq(torso.data, expected_torso.data))
+    for encoder, expected_encoder in zip(
+        model.encoder.parameters(), expected_model.encoder.parameters()
+    ):
+        assert T.all(T.eq(encoder.data, expected_encoder.data))
     np.testing.assert_array_almost_equal(actual_state, expected_state)
 
 
