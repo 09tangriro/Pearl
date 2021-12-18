@@ -32,6 +32,7 @@ class GA(BaseEvolutionAgent):
     https://www.geeksforgeeks.org/genetic-algorithms/
 
     :param env: the gym vecotrized environment
+    :param model: the model representing an individual in the population
     :param updater_class: the class to use for the updater handling the actual update algorithm
     :param population_settings: the settings object for population initialization
     :param buffer_class: the buffer class for storing and sampling trajectories

@@ -23,6 +23,7 @@ class BaseEvolutionUpdater(ABC):
     The base random search updater class with pre-defined methods for derived classes
 
     :param env: the vector environment
+    :param model: the model representing an individual in the population
     """
 
     def __init__(
@@ -58,6 +59,7 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
     Updater for the Natural Evolutionary Strategy
 
     :param env: the vector environment
+    :param model: the model representing an individual in the population
     """
 
     def __init__(
@@ -143,6 +145,7 @@ class GeneticUpdater(BaseEvolutionUpdater):
     Updater for the Genetic Algorithm
 
     :param env: the vector environment
+    :param model: the model representing an individual in the population
     """
 
     def __init__(

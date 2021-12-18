@@ -334,6 +334,13 @@ class TwinActorCritic(ActorCritic):
 
 
 class Individual(T.nn.Module):
+    """
+    An individual in the population without a nerual network is not needed.
+
+    :param space: the individual space
+    :param state: optional starting state of the individual
+    """
+
     def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
         super().__init__()
         self.space = space
@@ -342,10 +349,12 @@ class Individual(T.nn.Module):
         self.state = state if state is not None else space.sample()
 
     def set_state(self, state: np.ndarray) -> "Individual":
+        """Set the state of the individual"""
         self.state = state
         return self
 
     def numpy(self) -> np.ndarray:
+        """Get the numpy representation of the individual"""
         return self.state
 
     def forward(self, observation: Tensor) -> np.ndarray:
@@ -353,6 +362,16 @@ class Individual(T.nn.Module):
 
 
 class DeepIndividual(Actor):
+    """
+    An individual in the population with a neural network structure.
+
+    :param encoder: the encoder network
+    :param torso: the torso network
+    :param head: the head network
+    :param space: the individual space
+    :param device: the device to use
+    """
+
     def __init__(
         self,
         encoder: T.nn.Module,
@@ -376,6 +395,7 @@ class DeepIndividual(Actor):
         self.space_range = get_space_range(self.space)
 
     def make_state_info(self) -> None:
+        """Make the state info dictionary"""
         self.state_info = {}
         start_idx = 0
         for k, v in self.state_dict().items():
@@ -383,6 +403,7 @@ class DeepIndividual(Actor):
             start_idx += v.numel()
 
     def set_state(self, state: np.ndarray) -> "DeepIndividual":
+        """Set the state of the individual"""
         self.state = state
         state = numpy_to_torch(state, device=self.device)
         self.load_state_dict(self.state_dict())
@@ -394,4 +415,5 @@ class DeepIndividual(Actor):
         return self
 
     def numpy(self) -> np.ndarray:
+        """Get the numpy representation of the individual"""
         return self.state
