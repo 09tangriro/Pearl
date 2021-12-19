@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import Optional, Type, Union
 
 import numpy as np
 import torch as T
@@ -41,6 +41,7 @@ class GA(BaseEvolutionAgent):
     :param device: device to run on, accepts "auto", "cuda" or "cpu" (needed to pass to buffer,
         can mostly be ignored)
     :param learning_rate: learning rate for the updater
+    :param seed: optional seed for the random number generator
     """
 
     def __init__(
@@ -60,6 +61,7 @@ class GA(BaseEvolutionAgent):
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[str, T.device] = "auto",
+        seed: Optional[int] = None,
     ) -> None:
         super().__init__(
             env=env,
@@ -70,6 +72,7 @@ class GA(BaseEvolutionAgent):
             buffer_settings=buffer_settings,
             logger_settings=logger_settings,
             device=device,
+            seed=seed,
         )
 
         self.selection_operator = selection_operator

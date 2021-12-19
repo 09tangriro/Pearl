@@ -136,6 +136,7 @@ def set_seed(seed: int, env: Env) -> None:
     """
     Set the seed for all the random generators.
     :param seed: The seed to set
+    :param env: The environment to set the seed for
     """
     random.seed(seed)
     T.manual_seed(seed)

@@ -49,6 +49,7 @@ class YourDeepAgent(BaseDeepAgent):
     :param callback_settings: settings for callbacks
     :param device: device to run on, accepts "auto", "cuda" or "cpu"
     :param render: whether to render the environment or not
+    :param seed: optional seed for the random number generator
     """
 
     def __init__(
@@ -64,6 +65,7 @@ class YourDeepAgent(BaseDeepAgent):
         callback_settings: Optional[List[CallbackSettings]] = None,
         device: Union[str, T.device] = "auto",
         render: bool = False,
+        seed: Optional[int] = None,
     ) -> None:
         super().__init__(
             env,
@@ -77,6 +79,7 @@ class YourDeepAgent(BaseDeepAgent):
             callback_settings=callback_settings,
             device=device,
             render=render,
+            seed=seed,
         )
 
     def _fit(
@@ -112,6 +115,7 @@ class YourSearchAgent(BaseEvolutionAgent):
     :param logger_settings: settings for the logger
     :param device: device to run on, accepts "auto", "cuda" or "cpu" (needed to pass to buffer,
         can mostly be ignored)
+    :param seed: optional seed for the random number generator
     """
 
     def __init__(
@@ -123,6 +127,7 @@ class YourSearchAgent(BaseEvolutionAgent):
         buffer_settings: BufferSettings = ...,
         logger_settings: LoggerSettings = ...,
         device: Union[str, T.device] = "auto",
+        seed: Optional[int] = None,
     ) -> None:
         super().__init__(
             env,
@@ -132,6 +137,7 @@ class YourSearchAgent(BaseEvolutionAgent):
             buffer_settings=buffer_settings,
             logger_settings=logger_settings,
             device=device,
+            seed=seed,
         )
 
     def _fit(self) -> Log:

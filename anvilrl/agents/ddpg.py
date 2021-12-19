@@ -76,6 +76,7 @@ class DDPG(BaseDeepAgent):
     :param logger_settings: settings for the logger
     :param device: device to run on, accepts "auto", "cuda" or "cpu"
     :param render: whether to render the environment or not
+    :param seed: optional seed for the random number generator
     """
 
     def __init__(
@@ -99,6 +100,7 @@ class DDPG(BaseDeepAgent):
         logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[T.device, str] = "auto",
         render: bool = False,
+        seed: Optional[int] = None,
     ) -> None:
         model = model or get_default_model(env)
         super().__init__(
@@ -113,6 +115,7 @@ class DDPG(BaseDeepAgent):
             callback_settings=callback_settings,
             device=device,
             render=render,
+            seed=seed,
         )
         self.actor_updater = actor_updater_class(
             optimizer_class=actor_optimizer_settings.optimizer_class,

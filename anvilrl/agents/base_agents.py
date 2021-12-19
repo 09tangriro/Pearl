@@ -11,7 +11,7 @@ from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.enumerations import FrequencyType, PopulationInitStrategy
 from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Observation, Tensor, Trajectories
-from anvilrl.common.utils import get_device
+from anvilrl.common.utils import get_device, set_seed
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import ActorCritic, DeepIndividual, Individual
 from anvilrl.settings import (
@@ -25,6 +25,30 @@ from anvilrl.updaters.evolution import BaseEvolutionUpdater
 
 
 class BaseDeepAgent(ABC):
+    """
+    The BaseDeepAgent class is given to handle all the stuff around the actual Deep RL algorithm.
+    It's recommended to inherit this class when implementing your own Deep RL agent. You'll need
+    to implement the _fit() abstract method and override the __init__ to add updaters along with
+    it's settings.
+
+    See the example deep agents already done for guidance and settings.py for settings objects
+    that can be used.
+
+    :param env: the gym-like environment to be used
+    :param model: the neural network model
+    :param action_explorer_class: the explorer class for random search at beginning of training and
+        adding noise to actions
+    :param explorer settings: settings for the action explorer
+    :param buffer_class: the buffer class for storing and sampling trajectories
+    :param buffer_settings: settings for the buffer
+    :param logger_settings: settings for the logger
+    :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
+    :param callback_settings: settings for callbacks
+    :param device: device to run on, accepts "auto", "cuda" or "cpu"
+    :param render: whether to render the environment or not
+    :param seed: optional seed for the random number generator
+    """
+
     def __init__(
         self,
         env: Env,
@@ -38,30 +62,8 @@ class BaseDeepAgent(ABC):
         callback_settings: Optional[List[CallbackSettings]] = None,
         device: Union[str, T.device] = "auto",
         render: bool = False,
+        seed: Optional[int] = None,
     ) -> None:
-        """
-        The BaseDeepAgent class is given to handle all the stuff around the actual Deep RL algorithm.
-        It's recommended to inherit this class when implementing your own Deep RL agent. You'll need
-        to implement the _fit() abstract method and override the __init__ to add updaters along with
-        it's settings.
-
-        See the example deep agents already done for guidance and settings.py for settings objects
-        that can be used.
-
-        :param env: the gym-like environment to be used
-        :param model: the neural network model
-        :param action_explorer_class: the explorer class for random search at beginning of training and
-            adding noise to actions
-        :param explorer settings: settings for the action explorer
-        :param buffer_class: the buffer class for storing and sampling trajectories
-        :param buffer_settings: settings for the buffer
-        :param logger_settings: settings for the logger
-        :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
-        :param callback_settings: settings for callbacks
-        :param device: device to run on, accepts "auto", "cuda" or "cpu"
-        :param render: whether to render the environment or not
-        """
-
         self.env = env
         self.model = model
         self.render = render
@@ -99,6 +101,10 @@ class BaseDeepAgent(ABC):
 
         device = get_device(device)
         self.logger.info(f"Using device {device}")
+
+        if seed is not None:
+            self.logger.info(f"Using seed {seed}")
+            set_seed(seed, self.env)
 
     def predict(self, observations: Union[Tensor, Dict[str, Tensor]]) -> T.Tensor:
         """Run the agent actor model"""
@@ -279,6 +285,7 @@ class BaseEvolutionAgent(ABC):
     :param callbacks_settings: settings for the callbacks
     :param device: device to run on, accepts "auto", "cuda" or "cpu" (needed to pass to buffer,
         can mostly be ignored)
+    :param seed: optional seed for the random number generator
     """
 
     def __init__(
@@ -293,6 +300,7 @@ class BaseEvolutionAgent(ABC):
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         callback_settings: Optional[List[CallbackSettings]] = None,
         device: Union[str, T.device] = "auto",
+        seed: Optional[int] = None,
     ) -> None:
         self.env = env
         self.model = model
@@ -329,6 +337,10 @@ class BaseEvolutionAgent(ABC):
 
         device = get_device(device)
         self.logger.info(f"Using device {device}")
+
+        if seed is not None:
+            self.logger.info(f"Using seed {seed}")
+            set_seed(seed, self.env)
 
     def step_env(self, observations: Observation, num_steps: int = 1) -> None:
         """
