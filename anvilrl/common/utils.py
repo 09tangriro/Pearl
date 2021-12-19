@@ -1,9 +1,10 @@
+import random
 from dataclasses import asdict
 from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import torch as T
-from gym import spaces
+from gym import Env, spaces
 
 
 def get_device(device: Union[T.device, str]) -> T.device:
@@ -129,3 +130,19 @@ def extend_shape(original_shape: Tuple, new_size: int, axis: int = 0) -> Tuple:
 def filter_dataclass_by_none(class_object: Any) -> Dict[str, Any]:
     dict_class = asdict(class_object)
     return {k: v for k, v in dict_class.items() if v is not None}
+
+
+def set_seed(seed: int, env: Env) -> None:
+    """
+    Set the seed for all the random generators.
+    :param seed: The seed to set
+    """
+    random.seed(seed)
+    T.manual_seed(seed)
+    T.cuda.manual_seed(seed)
+    np.random.seed(seed)
+    T.backends.cudnn.deterministic = True
+    T.backends.cudnn.benchmark = False
+    env.seed(seed)
+    env.action_space.seed(seed)
+    env.observation_space.seed(seed)

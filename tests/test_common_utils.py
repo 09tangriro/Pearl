@@ -1,3 +1,4 @@
+import gym
 import numpy as np
 import pytest
 import torch as T
@@ -9,6 +10,7 @@ from anvilrl.common.utils import (
     get_space_range,
     get_space_shape,
     numpy_to_torch,
+    set_seed,
     torch_to_numpy,
 )
 from anvilrl.settings import ExplorerSettings
@@ -105,3 +107,35 @@ def test_filter_dataclass_by_none():
 
     actual_output = dataclass_example.filter_none()
     assert actual_output == expected_output
+
+
+def test_set_seed():
+    env = gym.make("CartPole-v0")
+    seed = 0
+
+    # Test numpy random seed
+    set_seed(seed, env)
+    expected_arr = np.random.rand()
+    set_seed(seed, env)
+    actual_arr = np.random.rand()
+    np.testing.assert_array_equal(actual_arr, expected_arr)
+
+    # Test torch random seed
+    set_seed(seed, env)
+    expected_arr = T.rand(2, 2)
+    set_seed(seed, env)
+    actual_arr = T.rand(2, 2)
+    T.testing.assert_allclose(actual_arr, expected_arr)
+
+    # Test gym random seed
+    env = gym.make("CartPole-v0")
+    set_seed(seed, env)
+    expected_arr = env.action_space.sample()
+    set_seed(seed, env)
+    actual_arr = env.action_space.sample()
+    np.testing.assert_array_equal(actual_arr, expected_arr)
+    set_seed(seed, env)
+    expected_arr = env.observation_space.sample()
+    set_seed(seed, env)
+    actual_arr = env.observation_space.sample()
+    np.testing.assert_array_equal(actual_arr, expected_arr)
