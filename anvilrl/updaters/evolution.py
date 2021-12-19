@@ -161,7 +161,7 @@ class GeneticUpdater(BaseEvolutionUpdater):
         population_init_strategy: PopulationInitStrategy = PopulationInitStrategy.UNIFORM,
         population_std: Union[float, np.ndarray] = 1,
         starting_point: Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> List[Union[Individual, DeepIndividual]]:
         if population_init_strategy == PopulationInitStrategy.UNIFORM:
             population = np.random.uniform(
                 self.model.space_range[0],
