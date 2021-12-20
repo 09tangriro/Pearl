@@ -363,7 +363,7 @@ class BaseEvolutionAgent(ABC):
                 next_observation=next_observations,
                 done=dones,
             )
-            self.logger.add_reward(np.max(rewards))
+            self.logger.add_reward(rewards)
             # Get indices of episodes that are done
             done_indices = np.where(dones)[0]
             not_done_indices = np.where(~dones)[0]

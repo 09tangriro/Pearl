@@ -78,7 +78,8 @@ class Logger(object):
         if isinstance(reward, (float, np.floating)):
             self.rewards.append(reward)
         elif isinstance(reward, np.ndarray):
-            self.rewards.append(reward[np.where(self.episode_dones == False)[0]])
+            reward[np.where(self.episode_dones == True)[0]] = 0
+            self.rewards.append(reward.max())
         else:
             raise TypeError(
                 f"Reward must be a float or numpy array, got {type(reward)}"
