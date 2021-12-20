@@ -98,7 +98,6 @@ class GA(BaseEvolutionAgent):
             mutation_settings=self.mutation_settings,
             elitism=self.elitism,
         )
-        self.logger.info(f"POPULATION MEAN={np.mean(self.updater.population, axis=0)}")
         self.buffer.reset()
 
         return Log(divergence=log.divergence, entropy=log.entropy)
