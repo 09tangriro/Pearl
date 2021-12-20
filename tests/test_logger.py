@@ -54,4 +54,4 @@ def test_add_reward():
     reward = np.array([1, 1])
     vec_logger.add_reward(reward)
     shutil.rmtree(path)
-    np.testing.assert_array_almost_equal([reward], vec_logger.rewards)
+    np.testing.assert_array_almost_equal([1], vec_logger.rewards)
