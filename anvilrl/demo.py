@@ -20,7 +20,7 @@ from anvilrl.models.actor_critics import (
     Individual,
 )
 from anvilrl.models.encoders import DictEncoder, IdentityEncoder
-from anvilrl.models.heads import CategoricalHead, DeterministicHead, DiscreteQHead
+from anvilrl.models.heads import DiagGaussianHead, DiscreteQHead
 from anvilrl.models.torsos import MLP
 from anvilrl.settings import (
     BufferSettings,
@@ -66,7 +66,10 @@ def dqn_parallel_demo():
         explorer_settings=ExplorerSettings(start_steps=1000),
     )
     agent.fit(
-        num_steps=50000, batch_size=32, critic_epochs=16, train_frequency=("episode", 1)
+        num_steps=50000,
+        batch_size=320,
+        critic_epochs=16,
+        train_frequency=("episode", 1),
     )
 
 
@@ -115,19 +118,16 @@ def es_demo():
             tensorboard_log_path="runs/ES-demo", log_frequency=("step", 1)
         ),
     )
-    agent.fit(num_steps=15)
+    agent.fit(num_steps=20)
 
 
 def es_deep_demo():
     POPULATION_SIZE = 100
     env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=False)
-    action_size = env.single_action_space.shape
     observation_shape = get_space_shape(env.single_observation_space)
     encoder = IdentityEncoder()
-    torso = MLP(layer_sizes=[observation_shape[0], 64, 64], activation_fn=T.nn.Tanh)
-    head = DeterministicHead(
-        input_shape=64, action_shape=action_size, activation_fn=T.nn.Tanh
-    )
+    torso = MLP(layer_sizes=[observation_shape[0], 64, 32], activation_fn=T.nn.ReLU)
+    head = DiagGaussianHead(input_shape=32, action_size=1)
     model = DeepIndividual(encoder=encoder, torso=torso, head=head)
 
     agent = ES(
@@ -135,10 +135,10 @@ def es_deep_demo():
         model=model,
         learning_rate=1,
         logger_settings=LoggerSettings(
-            tensorboard_log_path="runs/DeepES-demo", log_frequency=("step", 1)
+            tensorboard_log_path="runs/DeepES-demo", log_frequency=("episode", 1)
         ),
     )
-    agent.fit(num_steps=1000, train_frequency=("step", 1))
+    agent.fit(num_steps=50000, train_frequency=("step", 1))
 
 
 def ga_demo():
