@@ -106,4 +106,4 @@ class GA(BaseEvolutionAgent):
             entropies[i] = log.entropy
         self.buffer.reset()
 
-        return Log(divergence=divergences.mean(), entropy=entropies.mean())
+        return Log(divergence=divergences.sum(), entropy=entropies.mean())

@@ -135,6 +135,8 @@ class A2C(BaseDeepAgent):
     def _fit(self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1):
         critic_losses = np.zeros(shape=(critic_epochs))
         actor_losses = np.zeros(shape=(actor_epochs))
+        divergences = np.zeros(shape=(actor_epochs))
+        entropies = np.zeros(shape=(actor_epochs))
 
         # Sample rollout and compute advantages/returns
         trajectories = self.buffer.sample(batch_size, dtype="torch")
@@ -159,6 +161,8 @@ class A2C(BaseDeepAgent):
                 advantages=advantages,
             )
             actor_losses[i] = actor_log.loss
+            divergences[i] = actor_log.divergence
+            entropies[i] = actor_log.entropy
 
         # Train critic for critic_epochs
         for i in range(critic_epochs):
@@ -172,8 +176,8 @@ class A2C(BaseDeepAgent):
         self.buffer.reset()
 
         return Log(
-            actor_loss=np.mean(actor_losses),
-            critic_loss=np.mean(critic_losses),
-            divergence=actor_log.divergence,
-            entropy=actor_log.entropy,
+            actor_loss=actor_losses.mean(),
+            critic_loss=critic_losses.mean(),
+            divergence=divergences.sum(),
+            entropy=entropies.mean(),
         )
