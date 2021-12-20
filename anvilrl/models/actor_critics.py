@@ -417,3 +417,7 @@ class DeepIndividual(Actor):
     def numpy(self) -> np.ndarray:
         """Get the numpy representation of the individual"""
         return self.state
+
+    def forward(self, observation: Tensor) -> np.ndarray:
+        out = super().forward(observation)
+        return torch_to_numpy(out)

@@ -349,7 +349,10 @@ class BaseEvolutionAgent(ABC):
         :param num_steps: how many steps to take
         """
         for _ in range(num_steps):
-            actions = [model(observations) for model in self.population]
+            actions = [
+                model(observation)
+                for observation, model in zip(observations, self.population)
+            ]
             next_observations, rewards, dones, _ = self.env.step(actions)
             self.buffer.add_trajectory(
                 observation=self.env.observation_space.sample(),
