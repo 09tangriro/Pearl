@@ -66,7 +66,10 @@ class ES(BaseEvolutionAgent):
 
         self.learning_rate = learning_rate
 
-    def _fit(self) -> Log:
+    def _fit(self, epochs: int = 1) -> Log:
+        divergences = np.zeros(epochs)
+        entropies = np.zeros(epochs)
+
         trajectories = self.buffer.all()
         rewards = trajectories.rewards.squeeze()
         if rewards.ndim > 1:
@@ -76,10 +79,13 @@ class ES(BaseEvolutionAgent):
             np.mean(self.population_settings.population_std) * self.env.num_envs
         )
         optimization_direction = np.dot(self.updater.normal_dist.T, scaled_rewards)
-        log = self.updater(
-            learning_rate=learning_rate,
-            optimization_direction=optimization_direction,
-        )
+        for i in range(epochs):
+            log = self.updater(
+                learning_rate=learning_rate,
+                optimization_direction=optimization_direction,
+            )
+            divergences[i] = log.divergence
+            entropies[i] = log.entropy
         self.buffer.reset()
 
-        return Log(divergence=log.divergence, entropy=log.entropy)
+        return Log(divergence=divergences.mean(), entropy=entropies.mean())

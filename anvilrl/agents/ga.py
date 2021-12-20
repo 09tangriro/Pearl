@@ -83,21 +83,27 @@ class GA(BaseEvolutionAgent):
         self.mutation_settings = filter_dataclass_by_none(mutation_settings)
         self.elitism = elitism
 
-    def _fit(self) -> Log:
+    def _fit(self, epochs: int = 1) -> Log:
+        divergences = np.zeros(epochs)
+        entropies = np.zeros(epochs)
+
         trajectories = self.buffer.all()
         rewards = trajectories.rewards.squeeze()
         if rewards.ndim > 1:
             rewards = rewards.sum(dim=0)
-        log = self.updater(
-            rewards=rewards,
-            selection_operator=self.selection_operator,
-            crossover_operator=self.crossover_operator,
-            mutation_operator=self.mutation_operator,
-            selection_settings=self.selection_settings,
-            crossover_settings=self.crossover_settings,
-            mutation_settings=self.mutation_settings,
-            elitism=self.elitism,
-        )
+        for i in range(epochs):
+            log = self.updater(
+                rewards=rewards,
+                selection_operator=self.selection_operator,
+                crossover_operator=self.crossover_operator,
+                mutation_operator=self.mutation_operator,
+                selection_settings=self.selection_settings,
+                crossover_settings=self.crossover_settings,
+                mutation_settings=self.mutation_settings,
+                elitism=self.elitism,
+            )
+            divergences[i] = log.divergence
+            entropies[i] = log.entropy
         self.buffer.reset()
 
-        return Log(divergence=log.divergence, entropy=log.entropy)
+        return Log(divergence=divergences.mean(), entropy=entropies.mean())

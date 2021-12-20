@@ -398,22 +398,25 @@ class BaseEvolutionAgent(ABC):
         self.logger.reset_log()
 
     @abstractmethod
-    def _fit(self) -> Log:
+    def _fit(self, epochs: int = 1) -> Log:
         """
         Update the agent
 
+        :param epochs: the number of epochs to update the agent for
         :return: a Log object with training diagnostic info
         """
 
     def fit(
         self,
         num_steps: int,
+        epochs: int = 1,
         train_frequency: Tuple[str, int] = ("step", 1),
     ):
         """
         Train the agent in the environment
 
         :param num_steps: total number of environment steps to train over
+        :param epochs: the number of epochs to update the agent for
         :param train_frequency: the number of steps or episodes to run before running a training step.
             To run every n episodes, use `("episode", n)`.
             To run every n steps, use `("step", n)`.
@@ -453,7 +456,7 @@ class BaseEvolutionAgent(ABC):
                 if self.step >= num_steps:
                     break
 
-            log = self._fit()
+            log = self._fit(epochs=epochs)
             self.population = [
                 model.set_state(state)
                 for model, state in zip(self.population, self.updater.population)
