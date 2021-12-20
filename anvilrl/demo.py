@@ -11,14 +11,16 @@ from anvilrl.agents.dqn import DQN
 from anvilrl.agents.es import ES
 from anvilrl.agents.ga import GA
 from anvilrl.buffers import HERBuffer
+from anvilrl.common.utils import get_space_shape
 from anvilrl.models.actor_critics import (
     ActorCriticWithCriticTarget,
     Critic,
+    DeepIndividual,
     EpsilonGreedyActor,
     Individual,
 )
-from anvilrl.models.encoders import DictEncoder
-from anvilrl.models.heads import DiscreteQHead
+from anvilrl.models.encoders import DictEncoder, IdentityEncoder
+from anvilrl.models.heads import CategoricalHead, DeterministicHead, DiscreteQHead
 from anvilrl.models.torsos import MLP
 from anvilrl.settings import (
     BufferSettings,
@@ -35,6 +37,31 @@ def dqn_demo():
         model=None,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/DQN-demo", verbose=True
+        ),
+        explorer_settings=ExplorerSettings(start_steps=1000),
+    )
+    agent.fit(
+        num_steps=50000, batch_size=32, critic_epochs=16, train_frequency=("episode", 1)
+    )
+
+
+def dqn_parallel_demo():
+    env = gym.vector.make("CartPole-v0", 10, asynchronous=False)
+    encoder = IdentityEncoder()
+    torso = MLP(layer_sizes=[4, 64, 32], activation_fn=T.nn.ReLU)
+    head = DiscreteQHead(input_shape=32, output_shape=2)
+
+    actor = EpsilonGreedyActor(
+        critic_encoder=encoder, critic_torso=torso, critic_head=head
+    )
+    critic = Critic(encoder=encoder, torso=torso, head=head)
+    model = ActorCriticWithCriticTarget(actor=actor, critic=critic)
+
+    agent = DQN(
+        env=env,
+        model=model,
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/DQN-parallel-demo", verbose=True
         ),
         explorer_settings=ExplorerSettings(start_steps=1000),
     )
@@ -89,6 +116,29 @@ def es_demo():
         ),
     )
     agent.fit(num_steps=15)
+
+
+def es_deep_demo():
+    POPULATION_SIZE = 100
+    env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=False)
+    action_size = env.single_action_space.shape
+    observation_shape = get_space_shape(env.single_observation_space)
+    encoder = IdentityEncoder()
+    torso = MLP(layer_sizes=[observation_shape[0], 64, 64], activation_fn=T.nn.Tanh)
+    head = DeterministicHead(
+        input_shape=64, action_shape=action_size, activation_fn=T.nn.Tanh
+    )
+    model = DeepIndividual(encoder=encoder, torso=torso, head=head)
+
+    agent = ES(
+        env=env,
+        model=model,
+        learning_rate=1,
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/DeepES-demo", log_frequency=("step", 1)
+        ),
+    )
+    agent.fit(num_steps=1000, train_frequency=("step", 1))
 
 
 def ga_demo():
@@ -419,10 +469,14 @@ if __name__ == "__main__":
 
     if kwargs.agent.lower() == "dqn":
         dqn_demo()
+    elif kwargs.agent.lower() == "dqn-parallel":
+        dqn_parallel_demo()
     elif kwargs.agent.lower() == "ddpg":
         ddpg_demo()
     elif kwargs.agent.lower() == "es":
         es_demo()
+    elif kwargs.agent.lower() == "es-deep":
+        es_deep_demo()
     elif kwargs.agent.lower() == "ga":
         ga_demo()
     elif kwargs.agent.lower() == "her":
