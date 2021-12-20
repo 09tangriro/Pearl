@@ -133,12 +133,12 @@ def es_deep_demo():
     agent = ES(
         env=env,
         model=model,
-        learning_rate=1,
+        learning_rate=0.1,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/DeepES-demo", log_frequency=("episode", 1)
         ),
     )
-    agent.fit(num_steps=50000, train_frequency=("step", 1))
+    agent.fit(num_steps=50000, epochs=8, train_frequency=("step", 50))
 
 
 def ga_demo():
