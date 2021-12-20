@@ -55,3 +55,14 @@ def test_add_reward():
     vec_logger.add_reward(reward)
     shutil.rmtree(path)
     np.testing.assert_array_almost_equal([1], vec_logger.rewards)
+
+
+def test_episode_done():
+    logger = Logger(tensorboard_log_path=path)
+    done = False
+    flag = logger.check_episode_done(done)
+    assert not flag
+
+    done = True
+    flag = logger.check_episode_done(done)
+    assert flag

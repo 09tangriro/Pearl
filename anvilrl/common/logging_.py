@@ -84,6 +84,15 @@ class Logger(object):
                 f"Reward must be a float or numpy array, got {type(reward)}"
             )
 
+    def check_episode_done(self, done: np.ndarray) -> bool:
+        """
+        Check if all the environments have completed an episode
+
+        :param done: done array from the environment
+        """
+        self.episode_dones = np.logical_or(self.episode_dones, done)
+        return np.all(self.episode_dones)
+
     def _make_episode_log(self) -> Log:
         """Make an episode log out of the collected stats"""
         episode_log = Log(
