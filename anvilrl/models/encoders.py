@@ -6,7 +6,7 @@ from gym import spaces
 
 from anvilrl.common.type_aliases import Tensor
 from anvilrl.common.utils import torch_to_numpy
-from anvilrl.models.utils import concat_obs_actions, is_image_space
+from anvilrl.models.utils import concat_obs_actions
 
 
 class IdentityEncoder(T.nn.Module):
@@ -74,9 +74,6 @@ class CNNEncoder(T.nn.Module):
         super().__init__()
         # We assume CxHxW images (channels first)
         # Re-ordering will be done by pre-preprocessing or wrapper
-        assert is_image_space(observation_space, check_channels=False), (
-            "You should use NatureCNN " f"only with images not with {observation_space}"
-        )
         n_input_channels = observation_space.shape[0]
         self.cnn = T.nn.Sequential(
             T.nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),

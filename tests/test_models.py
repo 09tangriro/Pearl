@@ -15,6 +15,7 @@ from anvilrl.models import (
 )
 from anvilrl.models.actor_critics import DeepIndividual, Individual
 from anvilrl.models.encoders import (
+    CNNEncoder,
     DictEncoder,
     FlattenEncoder,
     IdentityEncoder,
@@ -39,13 +40,9 @@ def test_mlp():
     assert output.shape == (1,)
 
 
-@pytest.mark.parametrize(
-    "encoder_class", [IdentityEncoder, FlattenEncoder, MLPEncoder, DictEncoder]
-)
+@pytest.mark.parametrize("encoder_class", [IdentityEncoder, FlattenEncoder, MLPEncoder])
 def test_encoder(encoder_class):
     input = T.Tensor([[2, 2], [1, 1]])
-    if encoder_class == DictEncoder:
-        input = {"observation": T.Tensor([[2, 2], [1, 1]])}
     if encoder_class == MLPEncoder:
         encoder = encoder_class(input_size=2, output_size=2)
     elif encoder_class == DictEncoder:
@@ -55,10 +52,30 @@ def test_encoder(encoder_class):
     output = encoder(input)
     if isinstance(encoder, (IdentityEncoder)):
         assert T.equal(input, output)
-    elif encoder_class == DictEncoder:
-        assert T.equal(input["observation"], output)
-    elif isinstance(encoder, FlattenEncoder):
+    else:
         assert len(output.shape) == 2
+
+
+def test_dict_encoder():
+    input = {
+        "observation": T.Tensor([[2, 2], [1, 1]]),
+        "action": T.Tensor([[1, 1], [2, 2]]),
+    }
+    encoder = DictEncoder(labels=["observation", "action"])
+    actual_output = encoder(input)
+    expected_output = T.cat([input["observation"], input["action"]], dim=1)
+    assert T.equal(expected_output, actual_output)
+
+
+def test_cnn_encoder():
+    T.manual_seed(0)
+    space = gym.spaces.Box(low=0, high=255, shape=(1, 64, 64))
+    encoder = CNNEncoder(observation_space=space)
+
+    input = T.normal(0, 1, (1, 1, 64, 64))
+    output = encoder(input)
+
+    assert output.shape == (1, 512)
 
 
 @pytest.mark.parametrize("head_class", [ValueHead, ContinuousQHead, DiscreteQHead])
