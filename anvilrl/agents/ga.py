@@ -85,8 +85,11 @@ class GA(BaseEvolutionAgent):
 
     def _fit(self) -> Log:
         trajectories = self.buffer.all()
+        rewards = trajectories.rewards.squeeze()
+        if rewards.ndim > 1:
+            rewards = rewards.sum(dim=0)
         log = self.updater(
-            rewards=trajectories.rewards.flatten(),
+            rewards=rewards,
             selection_operator=self.selection_operator,
             crossover_operator=self.crossover_operator,
             mutation_operator=self.mutation_operator,

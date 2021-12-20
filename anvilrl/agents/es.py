@@ -68,7 +68,10 @@ class ES(BaseEvolutionAgent):
 
     def _fit(self) -> Log:
         trajectories = self.buffer.all()
-        scaled_rewards = scale(trajectories.rewards.squeeze())
+        rewards = trajectories.rewards.squeeze()
+        if rewards.ndim > 1:
+            rewards = rewards.sum(axis=0)
+        scaled_rewards = scale(rewards)
         learning_rate = self.learning_rate / (
             np.mean(self.population_settings.population_std) * self.env.num_envs
         )

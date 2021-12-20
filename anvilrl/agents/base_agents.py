@@ -161,8 +161,9 @@ class BaseDeepAgent(ABC):
 
             if isinstance(self.env, VectorEnv):
                 not_done_indices = np.where(~done)[0]
-                observation[done_indices] = self.env.reset()[done_indices]
                 observation[not_done_indices] = next_observation[not_done_indices]
+                if not done_indices.size == 0:
+                    observation[done_indices] = self.env.reset()[done_indices]
             else:
                 observation = self.env.reset() if done else next_observation
 
@@ -346,6 +347,7 @@ class BaseEvolutionAgent(ABC):
         """
         Step the agent in the environment
 
+        :param observations: the starting observations to step the agent with
         :param num_steps: how many steps to take
         """
         for _ in range(num_steps):
@@ -362,15 +364,14 @@ class BaseEvolutionAgent(ABC):
                 done=dones,
             )
             self.logger.add_reward(np.max(rewards))
-            # Get indices of episodes that are done, especially useful for vectorized environments
+            # Get indices of episodes that are done
             done_indices = np.where(dones)[0]
-
             not_done_indices = np.where(~dones)[0]
-            observations[done_indices] = self.env.reset()[done_indices]
             observations[not_done_indices] = next_observations[not_done_indices]
+            if not done_indices.size == 0:
+                observations[done_indices] = self.env.reset()[done_indices]
 
-            # For vectorized environments, we keep track of individual episodes as they finish
-            # also applies to single environments
+            # Keep track of individual episodes as they finish
             self.logger.episode_dones[done_indices] = True
             # If all environment episodes are done, check if we should dump the log
             if all(self.logger.episode_dones):
