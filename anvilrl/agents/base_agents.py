@@ -165,13 +165,14 @@ class BaseDeepAgent(ABC):
                 if not done_indices.size == 0:
                     observation[done_indices] = self.env.reset()[done_indices]
             else:
-                observation = self.env.reset() if done else next_observation
+                observation = next_observation
 
             # For vectorized environments, we keep track of individual episodes as they finish
             # also applies to single environments
             self.logger.episode_dones[done_indices] = True
-            # If all environment episodes are done, check if we should dump the log
+            # If all environment episodes are done, reset and check if we should dump the log
             if all(self.logger.episode_dones):
+                observation = self.env.reset()
                 if self.log_frequency[0] == FrequencyType.EPISODE:
                     if self.episode % self.log_frequency[1] == 0:
                         self.dump_log()
@@ -373,8 +374,9 @@ class BaseEvolutionAgent(ABC):
 
             # Keep track of individual episodes as they finish
             self.logger.episode_dones[done_indices] = True
-            # If all environment episodes are done, check if we should dump the log
+            # If all environment episodes are done, reset and check if we should dump the log
             if all(self.logger.episode_dones):
+                observations = self.env.reset()
                 if self.log_frequency[0] == FrequencyType.EPISODE:
                     if self.episode % self.log_frequency[1] == 0:
                         self.dump_log()
