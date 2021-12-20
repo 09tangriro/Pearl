@@ -357,7 +357,7 @@ class BaseEvolutionAgent(ABC):
             ]
             next_observations, rewards, dones, _ = self.env.step(actions)
             self.buffer.add_trajectory(
-                observation=self.env.observation_space.sample(),
+                observation=observations,
                 action=actions,
                 reward=rewards,
                 next_observation=next_observations,
