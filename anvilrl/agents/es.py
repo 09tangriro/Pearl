@@ -80,7 +80,6 @@ class ES(BaseEvolutionAgent):
             learning_rate=learning_rate,
             optimization_direction=optimization_direction,
         )
-        self.logger.info(f"POPULATION MEAN={self.updater.mean}")
         self.buffer.reset()
 
         return Log(divergence=log.divergence, entropy=log.entropy)
