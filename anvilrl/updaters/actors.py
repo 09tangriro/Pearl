@@ -122,7 +122,6 @@ class ProximalPolicyClip(BaseActorUpdater):
     :param optimizer_class: the type of optimizer to use, defaults to Adam
     :param lr: the learning rate for the optimizer algorithm
     :param ratio_clip: the clipping factor for the clipped loss
-    :param max_kl: the maximum kl divergence between old and new policies in an update step
     :param entropy_coeff: entropy regulation coefficient
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
@@ -132,13 +131,11 @@ class ProximalPolicyClip(BaseActorUpdater):
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
         lr: float = 1e-3,
         ratio_clip: float = 0.2,
-        max_kl: float = 0.015,
         entropy_coeff: float = 0.01,
         max_grad: float = 0,
     ) -> None:
         super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
         self.ratio_clip = ratio_clip
-        self.max_kl = max_kl
         self.entropy_coeff = entropy_coeff
 
     def __call__(
