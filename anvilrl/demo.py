@@ -5,11 +5,7 @@ import gym
 import numpy as np
 import torch as T
 
-from anvilrl.agents.a2c import A2C
-from anvilrl.agents.ddpg import DDPG
-from anvilrl.agents.dqn import DQN
-from anvilrl.agents.es import ES
-from anvilrl.agents.ga import GA
+from anvilrl.agents import A2C, DDPG, DQN, ES, GA, PPO
 from anvilrl.buffers import HERBuffer
 from anvilrl.common.utils import get_space_shape
 from anvilrl.models.actor_critics import (
@@ -455,9 +451,32 @@ def a2c_demo():
     )
 
     agent.fit(
-        num_steps=100000,
+        num_steps=200000,
         batch_size=batch_size,
         critic_epochs=1,
+        train_frequency=("step", batch_size),
+    )
+
+
+def ppo_demo():
+    env = gym.make("CartPole-v0")
+    batch_size = 5
+    epochs = 1
+
+    agent = PPO(
+        env=env,
+        buffer_settings=BufferSettings(buffer_size=batch_size),
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/PPO-demo", verbose=True
+        ),
+        entropy_coefficient=0,
+    )
+
+    agent.fit(
+        num_steps=200000,
+        batch_size=batch_size,
+        actor_epochs=epochs,
+        critic_epochs=epochs,
         train_frequency=("step", batch_size),
     )
 
@@ -483,5 +502,7 @@ if __name__ == "__main__":
         her_demo()
     elif kwargs.agent.lower() == "a2c":
         a2c_demo()
+    elif kwargs.agent.lower() == "ppo":
+        ppo_demo()
     else:
         raise ValueError(f"Agent {kwargs.agent} not found")
