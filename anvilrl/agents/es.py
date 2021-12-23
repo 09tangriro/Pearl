@@ -6,7 +6,7 @@ import torch as T
 from gym.vector.vector_env import VectorEnv
 from sklearn.preprocessing import scale
 
-from anvilrl.agents.base_agents import BaseEvolutionAgent
+from anvilrl.agents.base_agents import BaseEvolutionaryAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.common.type_aliases import Log
@@ -21,7 +21,7 @@ from anvilrl.updaters.evolution import BaseEvolutionUpdater, NoisyGradientAscent
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-class ES(BaseEvolutionAgent):
+class ES(BaseEvolutionaryAgent):
     """
     Natural Evolutionary Strategy
     https://towardsdatascience.com/evolutionary-strategy-a-theoretical-implementation-guide-9176217e7ed8

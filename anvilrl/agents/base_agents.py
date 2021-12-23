@@ -24,9 +24,9 @@ from anvilrl.settings import (
 from anvilrl.updaters.evolution import BaseEvolutionUpdater
 
 
-class BaseDeepAgent(ABC):
+class BaseRLAgent(ABC):
     """
-    The BaseDeepAgent class is given to handle all the stuff around the actual Deep RL algorithm.
+    The BaseRLAgent class is given to handle all the stuff around the actual Deep RL algorithm.
     It's recommended to inherit this class when implementing your own Deep RL agent. You'll need
     to implement the _fit() abstract method and override the __init__ to add updaters along with
     it's settings.
@@ -261,9 +261,9 @@ class BaseDeepAgent(ABC):
             self.logger.add_train_log(train_log)
 
 
-class BaseEvolutionAgent(ABC):
+class BaseEvolutionaryAgent(ABC):
     """
-    The BaseEvolutionAgent class is given to handle all the stuff around the actual random search
+    The BaseEvolutionaryAgent class is given to handle all the stuff around the actual random search
     algorithm. It's recommended to inherit this class when implementing your own random search
     agent. You'll need to implement the _fit() abstract method and override the __init__ to add
     any extra hyperparameters.

@@ -4,7 +4,7 @@ import torch as T
 from gym import Env
 from gym.vector import VectorEnv
 
-from anvilrl.agents.base_agents import BaseDeepAgent, BaseEvolutionAgent
+from anvilrl.agents.base_agents import BaseEvolutionaryAgent, BaseRLAgent
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
@@ -20,7 +20,7 @@ from anvilrl.settings import (
 from anvilrl.updaters.evolution import BaseEvolutionUpdater
 
 
-class YourDeepAgent(BaseDeepAgent):
+class YourRLAgent(BaseRLAgent):
     """
     A template for a new deep RL agent :)
 
@@ -91,7 +91,7 @@ class YourDeepAgent(BaseDeepAgent):
         """
 
 
-class YourSearchAgent(BaseEvolutionAgent):
+class YourSearchAgent(BaseEvolutionaryAgent):
     """
     A template for a new search agent.
 

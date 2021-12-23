@@ -4,7 +4,7 @@ import numpy as np
 import torch as T
 from gym.vector.vector_env import VectorEnv
 
-from anvilrl.agents.base_agents import BaseEvolutionAgent
+from anvilrl.agents.base_agents import BaseEvolutionaryAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.common.type_aliases import Log
@@ -26,7 +26,7 @@ from anvilrl.signal_processing import (
 from anvilrl.updaters.evolution import BaseEvolutionUpdater, GeneticUpdater
 
 
-class GA(BaseEvolutionAgent):
+class GA(BaseEvolutionaryAgent):
     """
     Genetic Algorithm
     https://www.geeksforgeeks.org/genetic-algorithms/

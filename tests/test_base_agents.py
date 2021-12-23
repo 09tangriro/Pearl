@@ -4,7 +4,7 @@ import gym
 import numpy as np
 import torch as T
 
-from anvilrl.agents.base_agents import BaseDeepAgent, BaseEvolutionAgent
+from anvilrl.agents.base_agents import BaseEvolutionaryAgent, BaseRLAgent
 from anvilrl.buffers import ReplayBuffer
 from anvilrl.common.enumerations import PopulationInitStrategy
 from anvilrl.common.type_aliases import Log
@@ -17,12 +17,12 @@ from anvilrl.settings import ExplorerSettings, LoggerSettings
 from anvilrl.updaters.evolution import NoisyGradientAscent
 
 
-class MockDeepAgent(BaseDeepAgent):
+class MockRLAgent(BaseRLAgent):
     def _fit(self, batch_size, actor_epochs=1, critic_epochs=1):
         return Log(actor_loss=0, critic_loss=0, entropy=0, divergence=0)
 
 
-class MockEvolutionAgent(BaseEvolutionAgent):
+class MockEvolutionaryAgent(BaseEvolutionaryAgent):
     def _fit(self, epochs=1):
         return Log(actor_loss=0, critic_loss=0, entropy=0, divergence=0)
 
@@ -38,21 +38,21 @@ model = ActorCritic(
 )
 individual = DeepIndividual(encoder=encoder, torso=torso, head=head)
 
-deep_agent = MockDeepAgent(
+deep_agent = MockRLAgent(
     env=env,
     model=model,
     buffer_class=ReplayBuffer,
     explorer_settings=ExplorerSettings(start_steps=0),
     logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
 )
-vec_deep_agent = MockDeepAgent(
+vec_deep_agent = MockRLAgent(
     env=envs,
     model=model,
     buffer_class=ReplayBuffer,
     explorer_settings=ExplorerSettings(start_steps=0),
     logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
 )
-evolution_agent = MockEvolutionAgent(
+evolution_agent = MockEvolutionaryAgent(
     env=envs,
     model=individual,
     updater_class=NoisyGradientAscent,
