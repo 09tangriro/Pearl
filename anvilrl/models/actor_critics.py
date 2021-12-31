@@ -106,16 +106,12 @@ class Actor(T.nn.Module):
 
     def assign_targets(self) -> None:
         """Assign the target parameters"""
-        if self.target is None:
-            return
         for online, target in zip(self.online_parameters, self.target_parameters):
             target.data.copy_(online.data)
 
     def update_targets(self) -> None:
         """Update the target parameters"""
         # target_params = polyak_coeff * target_params + (1 - polyak_coeff) * online_params
-        if self.target is None:
-            return
         with T.no_grad():
             for online, target in zip(self.online_parameters, self.target_parameters):
                 target.data.mul_(self.polyak_coeff)
@@ -248,16 +244,12 @@ class Critic(T.nn.Module):
 
     def assign_targets(self) -> None:
         """Assign the target parameters"""
-        if self.target is None:
-            return
         for online, target in zip(self.online_parameters, self.target_parameters):
             target.data.copy_(online.data)
 
     def update_targets(self) -> None:
         """Update the target parameters"""
         # target_params = polyak_coeff * target_params + (1 - polyak_coeff) * online_params
-        if self.target is None:
-            return
         with T.no_grad():
             for online, target in zip(self.online_parameters, self.target_parameters):
                 target.data.mul_(self.polyak_coeff)
@@ -348,6 +340,7 @@ class ActorCritic(T.nn.Module):
             population_distribution=critic_dist,
             population_std=population_settings.critic_std,
         )
+        self.assign_targets()
 
     def initialize_population(
         self,
@@ -387,12 +380,7 @@ class ActorCritic(T.nn.Module):
             population, model.space_range[0], model.space_range[1]
         )
 
-        models = [None] * population_size
-        for i, ind in enumerate(self.population):
-            models[i] = copy.deepcopy(model).set_state(ind)
-            models[i].assign_targets()
-
-        return models
+        return [copy.deepcopy(model).set_state(ind) for ind in self.population]
 
     def numpy_actor(self) -> np.ndarray:
         """
