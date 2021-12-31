@@ -8,7 +8,7 @@ from gym.vector import VectorEnv
 
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
-from anvilrl.common.enumerations import FrequencyType, PopulationInitStrategy
+from anvilrl.common.enumerations import Distribution, FrequencyType
 from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Observation, Tensor, Trajectories
 from anvilrl.common.utils import get_device, set_seed
@@ -440,7 +440,7 @@ class BaseEvolutionaryAgent(ABC):
             num_steps = num_steps // train_frequency[1]
 
         if isinstance(self.population_settings.strategy, str):
-            population_init_strategy = PopulationInitStrategy(
+            population_init_strategy = Distribution(
                 self.population_settings.strategy.lower()
             )
         else:

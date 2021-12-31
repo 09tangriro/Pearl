@@ -8,7 +8,7 @@ import numpy as np
 import torch as T
 from torch.optim.optimizer import Optimizer
 
-from anvilrl.common.enumerations import PopulationInitStrategy
+from anvilrl.common.enumerations import Distribution
 
 
 @dataclass
@@ -38,7 +38,7 @@ class PopulationInitializerSettings:
     :param population_std: std for population initialization (only used if strategy is 'normal')
     """
 
-    strategy: Union[str, PopulationInitStrategy] = PopulationInitStrategy.NORMAL
+    strategy: Union[str, Distribution] = Distribution.NORMAL
     population_std: Optional[Union[float, np.ndarray]] = 1
 
     def filter_none(self) -> Dict[str, Any]:

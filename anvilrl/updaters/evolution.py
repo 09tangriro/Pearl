@@ -7,7 +7,7 @@ from gym.spaces import Discrete, MultiDiscrete
 from gym.vector import VectorEnv
 from torch.distributions import Normal, kl_divergence
 
-from anvilrl.common.enumerations import PopulationInitStrategy
+from anvilrl.common.enumerations import Distribution
 from anvilrl.common.type_aliases import UpdaterLog
 from anvilrl.common.utils import numpy_to_torch
 from anvilrl.models.actor_critics import DeepIndividual, Individual
@@ -36,7 +36,7 @@ class BaseEvolutionUpdater(ABC):
     @abstractmethod
     def initialize_population(
         self,
-        population_init_strategy: PopulationInitStrategy,
+        population_init_strategy: Distribution,
         population_std: Optional[Union[float, np.ndarray]] = 1,
         starting_point: Optional[np.ndarray] = None,
     ) -> List[Union[Individual, DeepIndividual]]:
@@ -74,7 +74,7 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
 
     def initialize_population(
         self,
-        population_init_strategy: PopulationInitStrategy = PopulationInitStrategy.NORMAL,
+        population_init_strategy: Distribution = Distribution.NORMAL,
         population_std: Union[float, np.ndarray] = 1,
         starting_point: Optional[np.ndarray] = None,
     ) -> List[Union[Individual, DeepIndividual]]:
@@ -158,17 +158,17 @@ class GeneticUpdater(BaseEvolutionUpdater):
 
     def initialize_population(
         self,
-        population_init_strategy: PopulationInitStrategy = PopulationInitStrategy.UNIFORM,
+        population_init_strategy: Distribution = Distribution.UNIFORM,
         population_std: Union[float, np.ndarray] = 1,
         starting_point: Optional[np.ndarray] = None,
     ) -> List[Union[Individual, DeepIndividual]]:
-        if population_init_strategy == PopulationInitStrategy.UNIFORM:
+        if population_init_strategy == Distribution.UNIFORM:
             population = np.random.uniform(
                 self.model.space_range[0],
                 self.model.space_range[1],
                 (self.population_size, *self.model.space_shape),
             )
-        elif population_init_strategy == PopulationInitStrategy.NORMAL:
+        elif population_init_strategy == Distribution.NORMAL:
             mean = (starting_point).astype(np.float32)
             population = np.random.normal(
                 mean, population_std, (self.population_size, *self.model.space_shape)

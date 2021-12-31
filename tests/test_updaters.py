@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.common.enumerations import PopulationInitStrategy
+from anvilrl.common.enumerations import Distribution
 from anvilrl.models import Actor, ActorCritic, Critic
 from anvilrl.models.actor_critics import Individual
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
@@ -384,7 +384,7 @@ def test_genetic_updater_continuous():
     updater = GeneticUpdater(env_continuous, model_continuous)
     updater.initialize_population(
         starting_point=model_continuous.numpy(),
-        population_init_strategy=PopulationInitStrategy.NORMAL,
+        population_init_strategy=Distribution.NORMAL,
     )
     np.testing.assert_allclose(np.std(updater.population, axis=0), np.ones(2), rtol=0.1)
     np.testing.assert_allclose(
@@ -409,7 +409,7 @@ def test_genetic_updater_discrete():
     # Assert population stats
     updater = GeneticUpdater(env_discrete, model_discrete)
     updater.initialize_population(
-        population_init_strategy=PopulationInitStrategy.UNIFORM,
+        population_init_strategy=Distribution.UNIFORM,
     )
     assert np.issubdtype(updater.population.dtype, np.integer)
     np.testing.assert_allclose(

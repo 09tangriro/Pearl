@@ -6,7 +6,7 @@ import torch as T
 
 from anvilrl.agents.base_agents import BaseEvolutionaryAgent, BaseRLAgent
 from anvilrl.buffers import ReplayBuffer
-from anvilrl.common.enumerations import PopulationInitStrategy
+from anvilrl.common.enumerations import Distribution
 from anvilrl.common.type_aliases import Log
 from anvilrl.common.utils import set_seed
 from anvilrl.models.actor_critics import Actor, ActorCritic, Critic, DeepIndividual
@@ -121,7 +121,7 @@ def test_evolution_step_env():
     set_seed(0, envs)
     observations = envs.reset()
     population = evolution_agent.updater.initialize_population(
-        PopulationInitStrategy.NORMAL, starting_point=individual.numpy()
+        Distribution.NORMAL, starting_point=individual.numpy()
     )
     action = np.array(
         [
@@ -132,7 +132,7 @@ def test_evolution_step_env():
     expected_next_obs, _, _, _ = envs.step(action)
     set_seed(0, envs)
     evolution_agent.population = evolution_agent.updater.initialize_population(
-        PopulationInitStrategy.NORMAL, starting_point=individual.numpy()
+        Distribution.NORMAL, starting_point=individual.numpy()
     )
     observations = envs.reset()
     actual_next_obs = evolution_agent.step_env(observations)
