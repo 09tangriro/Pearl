@@ -30,7 +30,7 @@ class OptimizerSettings:
 
 
 @dataclass
-class PopulationInitializerSettings:
+class PopulationSettings:
     """
     Settings for the population initializer
 

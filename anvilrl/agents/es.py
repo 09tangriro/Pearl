@@ -11,11 +11,7 @@ from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.common.type_aliases import Log
 from anvilrl.models.actor_critics import DeepIndividual, Individual
-from anvilrl.settings import (
-    BufferSettings,
-    LoggerSettings,
-    PopulationInitializerSettings,
-)
+from anvilrl.settings import BufferSettings, LoggerSettings, PopulationSettings
 from anvilrl.updaters.evolution import BaseEvolutionUpdater, NoisyGradientAscent
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -45,7 +41,7 @@ class ES(BaseEvolutionaryAgent):
         model: Union[Individual, DeepIndividual],
         updater_class: Type[BaseEvolutionUpdater] = NoisyGradientAscent,
         learning_rate: float = 0.001,
-        population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
+        population_settings: PopulationSettings = PopulationSettings(),
         buffer_class: Type[BaseBuffer] = RolloutBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),

@@ -15,7 +15,7 @@ from anvilrl.settings import (
     CrossoverSettings,
     LoggerSettings,
     MutationSettings,
-    PopulationInitializerSettings,
+    PopulationSettings,
     SelectionSettings,
 )
 from anvilrl.signal_processing import (
@@ -56,7 +56,7 @@ class GA(BaseEvolutionaryAgent):
         mutation_operator: mutation_operators = mutation_operators.uniform_mutation,
         mutation_settings: MutationSettings = MutationSettings(),
         elitism: float = 0.1,
-        population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
+        population_settings: PopulationSettings = PopulationSettings(),
         buffer_class: Type[BaseBuffer] = RolloutBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),

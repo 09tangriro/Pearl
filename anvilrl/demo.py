@@ -22,7 +22,7 @@ from anvilrl.settings import (
     BufferSettings,
     ExplorerSettings,
     LoggerSettings,
-    PopulationInitializerSettings,
+    PopulationSettings,
 )
 
 
@@ -186,7 +186,7 @@ def ga_demo():
     agent = GA(
         env=env,
         model=model,
-        population_settings=PopulationInitializerSettings(strategy="uniform"),
+        population_settings=PopulationSettings(strategy="uniform"),
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/GA-demo", log_frequency=("step", 1)
         ),

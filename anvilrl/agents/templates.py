@@ -15,7 +15,7 @@ from anvilrl.settings import (
     CallbackSettings,
     ExplorerSettings,
     LoggerSettings,
-    PopulationInitializerSettings,
+    PopulationSettings,
 )
 from anvilrl.updaters.evolution import BaseEvolutionUpdater
 
@@ -122,7 +122,7 @@ class YourSearchAgent(BaseEvolutionaryAgent):
         self,
         env: VectorEnv,
         updater_class: Type[BaseEvolutionUpdater],
-        population_initializer_settings: PopulationInitializerSettings = ...,
+        population_initializer_settings: PopulationSettings = ...,
         buffer_class: Type[BaseBuffer] = ...,
         buffer_settings: BufferSettings = ...,
         logger_settings: LoggerSettings = ...,

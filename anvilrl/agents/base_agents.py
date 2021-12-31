@@ -19,7 +19,7 @@ from anvilrl.settings import (
     CallbackSettings,
     ExplorerSettings,
     LoggerSettings,
-    PopulationInitializerSettings,
+    PopulationSettings,
 )
 from anvilrl.updaters.evolution import BaseEvolutionUpdater
 
@@ -292,7 +292,7 @@ class BaseEvolutionaryAgent(ABC):
         env: VectorEnv,
         model: Union[Individual, DeepIndividual],
         updater_class: Type[BaseEvolutionUpdater],
-        population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
+        population_settings: PopulationSettings = PopulationSettings(),
         buffer_class: Type[BaseBuffer] = BaseBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         logger_settings: LoggerSettings = LoggerSettings(),
