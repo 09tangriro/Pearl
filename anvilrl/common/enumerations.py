@@ -25,7 +25,7 @@ class GoalSelectionStrategy(Enum):
 
 
 class Distribution(Enum):
-    """Population initialization strategy for random search agents"""
+    """Distribution types"""
 
     NORMAL = "normal"
     UNIFORM = "uniform"
