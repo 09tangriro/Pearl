@@ -1,19 +1,8 @@
-from anvilrl.models.actor_critics import (
-    Actor,
-    ActorCritic,
-    ActorCriticWithCriticTarget,
-    ActorCriticWithTargets,
-    Critic,
-    EpsilonGreedyActor,
-    TwinActorCritic,
-)
+from anvilrl.models.actor_critics import Actor, ActorCritic, Critic, EpsilonGreedyActor
 
 __all__ = [
     "Critic",
     "Actor",
     "ActorCritic",
-    "ActorCriticWithCriticTarget",
-    "ActorCriticWithTargets",
     "EpsilonGreedyActor",
-    "TwinActorCritic",
 ]

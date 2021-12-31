@@ -38,8 +38,12 @@ class PopulationSettings:
     :param population_std: std for population initialization (only used if strategy is 'normal')
     """
 
-    strategy: Union[str, Distribution] = Distribution.NORMAL
-    population_std: Optional[Union[float, np.ndarray]] = 1
+    actor_population_size: int = 1
+    critic_population_size: int = 1
+    actor_distribution: Union[str, Distribution] = Distribution.NORMAL
+    critic_distribution: Union[str, Distribution] = Distribution.NORMAL
+    actor_std: Optional[Union[float, np.ndarray]] = 1
+    critic_std: Optional[Union[float, np.ndarray]] = 1
 
     def filter_none(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
