@@ -29,7 +29,7 @@ class BaseActorHead(T.nn.Module, ABC):
         self.model = None
 
     @abstractmethod
-    def get_action_distribution(
+    def action_distribution(
         self, input: T.Tensor
     ) -> Optional[T.distributions.Distribution]:
         """
@@ -40,7 +40,7 @@ class BaseActorHead(T.nn.Module, ABC):
         """
 
     def forward(self, input: T.Tensor) -> T.Tensor:
-        distribution = self.get_action_distribution(input)
+        distribution = self.action_distribution(input)
         if distribution is None:
             return self.model(input)
         return distribution.sample()
@@ -138,7 +138,7 @@ class DeterministicHead(BaseActorHead):
         else:
             raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
 
-    def get_action_distribution(
+    def action_distribution(
         self, input: T.Tensor
     ) -> Optional[T.distributions.Distribution]:
         return None
@@ -171,7 +171,7 @@ class CategoricalHead(BaseActorHead):
         else:
             raise NotImplementedError(f"{network_type} hasn't been implemented yet :(")
 
-    def get_action_distribution(
+    def action_distribution(
         self, input: T.Tensor
     ) -> Optional[T.distributions.Distribution]:
         return T.distributions.Categorical(logits=self.model(input))
@@ -234,7 +234,7 @@ class DiagGaussianHead(BaseActorHead):
                 f"{log_std_network_type} hasn't been implemented for the log std network yet :("
             )
 
-    def get_action_distribution(
+    def action_distribution(
         self, input: T.Tensor
     ) -> Optional[T.distributions.Distribution]:
         mean = self.mean_network(input)

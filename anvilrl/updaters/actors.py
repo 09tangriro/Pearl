@@ -93,7 +93,7 @@ class PolicyGradient(BaseActorUpdater):
         """
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        old_distributions = model.get_action_distribution(observations)
+        old_distributions = model.action_distribution(observations)
         log_probs = old_distributions.log_prob(actions).sum(dim=-1)
         entropy = old_distributions.entropy().mean()
 
@@ -104,7 +104,7 @@ class PolicyGradient(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        new_distributions = model.get_action_distribution(observations)
+        new_distributions = model.action_distribution(observations)
         loss = loss.detach()
         entropy = entropy.detach()
         kl = kl_divergence(new_distributions, old_distributions).mean()
@@ -157,7 +157,7 @@ class ProximalPolicyClip(BaseActorUpdater):
         """
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        old_distributions = model.get_action_distribution(observations)
+        old_distributions = model.action_distribution(observations)
         log_probs = old_distributions.log_prob(actions).sum(dim=-1)
         entropy = old_distributions.entropy().mean()
 
@@ -175,7 +175,7 @@ class ProximalPolicyClip(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        new_distributions = model.get_action_distribution(observations)
+        new_distributions = model.action_distribution(observations)
         loss = loss.detach()
         entropy = entropy.detach()
         kl = kl_divergence(new_distributions, old_distributions).mean()
@@ -264,7 +264,7 @@ class SoftPolicyGradient(BaseActorUpdater):
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
 
-        distributions = model.get_action_distribution(observations)
+        distributions = model.action_distribution(observations)
         # use the reparametrization trick for backpropagation
         # https://gregorygundersen.com/blog/2018/04/29/reparameterization/
         actions = distributions.rsample()

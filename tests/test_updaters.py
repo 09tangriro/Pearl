@@ -76,7 +76,7 @@ def assert_same_distribution(
 )
 def test_policy_gradient(model):
     observation = T.rand(2)
-    out_before = model.get_action_distribution(observation)
+    out_before = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_before = model.forward_critic(observation)
@@ -90,7 +90,7 @@ def test_policy_gradient(model):
         advantages=T.rand(1),
     )
 
-    out_after = model.get_action_distribution(observation)
+    out_after = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_after = model.forward_critic(observation)
@@ -107,7 +107,7 @@ def test_policy_gradient(model):
 )
 def test_proximal_policy_clip(model):
     observation = T.rand(2)
-    out_before = model.get_action_distribution(observation)
+    out_before = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_before = model.forward_critic(observation)
@@ -122,7 +122,7 @@ def test_proximal_policy_clip(model):
         old_log_probs=T.rand(1),
     )
 
-    out_after = model.get_action_distribution(observation)
+    out_after = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
             critic_after = model.forward_critic(observation)
@@ -168,7 +168,7 @@ def test_deterministic_policy_gradient(model):
 def test_soft_policy_gradient(model):
     observation = T.rand(2)
     action = T.rand(1)
-    out_before = model.get_action_distribution(observation)
+    out_before = model.action_distribution(observation)
     with T.no_grad():
         critic_before = model.forward_critic(observation, action)
 
@@ -179,7 +179,7 @@ def test_soft_policy_gradient(model):
         observations=observation,
     )
 
-    out_after = model.get_action_distribution(observation)
+    out_after = model.action_distribution(observation)
     with T.no_grad():
         critic_after = model.forward_critic(observation, action)
 
@@ -201,7 +201,7 @@ def test_value_regression(model):
     returns = T.rand(1)
     out_before = model.forward_critic(observation)
     with T.no_grad():
-        actor_before = model.get_action_distribution(observation)
+        actor_before = model.action_distribution(observation)
 
     updater = ValueRegression(max_grad=0.5)
 
@@ -209,7 +209,7 @@ def test_value_regression(model):
 
     out_after = model.forward_critic(observation)
     with T.no_grad():
-        actor_after = model.get_action_distribution(observation)
+        actor_after = model.action_distribution(observation)
 
     assert out_after != out_before
     if model == actor_critic_shared:
@@ -230,7 +230,7 @@ def test_discrete_q_regression(model):
     else:
         out_before = model.forward_critic(observation)
         with T.no_grad():
-            actor_before = model.get_action_distribution(observation)
+            actor_before = model.action_distribution(observation)
 
     updater = DiscreteQRegression(max_grad=0.5)
 
@@ -241,7 +241,7 @@ def test_discrete_q_regression(model):
     else:
         out_after = model.forward_critic(observation)
         with T.no_grad():
-            actor_after = model.get_action_distribution(observation)
+            actor_after = model.action_distribution(observation)
 
     assert out_after != out_before
     if model == actor_critic_shared:
@@ -263,7 +263,7 @@ def test_continuous_q_regression(model):
     else:
         out_before = model.forward_critic(observation, actions)
         with T.no_grad():
-            actor_before = model.get_action_distribution(observation)
+            actor_before = model.action_distribution(observation)
 
     updater = ContinuousQRegression(max_grad=0.5)
 
@@ -274,7 +274,7 @@ def test_continuous_q_regression(model):
     else:
         out_after = model.forward_critic(observation, actions)
         with T.no_grad():
-            actor_after = model.get_action_distribution(observation)
+            actor_after = model.action_distribution(observation)
 
     assert out_after != out_before
     if model == continuous_actor_critic_shared:

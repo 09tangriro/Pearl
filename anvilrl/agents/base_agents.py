@@ -111,12 +111,12 @@ class BaseRLAgent(ABC):
         self.model.eval()
         return self.model(observations)
 
-    def get_action_distribution(
+    def action_distribution(
         self, observations: Union[Tensor, Dict[str, Tensor]]
     ) -> T.distributions.Distribution:
         """Get the policy distribution given an observation"""
         self.model.eval()
-        return self.model.get_action_distribution(observations)
+        return self.model.action_distribution(observations)
 
     def critic(
         self,
@@ -345,11 +345,11 @@ class BaseEvolutionaryAgent(ABC):
         """Run the agent actor model"""
         return self.model(observations)
 
-    def get_action_distribution(
+    def action_distribution(
         self, observations: Union[Tensor, Dict[str, Tensor]]
     ) -> T.distributions.Distribution:
         """Get the policy distribution given an observation"""
-        return self.model.get_action_distribution(observations)
+        return self.model.action_distribution(observations)
 
     def step_env(self, observations: Observation, num_steps: int = 1) -> None:
         """

@@ -153,7 +153,7 @@ class PPO(BaseRLAgent):
                 gae_lambda=self.gae_lambda,
                 gamma=self.gae_gamma,
             )
-            old_distributions = self.model.get_action_distribution(
+            old_distributions = self.model.action_distribution(
                 trajectories.observations
             )
             old_log_probs = old_distributions.log_prob(trajectories.actions).sum(dim=-1)

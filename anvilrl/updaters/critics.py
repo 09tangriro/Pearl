@@ -255,7 +255,7 @@ class SoftQRegression(BaseCriticUpdater):
         critic_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(critic_parameters, lr=self.lr)
 
-        next_action_distributions = model.get_action_distribution(next_observations)
+        next_action_distributions = model.action_distribution(next_observations)
         next_actions = next_action_distributions.rsample()
         log_probs = next_action_distributions.log_prob(next_actions)
 
