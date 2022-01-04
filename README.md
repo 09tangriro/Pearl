@@ -28,7 +28,7 @@ There are two options to install this package:
 2. `git clone git@github.com:LondonNode/AnvilRL.git`
 
 ### Module Guide
-- `agents`: implementations of RL agents where the other modular components are put together like Lego
+- `agents`: implementations of RL and EC agents where the other modular components are put together
 - `buffers`: these handle storing and sampling of trajectories
 - `callbacks`: inject logic for every step made in an environment (e.g. save model, early stopping)
 - `common`: common methods applicable to all other modules (e.g. enumerations) and a main `utils.py` file with some useful general logic
