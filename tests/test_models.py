@@ -183,14 +183,15 @@ def test_actor():
     actor.assign_targets()
     target_output = actor.forward_target(input)
     assert T.equal(online_output, target_output)
-    assert actor.get_action_distribution(input) is None
+    assert actor.action_distribution(input) is None
 
 
 @pytest.mark.parametrize("actor_population_size", [1, 2])
 @pytest.mark.parametrize("critic_population_size", [1, 2])
-@pytest.mark.parametrize("dist", ["normal", "uniform"])
-def test_actor_critic(actor_population_size, critic_population_size, dist):
+def test_actor_critic(actor_population_size, critic_population_size):
     input = T.Tensor([1, 1, 1, 1, 1])
+    x_actor = input.repeat(actor_population_size, 1)
+    x_critic = input.repeat(critic_population_size, 1)
     encoder = IdentityEncoder()
     torso = MLP([5, 5])
     head_critic = ValueHead(input_shape=5)
@@ -205,31 +206,55 @@ def test_actor_critic(actor_population_size, critic_population_size, dist):
         population_settings=PopulationSettings(
             actor_population_size=actor_population_size,
             critic_population_size=critic_population_size,
-            actor_distribution=dist,
-            critic_distribution=dist,
+            actor_distribution="uniform",
+            critic_distribution="uniform",
         ),
     )
-    actor_out = model(input)
-    critic_out = model.forward_critic(input)
+    actor_out = model.forward_actors(x_actor)
+    critic_out = model.forward_critics(x_critic)
 
-    actor_state = model.numpy_actor()
-    critic_state = model.numpy_critic()
+    actor_state = model.numpy_actors()
+    critic_state = model.numpy_critics()
 
     new_actor_state = np.random.rand(*actor_state.shape)
     new_critic_state = np.random.rand(*critic_state.shape)
 
-    model.set_actor_state(new_actor_state)
-    assert T.equal(model.forward_critic(input), critic_out)
-    assert not T.equal(model(input), actor_out)
+    model.set_actors_state(new_actor_state)
+    assert T.equal(model.forward_critics(x_critic), critic_out)
+    assert not T.equal(model.forward_actors(x_actor), actor_out)
 
-    model.set_critic_state(new_critic_state)
-    assert not T.equal(model.forward_critic(input), critic_out)
+    model.set_critics_state(new_critic_state)
+    assert not T.equal(model.forward_critics(x_critic), critic_out)
+
+    old_action = model(input)
+    old_value = model.predict_critic(input)
+    model.update_global()
+    actual_actor_state = model.actor.numpy()
+    actual_critic_state = model.critic.numpy()
+    expected_actor_state = (
+        new_actor_state
+        if actor_population_size == 1
+        else np.mean([actor.state for actor in model.actors], axis=0)
+    )
+    expected_critic_state = (
+        new_critic_state
+        if critic_population_size == 1
+        else np.mean([critic.state for critic in model.critics], axis=0)
+    )
+    np.testing.assert_array_equal(actual_actor_state, expected_actor_state)
+    np.testing.assert_array_equal(actual_critic_state, expected_critic_state)
+    new_action = model(input)
+    new_value = model.predict_critic(input)
+    assert not T.equal(old_action, new_action)
+    assert not T.equal(old_value, new_value)
 
 
 @pytest.mark.parametrize("actor_population_size", [1, 2])
 @pytest.mark.parametrize("critic_population_size", [1, 2])
 def test_actor_critic_targets(actor_population_size, critic_population_size):
     input = T.Tensor([1, 1, 1, 1, 1])
+    x_actor = input.repeat(actor_population_size, 1)
+    x_critic = input.repeat(critic_population_size, 1)
     encoder = IdentityEncoder()
     torso = MLP([5, 5])
     head_critic = ValueHead(input_shape=5)
@@ -247,35 +272,37 @@ def test_actor_critic_targets(actor_population_size, critic_population_size):
         ),
     )
 
-    actor_out = model(input)
-    actor_target_out = model.forward_target_actor(input)
-    critic_out = model.forward_critic(input)
-    critic_target_out = model.forward_target_critic(input)
+    actor_out = model.forward_actors(x_actor)
+    actor_target_out = model.forward_target_actors(x_actor)
+    critic_out = model.forward_critics(x_critic)
+    critic_target_out = model.forward_target_critics(x_critic)
 
     assert T.equal(actor_out, actor_target_out)
     assert T.equal(critic_out, critic_target_out)
 
-    actor_state = model.numpy_actor()
-    critic_state = model.numpy_critic()
+    actor_state = model.numpy_actors()
+    critic_state = model.numpy_critics()
 
     new_actor_state = np.random.rand(*actor_state.shape)
     new_critic_state = np.random.rand(*critic_state.shape)
 
-    model.set_actor_state(new_actor_state)
-    assert T.equal(model.forward_critic(input), critic_out)
-    assert not T.equal(model(input), actor_target_out)
-    assert T.equal(model.forward_target_actor(input), actor_target_out)
+    model.set_actors_state(new_actor_state)
+    assert T.equal(model.forward_critics(x_critic), critic_out)
+    assert not T.equal(model.forward_actors(x_actor), actor_target_out)
+    assert T.equal(model.forward_target_actors(x_actor), actor_target_out)
 
-    model.set_critic_state(new_critic_state)
-    assert not T.equal(model.forward_critic(input), critic_target_out)
-    assert T.equal(model.forward_target_critic(input), critic_target_out)
+    model.set_critics_state(new_critic_state)
+    assert not T.equal(model.forward_critics(x_critic), critic_target_out)
+    assert T.equal(model.forward_target_critics(x_critic), critic_target_out)
 
     model.update_targets()
     model.assign_targets()
-    assert not T.equal(model.forward_target_critic(input), critic_target_out)
-    assert not T.equal(model.forward_target_actor(input), actor_target_out)
-    assert T.equal(model.forward_target_critic(input), model.forward_critic(input))
-    assert T.equal(model.forward_target_actor(input), model(input))
+    assert not T.equal(model.forward_target_critics(x_critic), critic_target_out)
+    assert T.equal(
+        model.forward_target_critics(x_critic), model.forward_critics(x_critic)
+    )
+    assert not T.equal(model.forward_target_actors(x_actor), actor_target_out)
+    assert T.equal(model.forward_target_actors(x_actor), model.forward_actors(x_actor))
 
 
 def test_population_initialize():
@@ -293,9 +320,82 @@ def test_population_initialize():
         actor, critic, population_settings=PopulationSettings(actor_population_size=500)
     )
 
-    actor_state = model.numpy_actor()
+    actor_state = model.numpy_actors()
 
     np.testing.assert_array_almost_equal(np.std(actor_state), 1, decimal=1.5)
+
+
+@pytest.mark.parametrize("actor_population_size", [1, 2])
+def test_action_distribution(actor_population_size):
+    input = T.Tensor([1, 1, 1, 1, 1]).repeat(actor_population_size, 1)
+    encoder = IdentityEncoder()
+    torso = MLP([5, 5])
+    head_critic = ValueHead(input_shape=5)
+    head_actor = DeterministicHead(input_shape=5, action_shape=1)
+
+    actor = Actor(encoder, torso, head_actor)
+    critic = Critic(encoder, torso, head_critic)
+
+    model = ActorCritic(
+        actor,
+        critic,
+        population_settings=PopulationSettings(
+            actor_population_size=actor_population_size,
+        ),
+    )
+
+    distribution = model.action_distributions(input)
+    global_dist = model.action_distribution(input)
+    assert distribution is None
+    assert global_dist is None
+
+    input = T.Tensor([1, 1, 1, 1, 1]).repeat(actor_population_size, 1)
+    encoder = IdentityEncoder()
+    torso = MLP([5, 5])
+    head_critic = ValueHead(input_shape=5)
+    head_actor = CategoricalHead(input_shape=5, action_size=5)
+
+    actor = Actor(encoder, torso, head_actor)
+    critic = Critic(encoder, torso, head_critic)
+
+    model = ActorCritic(
+        actor,
+        critic,
+        population_settings=PopulationSettings(
+            actor_population_size=actor_population_size,
+        ),
+    )
+
+    distribution = model.action_distributions(input)
+    global_dist = model.action_distribution(T.Tensor([1, 1, 1, 1, 1]))
+    assert isinstance(distribution, T.distributions.Categorical)
+    assert distribution.logits.shape == (actor_population_size, 5)
+    assert global_dist.logits.shape == (5,)
+
+    input = T.Tensor([1, 1, 1, 1, 1]).repeat(actor_population_size, 1)
+    encoder = IdentityEncoder()
+    torso = MLP([5, 5])
+    head_critic = ValueHead(input_shape=5)
+    head_actor = DiagGaussianHead(input_shape=5, action_size=5)
+
+    actor = Actor(encoder, torso, head_actor)
+    critic = Critic(encoder, torso, head_critic)
+
+    model = ActorCritic(
+        actor,
+        critic,
+        population_settings=PopulationSettings(
+            actor_population_size=actor_population_size,
+        ),
+    )
+
+    distribution = model.action_distributions(input)
+    global_dist = model.action_distribution(T.Tensor([1, 1, 1, 1, 1]))
+    assert isinstance(distribution, T.distributions.Normal)
+    assert distribution.loc.shape == (actor_population_size, 5)
+    assert distribution.scale.shape == (actor_population_size, 5)
+    assert global_dist.loc.shape == (5,)
+    assert global_dist.scale.shape == (5,)
 
 
 def test_epsilon_greedy_actor():

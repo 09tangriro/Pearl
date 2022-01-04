@@ -14,7 +14,12 @@ from anvilrl.common.utils import (
     numpy_to_torch,
     torch_to_numpy,
 )
-from anvilrl.models.heads import BaseActorHead, BaseCriticHead
+from anvilrl.models.heads import (
+    BaseActorHead,
+    BaseCriticHead,
+    CategoricalHead,
+    DiagGaussianHead,
+)
 from anvilrl.models.utils import trainable_parameters
 from anvilrl.settings import PopulationSettings
 
@@ -117,12 +122,12 @@ class Actor(T.nn.Module):
                 target.data.mul_(self.polyak_coeff)
                 target.data.add_((1 - self.polyak_coeff) * online.data)
 
-    def get_action_distribution(
+    def action_distribution(
         self, observations: Tensor
     ) -> Optional[T.distributions.Distribution]:
         """Get the action distribution, returns None if deterministic"""
         latent_out = self.model.torso(self.model.encoder(observations))
-        return self.model.head.get_action_distribution(latent_out)
+        return self.model.head.action_distribution(latent_out)
 
     def forward_target(self, observations: Tensor) -> T.Tensor:
         return self.target(observations)
@@ -382,26 +387,26 @@ class ActorCritic(T.nn.Module):
 
         return [copy.deepcopy(model).set_state(ind) for ind in self.population]
 
-    def numpy_actor(self) -> np.ndarray:
+    def numpy_actors(self) -> np.ndarray:
         """
         Get the numpy representation of the actor population.
         """
         return np.array([ind.numpy() for ind in self.actors]).squeeze()
 
-    def numpy_critic(self) -> np.ndarray:
+    def numpy_critics(self) -> np.ndarray:
         """
         Get the numpy representation of the critic population.
         """
         return np.array([ind.numpy() for ind in self.critics]).squeeze()
 
-    def set_actor_state(self, state: np.ndarray) -> "ActorCritic":
-        """Set the state of the actor"""
+    def set_actors_state(self, state: np.ndarray) -> "ActorCritic":
+        """Set the state of the actors"""
         state = state[np.newaxis] if state.ndim == 1 else state
         [actor.set_state(s) for s, actor in zip(state, self.actors)]
         return self
 
-    def set_critic_state(self, state: np.ndarray) -> "ActorCritic":
-        """Set the state of the critic"""
+    def set_critics_state(self, state: np.ndarray) -> "ActorCritic":
+        """Set the state of the critics"""
         state = state[np.newaxis] if state.ndim == 1 else state
         [critic.set_state(s) for s, critic in zip(state, self.critics)]
         return self
@@ -421,37 +426,119 @@ class ActorCritic(T.nn.Module):
         if self.critic.target is not None:
             [critic.update_targets() for critic in self.critics]
 
-    def get_action_distribution(
+    def update_global(self) -> None:
+        """Update global networks"""
+        if self.num_actors == 1:
+            self.actor = self.actors[0]
+        else:
+            actor_states = [actor.state for actor in self.actors]
+            self.actor.set_state(np.mean(actor_states, axis=0))
+
+        if self.num_critics == 1:
+            self.critic = self.critics[0]
+        else:
+            critic_states = [critic.state for critic in self.critics]
+            self.critic.set_state(np.mean(critic_states, axis=0))
+
+    def action_distributions(
         self, observations: Tensor
-    ) -> Optional[List[T.distributions.Distribution]]:
-        """Get the action distribution, returns None if deterministic"""
-        return [actor.get_action_distribution(observations) for actor in self.actors]
+    ) -> Optional[T.distributions.Distribution]:
+        """Get the population action distributions, returns None if deterministic"""
+        if self.num_actors == 1:
+            return self.actors[0].action_distribution(observations)
+        distributions = [
+            actor.action_distribution(obs)
+            for actor, obs in zip(self.actors, observations)
+        ]
+        if all(dist is None for dist in distributions):
+            return None
+        elif isinstance(self.actor.model.head, CategoricalHead):
+            logits = T.stack([dist.logits for dist in distributions])
+            return T.distributions.Categorical(logits=logits)
+        elif isinstance(self.actor.model.head, DiagGaussianHead):
+            means = T.stack([dist.mean for dist in distributions])
+            stds = T.stack([dist.stddev for dist in distributions])
+            return T.distributions.Normal(means, stds)
 
-    def forward_target_critic(
+    def action_distribution(
+        self, observations: Tensor
+    ) -> Optional[T.distributions.Distribution]:
+        """Get the global network action distribution, returns None if deterministic"""
+        return self.actor.action_distribution(observations)
+
+    def forward_target_critics(
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
-        """Forward the target critic"""
+        """Get the population target critic outputs"""
+        if self.num_critics == 1:
+            return self.critics[0].forward_target(observations, actions)
+        elif actions is None:
+            return T.Tensor(
+                [
+                    critic.forward_target(obs)
+                    for critic, obs in zip(self.critics, observations)
+                ]
+            ).squeeze()
         return T.Tensor(
-            [critic.forward_target(observations, actions) for critic in self.critics]
+            [
+                critic.forward_target(obs, action)
+                for critic, obs, action in zip(self.critics, observations, actions)
+            ]
         ).squeeze()
 
-    def forward_target_actor(self, observations: Tensor) -> T.Tensor:
-        """Get the target actor output"""
+    def forward_target_actors(self, observations: Tensor) -> T.Tensor:
+        """Get the population target actor outputs"""
+        if self.num_actors == 1:
+            return self.actors[0].forward_target(observations)
         return T.Tensor(
-            [actor.forward_target(observations) for actor in self.actors]
+            [actor.forward_target(obs) for actor, obs in zip(self.actors, observations)]
         ).squeeze()
 
-    def forward_critic(
+    def forward_critics(
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
-        """Run a forward pass to get the critic output"""
+        """Get the population critic outputs"""
+        if self.num_critics == 1:
+            return self.critics[0](observations, actions)
+        elif actions is None:
+            return T.Tensor(
+                [critic(obs) for critic, obs in zip(self.critics, observations)]
+            ).squeeze()
         return T.Tensor(
-            [critic(observations, actions) for critic in self.critics]
+            [
+                critic(obs, action)
+                for critic, obs, action in zip(self.critics, observations, actions)
+            ]
+        ).squeeze()
+
+    def forward_actors(self, observations: Tensor) -> T.Tensor:
+        """Get the population actor outputs"""
+        if self.num_actors == 1:
+            return self.actors[0](observations)
+        return T.Tensor(
+            [actor(obs) for actor, obs in zip(self.actors, observations)]
         ).squeeze()
 
     def forward(self, observations: Tensor) -> T.Tensor:
-        """The default forward pass retrieves an action prediciton"""
-        return T.Tensor([actor(observations) for actor in self.actors]).squeeze()
+        """
+        The default forward pass retrieves the global network action prediction
+
+        :param observations: The state observations
+        :return: The action prediction
+        """
+        return self.actor(observations)
+
+    def predict_critic(
+        self, observations: Tensor, actions: Optional[Tensor] = None
+    ) -> T.Tensor:
+        """
+        Predict the critic value for a given state and optional action
+
+        :param observations: The state observations
+        :param actions: The actions
+        :return: The critic value
+        """
+        return self.critic(observations, actions)
 
 
 class Individual(T.nn.Module):
