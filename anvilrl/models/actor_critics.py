@@ -391,11 +391,9 @@ class ActorCritic(T.nn.Module):
         # Discretize and clip population as needed
         if isinstance(model.space, (Discrete, MultiDiscrete)):
             population = np.round(population).astype(np.int32)
-        self.population = np.clip(
-            population, model.space_range[0], model.space_range[1]
-        )
+        population = np.clip(population, model.space_range[0], model.space_range[1])
 
-        return [copy.deepcopy(model).set_state(ind) for ind in self.population]
+        return [copy.deepcopy(model).set_state(ind) for ind in population]
 
     def numpy_actors(self) -> np.ndarray:
         """
