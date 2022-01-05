@@ -1,3 +1,5 @@
+from typing import Union
+
 import gym
 import numpy as np
 import pytest
@@ -9,6 +11,7 @@ from anvilrl.models.actor_critics import Individual
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import DiagGaussianHead, ValueHead
 from anvilrl.models.torsos import MLP
+from anvilrl.settings import PopulationSettings
 from anvilrl.signal_processing import (
     crossover_operators,
     mutation_operators,
@@ -45,41 +48,63 @@ continuous_critic = Critic(
 continuous_critic_shared = Critic(
     encoder=encoder_critic_continuous, torso=torso_actor, head=head_critic
 )
-critic_shared_encoder = Critic(
-    encoder=encoder_actor, torso=torso_critic, head=head_critic
-)
 critic_shared = Critic(encoder=encoder_actor, torso=torso_actor, head=head_critic)
 
 actor_critic = ActorCritic(actor=actor, critic=critic)
-actor_critic_shared_encoder = ActorCritic(actor=actor, critic=critic_shared_encoder)
 actor_critic_shared = ActorCritic(actor=actor, critic=critic_shared)
 continuous_actor_critic = ActorCritic(actor=actor, critic=continuous_critic)
 continuous_actor_critic_shared = ActorCritic(
     actor=actor, critic=continuous_critic_shared
 )
+marl = ActorCritic(
+    actor=actor,
+    critic=critic,
+    population_settings=PopulationSettings(
+        actor_population_size=2, critic_population_size=2
+    ),
+)
+marl_shared = ActorCritic(
+    actor=actor,
+    critic=critic_shared,
+    population_settings=PopulationSettings(
+        actor_population_size=2, critic_population_size=2
+    ),
+)
+marl_continuous = ActorCritic(
+    actor=actor,
+    critic=continuous_critic,
+    population_settings=PopulationSettings(
+        actor_population_size=2, critic_population_size=2
+    ),
+)
+marl_shared_continuous = ActorCritic(
+    actor=actor,
+    critic=continuous_critic_shared,
+    population_settings=PopulationSettings(
+        actor_population_size=2, critic_population_size=2
+    ),
+)
 
 
-def assert_same_distribution(
+def same_distribution(
     dist1: T.distributions.Distribution, dist2: T.distributions.Distribution
 ) -> bool:
-    if T.equal(dist1.loc, dist2.loc) and T.equal(dist1.scale, dist2.scale):
-        return True
-    else:
-        return False
+    return T.equal(dist1.loc, dist2.loc) and T.equal(dist1.scale, dist2.scale)
 
 
 ############################### TEST ACTOR UPDATERS ###############################
 
 
 @pytest.mark.parametrize(
-    "model", [actor, actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+    "model", [actor, actor_critic, actor_critic_shared, marl, marl_shared]
 )
-def test_policy_gradient(model):
+def test_policy_gradient(model: Union[Actor, ActorCritic]):
     observation = T.rand(2)
-    out_before = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
-            critic_before = model.forward_critic(observation)
+            observation = observation.repeat(model.num_actors, 1)
+            critic_before = model.forward_critics(observation)
+    out_before = model.action_distribution(observation)
 
     updater = PolicyGradient(max_grad=0.5)
 
@@ -93,24 +118,25 @@ def test_policy_gradient(model):
     out_after = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
-            critic_after = model.forward_critic(observation)
+            critic_after = model.forward_critics(observation)
 
-    assert not assert_same_distribution(out_after, out_before)
-    if model == actor_critic or model == actor_critic_shared_encoder:
-        assert critic_after == critic_before
-    if model == actor_critic_shared:
-        assert critic_after != critic_before
+    assert not same_distribution(out_after, out_before)
+    if model == actor_critic or model == marl:
+        assert T.equal(critic_before, critic_after)
+    if model == actor_critic_shared or model == marl_shared:
+        assert not T.equal(critic_before, critic_after)
 
 
 @pytest.mark.parametrize(
-    "model", [actor, actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+    "model", [actor, actor_critic, actor_critic_shared, marl, marl_shared]
 )
-def test_proximal_policy_clip(model):
+def test_proximal_policy_clip(model: Union[Actor, ActorCritic]):
     observation = T.rand(2)
-    out_before = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
-            critic_before = model.forward_critic(observation)
+            observation = observation.repeat(model.num_actors, 1)
+            critic_before = model.forward_critics(observation)
+    out_before = model.action_distribution(observation)
 
     updater = ProximalPolicyClip(max_grad=0.5)
 
@@ -125,24 +151,29 @@ def test_proximal_policy_clip(model):
     out_after = model.action_distribution(observation)
     if model != actor:
         with T.no_grad():
-            critic_after = model.forward_critic(observation)
+            critic_after = model.forward_critics(observation)
 
-    assert not assert_same_distribution(out_after, out_before)
-    if model == actor_critic or model == actor_critic_shared_encoder:
-        assert critic_after == critic_before
-    if model == actor_critic_shared:
-        assert critic_after != critic_before
+    assert not same_distribution(out_after, out_before)
+    if model == actor_critic or model == marl:
+        assert T.equal(critic_before, critic_after)
+    if model == actor_critic_shared or model == marl_shared:
+        assert not T.equal(critic_before, critic_after)
 
 
 @pytest.mark.parametrize(
-    "model", [continuous_actor_critic, continuous_actor_critic_shared]
+    "model",
+    [
+        continuous_actor_critic,
+        continuous_actor_critic_shared,
+        marl_continuous,
+        marl_shared_continuous,
+    ],
 )
-def test_deterministic_policy_gradient(model):
-    observation = T.rand(2)
-    action = T.rand(1)
-    out_before = model(observation)
+def test_deterministic_policy_gradient(model: ActorCritic):
+    observation = T.rand(2).repeat(model.num_actors, 1)
+    action = model(observation)
     with T.no_grad():
-        critic_before = model.forward_critic(observation, action)
+        critic_before = model.forward_critics(observation, action)
 
     updater = DeterministicPolicyGradient(max_grad=0.5)
 
@@ -153,24 +184,30 @@ def test_deterministic_policy_gradient(model):
 
     out_after = model(observation)
     with T.no_grad():
-        critic_after = model.forward_critic(observation, action)
+        critic_after = model.forward_critics(observation, action)
 
-    assert out_after != out_before
-    if model == continuous_actor_critic:
-        assert critic_after == critic_before
-    if model == continuous_actor_critic_shared:
-        assert critic_after != critic_before
+    assert not T.equal(action, out_after)
+    if model == continuous_actor_critic or model == marl_continuous:
+        assert T.equal(critic_before, critic_after)
+    if model == continuous_actor_critic_shared or model == marl_shared_continuous:
+        assert not T.equal(critic_before, critic_after)
 
 
 @pytest.mark.parametrize(
-    "model", [continuous_actor_critic, continuous_actor_critic_shared]
+    "model",
+    [
+        continuous_actor_critic,
+        continuous_actor_critic_shared,
+        marl_continuous,
+        marl_shared_continuous,
+    ],
 )
-def test_soft_policy_gradient(model):
-    observation = T.rand(2)
-    action = T.rand(1)
+def test_soft_policy_gradient(model: ActorCritic):
+    observation = T.rand(2).repeat(model.num_actors, 1)
+    action = model(observation)
     out_before = model.action_distribution(observation)
     with T.no_grad():
-        critic_before = model.forward_critic(observation, action)
+        critic_before = model.forward_critics(observation, action)
 
     updater = SoftPolicyGradient(max_grad=0.5)
 
@@ -181,54 +218,59 @@ def test_soft_policy_gradient(model):
 
     out_after = model.action_distribution(observation)
     with T.no_grad():
-        critic_after = model.forward_critic(observation, action)
+        critic_after = model.forward_critics(observation, action)
 
-    assert not assert_same_distribution(out_after, out_before)
-    if model == continuous_actor_critic:
-        assert critic_after == critic_before
-    if model == continuous_actor_critic_shared:
-        assert critic_after != critic_before
+    assert not same_distribution(out_after, out_before)
+    if model == continuous_actor_critic or model == marl_continuous:
+        assert T.equal(critic_before, critic_after)
+    if model == continuous_actor_critic_shared or model == marl_shared_continuous:
+        assert not T.equal(critic_before, critic_after)
 
 
 ############################### TEST CRITIC UPDATERS ###############################
 
 
 @pytest.mark.parametrize(
-    "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared]
+    "model", [critic, actor_critic, actor_critic_shared, marl, marl_shared]
 )
-def test_value_regression(model):
+def test_value_regression(model: Union[Critic, ActorCritic]):
     observation = T.rand(2)
     returns = T.rand(1)
-    out_before = model.forward_critic(observation)
-    with T.no_grad():
-        actor_before = model.action_distribution(observation)
+    if model != critic:
+        observation = observation.repeat(model.num_critics, 1)
+        with T.no_grad():
+            actor_before = model.action_distribution(observation)
+        out_before = model.forward_critics(observation)
+    else:
+        out_before = model(observation)
 
     updater = ValueRegression(max_grad=0.5)
 
     updater(model, observation, returns)
 
-    out_after = model.forward_critic(observation)
-    with T.no_grad():
-        actor_after = model.action_distribution(observation)
-
-    assert out_after != out_before
-    if model == actor_critic_shared:
-        assert not assert_same_distribution(actor_before, actor_after)
+    if model != critic:
+        out_after = model.forward_critics(observation)
+        with T.no_grad():
+            actor_after = model.action_distribution(observation)
     else:
-        assert assert_same_distribution(actor_before, actor_after)
+        out_after = model(observation)
+
+    assert not T.equal(out_after, out_before)
+    if model == actor_critic_shared or model == marl_shared:
+        assert not same_distribution(actor_before, actor_after)
+    elif model == actor_critic or model == marl:
+        assert same_distribution(actor_before, actor_after)
 
 
-@pytest.mark.parametrize(
-    "model", [actor_critic, actor_critic_shared_encoder, actor_critic_shared, critic]
-)
-def test_discrete_q_regression(model):
+@pytest.mark.parametrize("model", [critic, actor_critic, actor_critic_shared])
+def test_discrete_q_regression(model: Union[Critic, ActorCritic]):
     observation = T.rand(1, 2)
     actions = T.randint(0, 1, (1, 1))
     returns = T.rand(1)
     if model == critic:
         out_before = model(observation)
     else:
-        out_before = model.forward_critic(observation)
+        out_before = model.forward_critics(observation)
         with T.no_grad():
             actor_before = model.action_distribution(observation)
 
@@ -239,29 +281,29 @@ def test_discrete_q_regression(model):
     if model == critic:
         out_after = model(observation)
     else:
-        out_after = model.forward_critic(observation)
+        out_after = model.forward_critics(observation)
         with T.no_grad():
             actor_after = model.action_distribution(observation)
 
-    assert out_after != out_before
+    assert not T.equal(out_before, out_after)
     if model == actor_critic_shared:
-        assert not assert_same_distribution(actor_before, actor_after)
-    elif model != critic:
-        assert assert_same_distribution(actor_before, actor_after)
+        assert not same_distribution(actor_before, actor_after)
+    elif model == actor_critic:
+        assert same_distribution(actor_before, actor_after)
 
 
 @pytest.mark.parametrize(
     "model",
     [continuous_actor_critic, continuous_actor_critic_shared, continuous_critic],
 )
-def test_continuous_q_regression(model):
+def test_continuous_q_regression(model: Union[Critic, ActorCritic]):
     observation = T.rand(1, 2)
     actions = T.rand(1, 1)
     returns = T.rand(1)
     if model == continuous_critic:
         out_before = model(observation, actions)
     else:
-        out_before = model.forward_critic(observation, actions)
+        out_before = model.forward_critics(observation, actions)
         with T.no_grad():
             actor_before = model.action_distribution(observation)
 
@@ -272,15 +314,15 @@ def test_continuous_q_regression(model):
     if model == continuous_critic:
         out_after = model(observation, actions)
     else:
-        out_after = model.forward_critic(observation, actions)
+        out_after = model.forward_critics(observation, actions)
         with T.no_grad():
             actor_after = model.action_distribution(observation)
 
     assert out_after != out_before
     if model == continuous_actor_critic_shared:
-        assert not assert_same_distribution(actor_before, actor_after)
+        assert not same_distribution(actor_before, actor_after)
     elif model == continuous_actor_critic:
-        assert assert_same_distribution(actor_before, actor_after)
+        assert same_distribution(actor_before, actor_after)
 
 
 ############################### TEST RANDOM SEARCH UPDATERS ###############################

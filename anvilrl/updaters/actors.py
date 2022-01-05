@@ -35,7 +35,10 @@ class BaseActorUpdater(ABC):
         if isinstance(model, Actor):
             return model.parameters()
         else:
-            return model.actor.parameters()
+            params = []
+            for actor in model.actors:
+                params.extend(actor.parameters())
+            return params
 
     def run_optimizer(
         self,
@@ -51,7 +54,7 @@ class BaseActorUpdater(ABC):
         optimizer.step()
 
     @abstractmethod
-    def __call__(self) -> UpdaterLog:
+    def __call__(self, model: Union[Actor, ActorCritic]) -> UpdaterLog:
         """Run an optimization step"""
 
 
@@ -218,7 +221,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
 
         actions = model(observations)
-        values = model.critic(observations, actions)
+        values = model.forward_critics(observations, actions)
 
         loss = -values.mean()
 
@@ -275,10 +278,10 @@ class SoftPolicyGradient(BaseActorUpdater):
 
         with T.no_grad():
             if hasattr(model, "critic2"):
-                values1, values2 = model.forward_critic(observations, actions)
+                values1, values2 = model.forward_critics(observations, actions)
                 values = T.min(values1, values2)
             else:
-                values = model.forward_critic(observations, actions)
+                values = model.forward_critics(observations, actions)
 
         loss = (self.entropy_coeff * log_probs - values).mean()
 
