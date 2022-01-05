@@ -345,19 +345,29 @@ class ActorCritic(T.nn.Module):
             population_distribution=critic_dist,
             population_std=population_settings.critic_std,
         )
+        if self.actor.model.encoder == self.critic.model.encoder:
+            assert self.num_critics == self.num_actors
+            for actor, critic in zip(self.actors, self.critics):
+                critic.model.encoder = actor.model.encoder
+        if self.actor.model.torso == self.critic.model.torso:
+            assert self.num_critics == self.num_actors
+            for actor, critic in zip(self.actors, self.critics):
+                critic.model.torso = actor.model.torso
         self.assign_targets()
 
     def initialize_population(
         self,
         model: Union[Actor, Critic],
         population_size: int,
-        population_distribution: Distribution,
+        population_distribution: Optional[Distribution],
         population_std: Union[float, np.ndarray] = 1,
     ) -> List[Union[Actor, Critic]]:
         """
         Initialize the population of networks.
         """
-        if population_distribution == Distribution.UNIFORM:
+        if population_distribution is None:
+            return [copy.deepcopy(model) for _ in range(population_size)]
+        elif population_distribution == Distribution.UNIFORM:
             population = np.random.uniform(
                 model.space_range[0],
                 model.space_range[1],
@@ -440,7 +450,7 @@ class ActorCritic(T.nn.Module):
             critic_states = [critic.state for critic in self.critics]
             self.critic.set_state(np.mean(critic_states, axis=0))
 
-    def action_distributions(
+    def action_distribution(
         self, observations: Tensor
     ) -> Optional[T.distributions.Distribution]:
         """Get the population action distributions, returns None if deterministic"""
@@ -459,12 +469,6 @@ class ActorCritic(T.nn.Module):
             means = T.stack([dist.mean for dist in distributions])
             stds = T.stack([dist.stddev for dist in distributions])
             return T.distributions.Normal(means, stds)
-
-    def action_distribution(
-        self, observations: Tensor
-    ) -> Optional[T.distributions.Distribution]:
-        """Get the global network action distribution, returns None if deterministic"""
-        return self.actor.action_distribution(observations)
 
     def forward_target_critics(
         self, observations: Tensor, actions: Optional[Tensor] = None
@@ -511,17 +515,23 @@ class ActorCritic(T.nn.Module):
             ]
         ).squeeze()
 
-    def forward_actors(self, observations: Tensor) -> T.Tensor:
-        """Get the population actor outputs"""
+    def forward(self, observations: Tensor) -> T.Tensor:
+        """The default forward pass retrieves the population actor outputs"""
         if self.num_actors == 1:
             return self.actors[0](observations)
         return T.Tensor(
             [actor(obs) for actor, obs in zip(self.actors, observations)]
         ).squeeze()
 
-    def forward(self, observations: Tensor) -> T.Tensor:
+    def predict_distribution(
+        self, observations: Tensor
+    ) -> Optional[T.distributions.Distribution]:
+        """Get the global network action distribution, returns None if deterministic"""
+        return self.actor.action_distribution(observations)
+
+    def predict(self, observations: Tensor) -> T.Tensor:
         """
-        The default forward pass retrieves the global network action prediction
+        Get the global network action prediction
 
         :param observations: The state observations
         :return: The action prediction

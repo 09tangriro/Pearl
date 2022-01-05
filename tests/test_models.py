@@ -192,13 +192,15 @@ def test_actor_critic(actor_population_size, critic_population_size):
     input = T.Tensor([1, 1, 1, 1, 1])
     x_actor = input.repeat(actor_population_size, 1)
     x_critic = input.repeat(critic_population_size, 1)
-    encoder = IdentityEncoder()
-    torso = MLP([5, 5])
+    encoder_actor = IdentityEncoder()
+    encoder_critic = IdentityEncoder()
+    torso_actor = MLP([5, 5])
+    torso_critic = MLP([5, 5])
     head_critic = ValueHead(input_shape=5)
     head_actor = DeterministicHead(input_shape=5, action_shape=1)
 
-    actor = Actor(encoder, torso, head_actor)
-    critic = Critic(encoder, torso, head_critic)
+    actor = Actor(encoder_actor, torso_actor, head_actor)
+    critic = Critic(encoder_critic, torso_critic, head_critic)
 
     model = ActorCritic(
         actor,
@@ -207,10 +209,10 @@ def test_actor_critic(actor_population_size, critic_population_size):
             actor_population_size=actor_population_size,
             critic_population_size=critic_population_size,
             actor_distribution="uniform",
-            critic_distribution="uniform",
+            critic_distribution=None,
         ),
     )
-    actor_out = model.forward_actors(x_actor)
+    actor_out = model(x_actor)
     critic_out = model.forward_critics(x_critic)
 
     actor_state = model.numpy_actors()
@@ -221,12 +223,12 @@ def test_actor_critic(actor_population_size, critic_population_size):
 
     model.set_actors_state(new_actor_state)
     assert T.equal(model.forward_critics(x_critic), critic_out)
-    assert not T.equal(model.forward_actors(x_actor), actor_out)
+    assert not T.equal(model(x_actor), actor_out)
 
     model.set_critics_state(new_critic_state)
     assert not T.equal(model.forward_critics(x_critic), critic_out)
 
-    old_action = model(input)
+    old_action = model.predict(input)
     old_value = model.predict_critic(input)
     model.update_global()
     actual_actor_state = model.actor.numpy()
@@ -243,10 +245,70 @@ def test_actor_critic(actor_population_size, critic_population_size):
     )
     np.testing.assert_array_equal(actual_actor_state, expected_actor_state)
     np.testing.assert_array_equal(actual_critic_state, expected_critic_state)
-    new_action = model(input)
+    new_action = model.predict(input)
     new_value = model.predict_critic(input)
     assert not T.equal(old_action, new_action)
     assert not T.equal(old_value, new_value)
+    assert model.predict_distribution(input) is None
+
+
+def test_shared_network():
+    # Shared encoder and torso
+    encoder = IdentityEncoder()
+    torso = MLP([5, 5])
+    head_actor = DeterministicHead(input_shape=5, action_shape=1)
+    head_critic = ValueHead(input_shape=5)
+
+    actor = Actor(encoder, torso, head_actor)
+    critic = Critic(encoder, torso, head_critic)
+
+    model = ActorCritic(
+        actor,
+        critic,
+        population_settings=PopulationSettings(
+            actor_population_size=1,
+            critic_population_size=1,
+            actor_distribution="normal",
+            critic_distribution=None,
+        ),
+    )
+
+    assert model.actor.model.encoder == model.critic.model.encoder
+    assert model.actor.model.torso == model.critic.model.torso
+    assert model.actor.model.head != model.critic.model.head
+    for actor, critic in zip(model.actors, model.critics):
+        assert actor.model.encoder == critic.model.encoder
+        assert actor.model.torso == critic.model.torso
+        assert actor.model.head != critic.model.head
+
+    # Shared encoder
+    encoder = IdentityEncoder()
+    torso_actor = MLP([5, 5])
+    torso_critic = MLP([5, 5])
+    head_actor = DeterministicHead(input_shape=5, action_shape=1)
+    head_critic = ValueHead(input_shape=5)
+
+    actor = Actor(encoder, torso_actor, head_actor)
+    critic = Critic(encoder, torso_critic, head_critic)
+
+    model = ActorCritic(
+        actor,
+        critic,
+        population_settings=PopulationSettings(
+            actor_population_size=1,
+            critic_population_size=1,
+            actor_distribution="normal",
+            critic_distribution=None,
+        ),
+    )
+
+    assert model.actor.model.encoder == model.critic.model.encoder
+    assert model.actor.model.torso != model.critic.model.torso
+    assert model.actor.model.head != model.critic.model.head
+    for actor, critic in zip(model.actors, model.critics):
+        assert actor.model.encoder == critic.model.encoder
+        assert actor.model.torso != critic.model.torso
+        assert actor.model.head != critic.model.head
 
 
 @pytest.mark.parametrize("actor_population_size", [1, 2])
@@ -255,13 +317,15 @@ def test_actor_critic_targets(actor_population_size, critic_population_size):
     input = T.Tensor([1, 1, 1, 1, 1])
     x_actor = input.repeat(actor_population_size, 1)
     x_critic = input.repeat(critic_population_size, 1)
-    encoder = IdentityEncoder()
-    torso = MLP([5, 5])
+    encoder_actor = IdentityEncoder()
+    encoder_critic = IdentityEncoder()
+    torso_actor = MLP([5, 5])
+    torso_critic = MLP([5, 5])
     head_critic = ValueHead(input_shape=5)
     head_actor = DeterministicHead(input_shape=5, action_shape=1)
 
-    actor = Actor(encoder, torso, head_actor, create_target=True)
-    critic = Critic(encoder, torso, head_critic, create_target=True)
+    actor = Actor(encoder_actor, torso_actor, head_actor, create_target=True)
+    critic = Critic(encoder_critic, torso_critic, head_critic, create_target=True)
 
     model = ActorCritic(
         actor,
@@ -272,7 +336,7 @@ def test_actor_critic_targets(actor_population_size, critic_population_size):
         ),
     )
 
-    actor_out = model.forward_actors(x_actor)
+    actor_out = model(x_actor)
     actor_target_out = model.forward_target_actors(x_actor)
     critic_out = model.forward_critics(x_critic)
     critic_target_out = model.forward_target_critics(x_critic)
@@ -288,7 +352,7 @@ def test_actor_critic_targets(actor_population_size, critic_population_size):
 
     model.set_actors_state(new_actor_state)
     assert T.equal(model.forward_critics(x_critic), critic_out)
-    assert not T.equal(model.forward_actors(x_actor), actor_target_out)
+    assert not T.equal(model(x_actor), actor_target_out)
     assert T.equal(model.forward_target_actors(x_actor), actor_target_out)
 
     model.set_critics_state(new_critic_state)
@@ -302,19 +366,21 @@ def test_actor_critic_targets(actor_population_size, critic_population_size):
         model.forward_target_critics(x_critic), model.forward_critics(x_critic)
     )
     assert not T.equal(model.forward_target_actors(x_actor), actor_target_out)
-    assert T.equal(model.forward_target_actors(x_actor), model.forward_actors(x_actor))
+    assert T.equal(model.forward_target_actors(x_actor), model(x_actor))
 
 
 def test_population_initialize():
     np.random.seed(0)
     T.manual_seed(0)
-    encoder = IdentityEncoder()
-    torso = MLP([5, 5])
+    encoder_actor = IdentityEncoder()
+    encoder_critic = IdentityEncoder()
+    torso_actor = MLP([5, 5])
+    torso_critic = MLP([5, 5])
     head_critic = ValueHead(input_shape=5)
     head_actor = DeterministicHead(input_shape=5, action_shape=1)
 
-    actor = Actor(encoder, torso, head_actor)
-    critic = Critic(encoder, torso, head_critic)
+    actor = Actor(encoder_actor, torso_actor, head_actor)
+    critic = Critic(encoder_critic, torso_critic, head_critic)
 
     model = ActorCritic(
         actor, critic, population_settings=PopulationSettings(actor_population_size=500)
@@ -328,13 +394,15 @@ def test_population_initialize():
 @pytest.mark.parametrize("actor_population_size", [1, 2])
 def test_action_distribution(actor_population_size):
     input = T.Tensor([1, 1, 1, 1, 1]).repeat(actor_population_size, 1)
-    encoder = IdentityEncoder()
-    torso = MLP([5, 5])
+    encoder_actor = IdentityEncoder()
+    encoder_critic = IdentityEncoder()
+    torso_actor = MLP([5, 5])
+    torso_critic = MLP([5, 5])
     head_critic = ValueHead(input_shape=5)
     head_actor = DeterministicHead(input_shape=5, action_shape=1)
 
-    actor = Actor(encoder, torso, head_actor)
-    critic = Critic(encoder, torso, head_critic)
+    actor = Actor(encoder_actor, torso_actor, head_actor)
+    critic = Critic(encoder_critic, torso_critic, head_critic)
 
     model = ActorCritic(
         actor,
@@ -344,19 +412,16 @@ def test_action_distribution(actor_population_size):
         ),
     )
 
-    distribution = model.action_distributions(input)
-    global_dist = model.action_distribution(input)
+    distribution = model.action_distribution(input)
+    global_dist = model.predict_distribution(T.Tensor([1, 1, 1, 1, 1]))
     assert distribution is None
     assert global_dist is None
 
     input = T.Tensor([1, 1, 1, 1, 1]).repeat(actor_population_size, 1)
-    encoder = IdentityEncoder()
-    torso = MLP([5, 5])
-    head_critic = ValueHead(input_shape=5)
     head_actor = CategoricalHead(input_shape=5, action_size=5)
 
-    actor = Actor(encoder, torso, head_actor)
-    critic = Critic(encoder, torso, head_critic)
+    actor = Actor(encoder_actor, torso_actor, head_actor)
+    critic = Critic(encoder_critic, torso_critic, head_critic)
 
     model = ActorCritic(
         actor,
@@ -366,20 +431,17 @@ def test_action_distribution(actor_population_size):
         ),
     )
 
-    distribution = model.action_distributions(input)
-    global_dist = model.action_distribution(T.Tensor([1, 1, 1, 1, 1]))
+    distribution = model.action_distribution(input)
+    global_dist = model.predict_distribution(T.Tensor([1, 1, 1, 1, 1]))
     assert isinstance(distribution, T.distributions.Categorical)
     assert distribution.logits.shape == (actor_population_size, 5)
     assert global_dist.logits.shape == (5,)
 
     input = T.Tensor([1, 1, 1, 1, 1]).repeat(actor_population_size, 1)
-    encoder = IdentityEncoder()
-    torso = MLP([5, 5])
-    head_critic = ValueHead(input_shape=5)
     head_actor = DiagGaussianHead(input_shape=5, action_size=5)
 
-    actor = Actor(encoder, torso, head_actor)
-    critic = Critic(encoder, torso, head_critic)
+    actor = Actor(encoder_actor, torso_actor, head_actor)
+    critic = Critic(encoder_critic, torso_critic, head_critic)
 
     model = ActorCritic(
         actor,
@@ -389,8 +451,8 @@ def test_action_distribution(actor_population_size):
         ),
     )
 
-    distribution = model.action_distributions(input)
-    global_dist = model.action_distribution(T.Tensor([1, 1, 1, 1, 1]))
+    distribution = model.action_distribution(input)
+    global_dist = model.predict_distribution(T.Tensor([1, 1, 1, 1, 1]))
     assert isinstance(distribution, T.distributions.Normal)
     assert distribution.loc.shape == (actor_population_size, 5)
     assert distribution.scale.shape == (actor_population_size, 5)
