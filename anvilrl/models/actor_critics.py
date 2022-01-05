@@ -475,26 +475,26 @@ class ActorCritic(T.nn.Module):
         if self.num_critics == 1:
             return self.critics[0].forward_target(observations, actions)
         elif actions is None:
-            return T.Tensor(
+            return T.stack(
                 [
                     critic.forward_target(obs)
                     for critic, obs in zip(self.critics, observations)
                 ]
-            ).squeeze()
-        return T.Tensor(
+            )
+        return T.stack(
             [
                 critic.forward_target(obs, action)
                 for critic, obs, action in zip(self.critics, observations, actions)
             ]
-        ).squeeze()
+        )
 
     def forward_target_actors(self, observations: Tensor) -> T.Tensor:
         """Get the population target actor outputs"""
         if self.num_actors == 1:
             return self.actors[0].forward_target(observations)
-        return T.Tensor(
+        return T.stack(
             [actor.forward_target(obs) for actor, obs in zip(self.actors, observations)]
-        ).squeeze()
+        )
 
     def forward_critics(
         self, observations: Tensor, actions: Optional[Tensor] = None
@@ -503,23 +503,21 @@ class ActorCritic(T.nn.Module):
         if self.num_critics == 1:
             return self.critics[0](observations, actions)
         elif actions is None:
-            return T.Tensor(
+            return T.stack(
                 [critic(obs) for critic, obs in zip(self.critics, observations)]
-            ).squeeze()
-        return T.Tensor(
+            )
+        return T.stack(
             [
                 critic(obs, action)
                 for critic, obs, action in zip(self.critics, observations, actions)
             ]
-        ).squeeze()
+        )
 
     def forward(self, observations: Tensor) -> T.Tensor:
         """The default forward pass retrieves the population actor outputs"""
         if self.num_actors == 1:
             return self.actors[0](observations)
-        return T.Tensor(
-            [actor(obs) for actor, obs in zip(self.actors, observations)]
-        ).squeeze()
+        return T.stack([actor(obs) for actor, obs in zip(self.actors, observations)])
 
     def predict_distribution(
         self, observations: Tensor

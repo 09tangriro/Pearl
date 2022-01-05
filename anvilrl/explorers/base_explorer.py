@@ -25,6 +25,7 @@ class BaseExplorer(object):
     ) -> None:
         self.start_steps = start_steps
         self.action_space = action_space
+        self.action_shape = get_space_shape(action_space)
         self.action_size = get_mlp_size(get_space_shape(action_space))
         self.action_range = get_space_range(action_space)
 

@@ -31,7 +31,7 @@ class GaussianExplorer(BaseExplorer):
     ) -> np.ndarray:
         actions = super().__call__(model, observation, step)
         if step >= self.start_steps:
-            noises = np.random.normal(loc=0.0, scale=self.scale, size=self.action_size)
+            noises = np.random.normal(loc=0.0, scale=self.scale, size=self.action_shape)
             actions = actions + noises
             actions = np.clip(actions, self.action_range[0], self.action_range[1])
         return actions

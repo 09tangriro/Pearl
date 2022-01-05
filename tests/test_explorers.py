@@ -62,4 +62,4 @@ def test_explorer(explorer_class):
 
     # model exploration
     actions = explorer(model=model, observation=observation, step=50e3)
-    assert actions.shape == (2,)
+    assert actions.shape == (2,) + env.single_action_space.shape
