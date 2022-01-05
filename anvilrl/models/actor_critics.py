@@ -14,11 +14,13 @@ from anvilrl.common.utils import (
     numpy_to_torch,
     torch_to_numpy,
 )
+from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import (
     BaseActorHead,
     BaseCriticHead,
     CategoricalHead,
     DiagGaussianHead,
+    DummyHead,
 )
 from anvilrl.models.utils import trainable_parameters
 from anvilrl.settings import PopulationSettings
@@ -182,6 +184,38 @@ class EpsilonGreedyActor(Actor):
         return actions
 
 
+class DummyActor(Actor):
+    """
+    An individual in the population without a nerual network.
+
+    :param space: the individual space
+    :param state: optional starting state of the individual
+    """
+
+    def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
+        super().__init__(
+            encoder=IdentityEncoder(),
+            torso=MLPEncoder(1, 1),
+            head=DummyHead(),
+        )
+        self.space = space
+        self.space_shape = get_space_shape(self.space)
+        self.space_range = get_space_range(self.space)
+        self.state = state if state is not None else space.sample()
+
+    def set_state(self, state: np.ndarray) -> "DummyActor":
+        """Set the state of the individual"""
+        self.state = state
+        return self
+
+    def numpy(self) -> np.ndarray:
+        """Get the numpy representation of the individual"""
+        return self.state
+
+    def forward(self, observation: Tensor) -> np.ndarray:
+        return numpy_to_torch(self.state)
+
+
 class Critic(T.nn.Module):
     """
     The critic network which approximates the Q or Value functions.
@@ -271,6 +305,38 @@ class Critic(T.nn.Module):
         return self.model(observations, actions)
 
 
+class DummyCritic(Critic):
+    """
+    An individual in the population without a nerual network.
+
+    :param space: the individual space
+    :param state: optional starting state of the individual
+    """
+
+    def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
+        super().__init__(
+            encoder=IdentityEncoder(),
+            torso=MLPEncoder(1, 1),
+            head=BaseCriticHead(),
+        )
+        self.space = space
+        self.space_shape = get_space_shape(self.space)
+        self.space_range = get_space_range(self.space)
+        self.state = state if state is not None else space.sample()
+
+    def set_state(self, state: np.ndarray) -> "DummyCritic":
+        """Set the state of the individual"""
+        self.state = state
+        return self
+
+    def numpy(self) -> np.ndarray:
+        """Get the numpy representation of the individual"""
+        return self.state
+
+    def forward(self, observation: Tensor) -> np.ndarray:
+        return numpy_to_torch(self.state)
+
+
 class ActorCritic(T.nn.Module):
     """
     A basic actor critic network.
@@ -315,6 +381,7 @@ class ActorCritic(T.nn.Module):
         super().__init__()
         self.actor = actor
         self.critic = critic
+        self.population_settings = population_settings
         self.num_actors = population_settings.actor_population_size
         self.num_critics = population_settings.critic_population_size
         actor_dist = population_settings.actor_distribution
@@ -545,31 +612,3 @@ class ActorCritic(T.nn.Module):
         :return: The critic value
         """
         return self.critic(observations, actions)
-
-
-class Individual(T.nn.Module):
-    """
-    An individual in the population without a nerual network is not needed.
-
-    :param space: the individual space
-    :param state: optional starting state of the individual
-    """
-
-    def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
-        super().__init__()
-        self.space = space
-        self.space_shape = get_space_shape(self.space)
-        self.space_range = get_space_range(self.space)
-        self.state = state if state is not None else space.sample()
-
-    def set_state(self, state: np.ndarray) -> "Individual":
-        """Set the state of the individual"""
-        self.state = state
-        return self
-
-    def numpy(self) -> np.ndarray:
-        """Get the numpy representation of the individual"""
-        return self.state
-
-    def forward(self, observation: Tensor) -> np.ndarray:
-        return self.state

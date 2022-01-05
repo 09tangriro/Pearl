@@ -110,6 +110,16 @@ class DiscreteQHead(BaseCriticHead):
 ################################### ACTOR HEADS ###################################
 
 
+class DummyHead(BaseActorHead):
+    def __init__(self):
+        super().__init__()
+
+    def action_distribution(
+        self, input: T.Tensor
+    ) -> Optional[T.distributions.Distribution]:
+        return None
+
+
 class DeterministicHead(BaseActorHead):
     """
     Use this head if you want a deterministic actor.
