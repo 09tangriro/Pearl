@@ -49,7 +49,9 @@ def test_explorer(explorer_class):
     model = ActorCritic(
         actor=actor,
         critic=critic,
-        population_settings=PopulationSettings(actor_population_size=2),
+        population_settings=PopulationSettings(
+            actor_population_size=2, critic_population_size=2
+        ),
     )
     explorer = explorer_class(action_space=env.action_space)
 
