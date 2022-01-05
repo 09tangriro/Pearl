@@ -18,7 +18,7 @@ class GaussianExplorer(BaseExplorer):
         """
         Add Gaussian noise to the actions
 
-        :param actor: actor or actor critic network
+        :param model: actor or actor critic network
         :param action_space: action space
         :param scale: std of the Gaussian noise
         :param start_steps: the fist n steps to uniformally sample actions
@@ -27,9 +27,9 @@ class GaussianExplorer(BaseExplorer):
         self.scale = scale
 
     def __call__(
-        self, actor: Union[Actor, ActorCritic], observation: Observation, step: int
+        self, model: Union[Actor, ActorCritic], observation: Observation, step: int
     ) -> np.ndarray:
-        actions = super().__call__(actor, observation, step)
+        actions = super().__call__(model, observation, step)
         if step >= self.start_steps:
             noises = np.random.normal(loc=0.0, scale=self.scale, size=self.action_size)
             actions = actions + noises
