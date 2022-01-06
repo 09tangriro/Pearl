@@ -5,7 +5,7 @@ import torch as T
 from gym import spaces
 
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import torch_to_numpy
+from anvilrl.common.utils import to_numpy
 from anvilrl.models.utils import concat_obs_actions
 
 
@@ -118,7 +118,7 @@ class DictEncoder(T.nn.Module):
         self, observations: Dict[str, Tensor], actions: Optional[Tensor] = None
     ) -> T.Tensor:
         obs = [observations[label] for label in self.labels]
-        obs = torch_to_numpy(*obs)
+        obs = to_numpy(*obs)
         if len(self.labels) > 1:
             shape_length = len(observations[self.labels[0]].shape)
             obs = np.concatenate(obs, axis=shape_length - 1)

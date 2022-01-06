@@ -4,7 +4,7 @@ import numpy as np
 from gym import spaces
 
 from anvilrl.common.type_aliases import Observation
-from anvilrl.common.utils import get_space_range, get_space_shape, torch_to_numpy
+from anvilrl.common.utils import get_space_range, get_space_shape, to_numpy
 from anvilrl.models.actor_critics import Actor, ActorCritic
 from anvilrl.models.utils import get_mlp_size
 
@@ -33,7 +33,7 @@ class BaseExplorer(object):
         self, model: Union[Actor, ActorCritic], observation: Observation, step: int
     ) -> np.ndarray:
         if step >= self.start_steps:
-            action = torch_to_numpy(model(observation))
+            action = to_numpy(model(observation))
             action = np.clip(action, self.action_range[0], self.action_range[1])
         else:
             action = self.action_space.sample()

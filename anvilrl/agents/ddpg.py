@@ -9,7 +9,7 @@ from anvilrl.buffers import ReplayBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
-from anvilrl.common.utils import get_space_shape, torch_to_numpy
+from anvilrl.common.utils import get_space_shape, to_numpy
 from anvilrl.explorers import BaseExplorer, GaussianExplorer
 from anvilrl.models.actor_critics import (
     Actor,
@@ -144,7 +144,7 @@ class DDPG(BaseRLAgent):
                 )
                 target_q_values = TD_zero(
                     trajectories.rewards,
-                    torch_to_numpy(next_q_values),
+                    to_numpy(next_q_values),
                     trajectories.dones,
                     gamma=self.td_gamma,
                 )

@@ -5,7 +5,7 @@ import torch as T
 from torch.nn.parameter import Parameter
 
 from anvilrl.common.type_aliases import Tensor, UpdaterLog
-from anvilrl.common.utils import numpy_to_torch
+from anvilrl.common.utils import to_torch
 from anvilrl.models.actor_critics import ActorCritic, Critic
 
 
@@ -208,7 +208,7 @@ class DiscreteQRegression(BaseCriticUpdater):
             q_values = model(observations)
         else:
             q_values = model.forward_critics(observations)
-        actions_index = numpy_to_torch(actions_index)
+        actions_index = to_torch(actions_index)
         q_values = T.gather(q_values, dim=-1, index=actions_index.long())
 
         loss = self.loss_coeff * self.loss_class(q_values, returns)

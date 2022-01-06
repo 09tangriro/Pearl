@@ -9,7 +9,7 @@ from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.buffers.replay_buffer import ReplayBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
-from anvilrl.common.utils import get_space_shape, torch_to_numpy
+from anvilrl.common.utils import get_space_shape, to_numpy
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models.actor_critics import (
     ActorCritic,
@@ -122,7 +122,7 @@ class DQN(BaseRLAgent):
             with T.no_grad():
                 next_q_values = self.model.target_critic(trajectories.next_observations)
                 next_q_values, _ = next_q_values.max(dim=-1)
-                next_q_values = torch_to_numpy(next_q_values.reshape(-1, 1))
+                next_q_values = to_numpy(next_q_values.reshape(-1, 1))
                 target_q_values = TD_zero(
                     trajectories.rewards,
                     next_q_values,

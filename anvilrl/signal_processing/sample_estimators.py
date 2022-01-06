@@ -5,7 +5,7 @@ import torch as T
 
 from anvilrl.common.enumerations import TrajectoryType
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import numpy_to_torch, torch_to_numpy
+from anvilrl.common.utils import to_numpy, to_torch
 
 
 def sample_forward_kl_divergence(
@@ -21,10 +21,10 @@ def sample_forward_kl_divergence(
     """
     ratio = target_dist_prob / sample_dist_prob
     if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
-        ratio = numpy_to_torch(ratio)
+        ratio = to_torch(ratio)
         return ratio * T.log(ratio) - (ratio - 1)
     elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
-        ratio = torch_to_numpy(ratio)
+        ratio = to_numpy(ratio)
         return ratio * np.log(ratio) - (ratio - 1)
     else:
         raise ValueError(
@@ -45,10 +45,10 @@ def sample_reverse_kl_divergence(
     """
     ratio = target_dist_prob / sample_dist_prob
     if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
-        ratio = numpy_to_torch(ratio)
+        ratio = to_torch(ratio)
         return (ratio - 1) - T.log(ratio)
     elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
-        ratio = torch_to_numpy(ratio)
+        ratio = to_numpy(ratio)
         return (ratio - 1) - np.log(ratio)
     else:
         raise ValueError(

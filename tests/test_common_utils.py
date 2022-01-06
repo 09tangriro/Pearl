@@ -9,9 +9,9 @@ from anvilrl.common.utils import (
     filter_dataclass_by_none,
     get_space_range,
     get_space_shape,
-    numpy_to_torch,
     set_seed,
-    torch_to_numpy,
+    to_numpy,
+    to_torch,
 )
 from anvilrl.settings import ExplorerSettings
 
@@ -24,23 +24,23 @@ one_torch = T.zeros(2, 2)
 
 @pytest.mark.parametrize("input", [numpy_data, torch_data, mixed_data])
 def test_numpy_to_torch(input):
-    actual_output = numpy_to_torch(*input)
+    actual_output = to_torch(*input)
     for i in range(len(actual_output)):
         assert T.equal(actual_output[i], torch_data[i])
 
 
 @pytest.mark.parametrize("input", [numpy_data, torch_data, mixed_data])
 def test_torch_to_numpy(input):
-    actual_output = torch_to_numpy(*input)
+    actual_output = to_numpy(*input)
     for i in range(len(actual_output)):
         np.testing.assert_array_equal(actual_output[i], numpy_data[i])
 
 
 def test_one_input():
-    actual_output = torch_to_numpy(one_torch)
+    actual_output = to_numpy(one_torch)
     np.testing.assert_array_equal(actual_output, one_numpy)
 
-    actual_output = numpy_to_torch(one_numpy)
+    actual_output = to_torch(one_numpy)
     T.equal(actual_output, one_torch)
 
 

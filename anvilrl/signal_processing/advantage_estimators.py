@@ -6,7 +6,7 @@ import numpy as np
 
 from anvilrl.common.enumerations import TrajectoryType
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import numpy_to_torch, torch_to_numpy
+from anvilrl.common.utils import to_numpy, to_torch
 
 
 def generalized_advantage_estimate(
@@ -30,7 +30,7 @@ def generalized_advantage_estimate(
     :return advantage: the advantage of taking actions in the environment
     :return value: the value of taking actions in the environment
     """
-    rewards, old_values, new_values, dones = torch_to_numpy(
+    rewards, old_values, new_values, dones = to_numpy(
         rewards, old_values, new_values, dones
     )
     dones = 1 - dones
@@ -54,7 +54,7 @@ def generalized_advantage_estimate(
     ), f"The returns' shape should be {old_values.shape}, instead it is {value_target.shape}."
 
     if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
-        return numpy_to_torch(advantage[:batch_size], value_target)
+        return to_torch(advantage[:batch_size], value_target)
     elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
         return advantage[:batch_size], value_target
     else:

@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.common.utils import numpy_to_torch
+from anvilrl.common.utils import to_torch
 from anvilrl.signal_processing.advantage_estimators import (
     generalized_advantage_estimate,
 )
@@ -48,9 +48,7 @@ def test_kl_divergence(kl_divergence, dtype):
     else:
         full_kl_div = T.distributions.kl_divergence(dist2, dist1)
 
-    approx_kl_div = numpy_to_torch(
-        kl_divergence(log_probs1.exp(), log_probs2.exp(), dtype)
-    )
+    approx_kl_div = to_torch(kl_divergence(log_probs1.exp(), log_probs2.exp(), dtype))
     mean_approx_kl_div = T.mean(approx_kl_div)
 
     assert T.allclose(full_kl_div, mean_approx_kl_div, rtol=5e-3)

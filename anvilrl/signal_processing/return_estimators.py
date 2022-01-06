@@ -4,7 +4,7 @@ import numpy as np
 
 from anvilrl.common.enumerations import TrajectoryType
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import numpy_to_torch, torch_to_numpy
+from anvilrl.common.utils import to_numpy, to_torch
 
 
 def TD_lambda(
@@ -22,7 +22,7 @@ def TD_lambda(
     :param last_dones: the done values of the last step of the trajectory, indicates whether to bootstrap
     :param gamma: the discount factor of future rewards
     """
-    rewards, last_values = torch_to_numpy(rewards, last_values)
+    rewards, last_values = to_numpy(rewards, last_values)
     batch_size = rewards.shape[0]
     td_lambda = rewards.shape[1]
     last_dones = 1 - last_dones
@@ -34,7 +34,7 @@ def TD_lambda(
     returns += (gamma ** td_lambda) * last_values * last_dones
 
     if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
-        return numpy_to_torch(returns)
+        return to_torch(returns)
     elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
         return returns
     else:
@@ -63,7 +63,7 @@ def TD_zero(
         returns.shape == next_values.shape
     ), f"The TD returns' shape should be {next_values.shape}, instead it is {returns.shape}."
     if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
-        return numpy_to_torch(returns)
+        return to_torch(returns)
     elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
         return returns
     else:
@@ -96,7 +96,7 @@ def soft_q_target(
         returns.shape == q_values.shape
     ), f"The advantage's shape should be {q_values.shape}, instead it is {returns.shape}."
     if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
-        return numpy_to_torch(returns)
+        return to_torch(returns)
     elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
         return returns
     else:

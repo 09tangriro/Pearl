@@ -32,37 +32,36 @@ def get_device(device: Union[T.device, str]) -> T.device:
     return device
 
 
-def numpy_to_torch(*data, **kwargs) -> Union[Tuple[T.Tensor], T.Tensor]:
-    """Convert any numpy arrays into torch tensors"""
+def to_torch(*data, **kwargs) -> Union[Tuple[T.Tensor], T.Tensor]:
+    """Convert to torch tensors"""
     device = get_device(kwargs.pop("device", "auto"))
     result = [None] * len(data)
     for i, el in enumerate(data):
-        if isinstance(el, np.ndarray):
-            result[i] = T.Tensor(el).to(device)
-        elif isinstance(el, T.Tensor):
+        if isinstance(el, T.Tensor):
             result[i] = el.to(device)
+        elif isinstance(el, np.ndarray):
+            # For some reason T.Tensor(el) changes the value if array has 0 dimension??
+            # e.g. if el = np.array(4)
+            if el.ndim == 0:
+                result[i] = T.tensor(el, device=device)
+            else:
+                result[i] = T.Tensor(el).to(device)
         else:
-            raise RuntimeError(
-                f"{type(el)} is not a recognized data format, it should be a numpy array or torch tensor"
-            )
+            return T.Tensor(el).to(device)
     if len(data) == 1:
         return result[0]
     else:
         return tuple(result)
 
 
-def torch_to_numpy(*data) -> Union[Tuple[np.ndarray], np.ndarray]:
-    """Convert any torch tensors into numpy arrays"""
+def to_numpy(*data) -> Union[Tuple[np.ndarray], np.ndarray]:
+    """Convert to numpy arrays"""
     result = [None] * len(data)
     for i, el in enumerate(data):
         if isinstance(el, T.Tensor):
             result[i] = el.detach().numpy()
-        elif isinstance(el, np.ndarray):
-            result[i] = el
         else:
-            raise RuntimeError(
-                f"{type(el)} is not a recognized data format, it should be a numpy array or torch tensor"
-            )
+            result[i] = np.array(el)
 
     if len(data) == 1:
         return result[0]
