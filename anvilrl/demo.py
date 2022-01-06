@@ -36,7 +36,7 @@ def dqn_demo():
 
 
 def dqn_parallel_demo():
-    env = gym.vector.make("CartPole-v0", 10, asynchronous=False)
+    env = gym.vector.make("CartPole-v0", 2, asynchronous=False)
     encoder = IdentityEncoder()
     torso = MLP(layer_sizes=[4, 64, 32], activation_fn=T.nn.ReLU)
     head = DiscreteQHead(input_shape=32, output_shape=2)
@@ -44,8 +44,17 @@ def dqn_parallel_demo():
     actor = EpsilonGreedyActor(
         critic_encoder=encoder, critic_torso=torso, critic_head=head
     )
-    critic = Critic(encoder=encoder, torso=torso, head=head)
-    model = ActorCritic(actor=actor, critic=critic)
+    critic = Critic(encoder=encoder, torso=torso, head=head, create_target=True)
+    model = ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=2,
+            critic_population_size=2,
+            actor_distribution="normal",
+            critic_distribution="normal",
+        ),
+    )
 
     agent = DQN(
         env=env,
@@ -57,7 +66,7 @@ def dqn_parallel_demo():
     )
     agent.fit(
         num_steps=50000,
-        batch_size=320,
+        batch_size=32,
         critic_epochs=16,
         train_frequency=("episode", 1),
     )

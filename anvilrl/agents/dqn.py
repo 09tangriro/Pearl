@@ -112,14 +112,14 @@ class DQN(BaseAgent):
     ) -> Log:
         critic_losses = np.zeros(shape=(critic_epochs))
         for i in range(critic_epochs):
-            trajectories = self.buffer.sample(batch_size=batch_size)
+            trajectories = self.buffer.sample(batch_size=batch_size, flatten_env=False)
 
             with T.no_grad():
                 next_q_values = self.model.forward_target_critics(
                     trajectories.next_observations
                 )
-                next_q_values, _ = next_q_values.max(dim=-1)
-                next_q_values = to_numpy(next_q_values.reshape(-1, 1))
+                next_q_values = to_numpy(next_q_values.max(dim=-1)[0])
+                next_q_values = next_q_values[..., np.newaxis]
                 target_q_values = TD_zero(
                     trajectories.rewards,
                     next_q_values,
