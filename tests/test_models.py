@@ -3,8 +3,14 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.models import Actor, ActorCritic, Critic, EpsilonGreedyActor
-from anvilrl.models.actor_critics import DummyActor, DummyCritic
+from anvilrl.models import (
+    Actor,
+    ActorCritic,
+    Critic,
+    DummyActor,
+    DummyCritic,
+    EpsilonGreedyActor,
+)
 from anvilrl.models.encoders import (
     CNNEncoder,
     DictEncoder,

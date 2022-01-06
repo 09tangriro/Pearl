@@ -13,7 +13,7 @@ from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
 from anvilrl.explorers.base_explorer import BaseExplorer
-from anvilrl.models.actor_critics import ActorCritic, DummyActor, DummyCritic
+from anvilrl.models import ActorCritic, DummyActor, DummyCritic
 from anvilrl.settings import (
     BufferSettings,
     CallbackSettings,

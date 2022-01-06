@@ -8,7 +8,7 @@ import torch as T
 from anvilrl.agents import A2C, DDPG, DQN, ES, GA, PPO
 from anvilrl.buffers import HERBuffer
 from anvilrl.common.utils import get_space_shape
-from anvilrl.models.actor_critics import (
+from anvilrl.models import (
     ActorCritic,
     Critic,
     DummyActor,

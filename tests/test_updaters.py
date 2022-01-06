@@ -6,8 +6,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.models import Actor, ActorCritic, Critic
-from anvilrl.models.actor_critics import DummyActor, DummyCritic
+from anvilrl.models import Actor, ActorCritic, Critic, DummyActor, DummyCritic
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import DiagGaussianHead, ValueHead
 from anvilrl.models.torsos import MLP
