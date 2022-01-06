@@ -191,12 +191,11 @@ def ga_demo():
 
     agent = GA(
         env=env,
-        population_settings=PopulationSettings(strategy="uniform"),
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/GA-demo", log_frequency=("step", 1)
         ),
     )
-    agent.fit(num_steps=25)
+    agent.fit(num_steps=30, batch_size=1)
 
 
 def her_demo():
