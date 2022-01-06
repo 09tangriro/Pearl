@@ -141,8 +141,8 @@ class A2C(BaseRLAgent):
         # Sample rollout and compute advantages/returns
         trajectories = self.buffer.sample(batch_size, dtype="torch")
         with T.no_grad():
-            old_values = self.model.forward_critic(trajectories.observations)
-            next_values = self.model.forward_critic(trajectories.next_observations)
+            old_values = self.model.forward_critics(trajectories.observations)
+            next_values = self.model.forward_critics(trajectories.next_observations)
             advantages, returns = generalized_advantage_estimate(
                 rewards=trajectories.rewards,
                 old_values=old_values,
@@ -174,6 +174,7 @@ class A2C(BaseRLAgent):
             critic_losses[i] = critic_log.loss
 
         self.buffer.reset()
+        self.model.update_global()
 
         return Log(
             actor_loss=actor_losses.mean(),
