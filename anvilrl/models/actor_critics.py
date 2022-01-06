@@ -11,8 +11,8 @@ from anvilrl.common.utils import (
     get_device,
     get_space_range,
     get_space_shape,
-    numpy_to_torch,
-    torch_to_numpy,
+    to_numpy,
+    to_torch,
 )
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import (
@@ -71,7 +71,7 @@ class Actor(T.nn.Module):
         self.state_info = {}
         self.make_state_info()
         self.state = np.concatenate(
-            [torch_to_numpy(d.flatten()) for d in self.model.state_dict().values()]
+            [to_numpy(d.flatten()) for d in self.model.state_dict().values()]
         )
         self.space = Box(low=-1e6, high=1e6, shape=self.state.shape)
         self.space_shape = get_space_shape(self.space)
@@ -99,7 +99,7 @@ class Actor(T.nn.Module):
     def set_state(self, state: np.ndarray) -> "Actor":
         """Set the state of the individual"""
         self.state = state
-        state = numpy_to_torch(state, device=self.device)
+        state = to_torch(state, device=self.device)
         state_dict = {
             k: state[v[1][0] : v[1][1]].reshape(v[0])
             for k, v in zip(self.state_info.keys(), self.state_info.values())
@@ -186,13 +186,14 @@ class EpsilonGreedyActor(Actor):
 
 class DummyActor(Actor):
     """
-    An individual in the population without a nerual network.
+    An actor without a nerual network.
 
     :param space: the individual space
     :param state: optional starting state of the individual
     """
 
     def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
+        # Random network to make compatible with ActorCritic
         super().__init__(
             encoder=IdentityEncoder(),
             torso=MLPEncoder(1, 1),
@@ -201,11 +202,11 @@ class DummyActor(Actor):
         self.space = space
         self.space_shape = get_space_shape(self.space)
         self.space_range = get_space_range(self.space)
-        self.state = state if state is not None else space.sample()
+        self.state = np.array(state) if state is not None else np.array(space.sample())
 
     def set_state(self, state: np.ndarray) -> "DummyActor":
         """Set the state of the individual"""
-        self.state = state
+        self.state = np.array(state)
         return self
 
     def numpy(self) -> np.ndarray:
@@ -213,7 +214,7 @@ class DummyActor(Actor):
         return self.state
 
     def forward(self, observation: Tensor) -> np.ndarray:
-        return numpy_to_torch(self.state)
+        return to_torch(self.state)
 
 
 class Critic(T.nn.Module):
@@ -241,7 +242,7 @@ class Critic(T.nn.Module):
         self.state_info = {}
         self.make_state_info()
         self.state = np.concatenate(
-            [torch_to_numpy(d.flatten()) for d in self.model.state_dict().values()]
+            [to_numpy(d.flatten()) for d in self.model.state_dict().values()]
         )
         self.space = Box(low=-1e6, high=1e6, shape=self.state.shape)
         self.space_shape = get_space_shape(self.space)
@@ -269,7 +270,7 @@ class Critic(T.nn.Module):
     def set_state(self, state: np.ndarray) -> "Actor":
         """Set the state of the individual"""
         self.state = state
-        state = numpy_to_torch(state, device=self.device)
+        state = to_torch(state, device=self.device)
         state_dict = {
             k: state[v[1][0] : v[1][1]].reshape(v[0])
             for k, v in zip(self.state_info.keys(), self.state_info.values())
@@ -307,13 +308,14 @@ class Critic(T.nn.Module):
 
 class DummyCritic(Critic):
     """
-    An individual in the population without a nerual network.
+    A critic without a nerual network.
 
     :param space: the individual space
     :param state: optional starting state of the individual
     """
 
     def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
+        # Random network to make compatible with ActorCritic
         super().__init__(
             encoder=IdentityEncoder(),
             torso=MLPEncoder(1, 1),
@@ -322,11 +324,11 @@ class DummyCritic(Critic):
         self.space = space
         self.space_shape = get_space_shape(self.space)
         self.space_range = get_space_range(self.space)
-        self.state = state if state is not None else space.sample()
+        self.state = np.array(state) if state is not None else np.array(space.sample())
 
     def set_state(self, state: np.ndarray) -> "DummyCritic":
         """Set the state of the individual"""
-        self.state = state
+        self.state = np.array(state)
         return self
 
     def numpy(self) -> np.ndarray:
@@ -334,7 +336,7 @@ class DummyCritic(Critic):
         return self.state
 
     def forward(self, observation: Tensor) -> np.ndarray:
-        return numpy_to_torch(self.state)
+        return to_torch(self.state)
 
 
 class ActorCritic(T.nn.Module):
@@ -466,13 +468,13 @@ class ActorCritic(T.nn.Module):
         """
         Get the numpy representation of the actor population.
         """
-        return np.array([ind.numpy() for ind in self.actors]).squeeze()
+        return np.array([ind.numpy() for ind in self.actors])
 
     def numpy_critics(self) -> np.ndarray:
         """
         Get the numpy representation of the critic population.
         """
-        return np.array([ind.numpy() for ind in self.critics]).squeeze()
+        return np.array([ind.numpy() for ind in self.critics])
 
     def set_actors_state(self, state: np.ndarray) -> "ActorCritic":
         """Set the state of the actors"""

@@ -1,3 +1,4 @@
+import copy
 from typing import Union
 
 import gym
@@ -5,9 +6,8 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.common.enumerations import Distribution
 from anvilrl.models import Actor, ActorCritic, Critic
-from anvilrl.models.actor_critics import Individual
+from anvilrl.models.actor_critics import DummyActor, DummyCritic
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import DiagGaussianHead, ValueHead
 from anvilrl.models.torsos import MLP
@@ -84,6 +84,9 @@ marl_shared_continuous = ActorCritic(
         actor_population_size=2, critic_population_size=2
     ),
 )
+
+T.manual_seed(0)
+np.random.seed(0)
 
 
 def same_distribution(
@@ -360,112 +363,167 @@ class DiscreteSphere(gym.Env):
         return 0
 
 
-POPULATION_SIZE = 1000
+POPULATION_SIZE = 100
 env_continuous = gym.vector.SyncVectorEnv(
     [lambda: Sphere() for _ in range(POPULATION_SIZE)]
 )
 env_discrete = gym.vector.SyncVectorEnv(
     [lambda: DiscreteSphere() for _ in range(POPULATION_SIZE)]
 )
-model_continuous = Individual(
-    space=env_continuous.single_action_space, state=np.array([10, 10])
-)
-model_discrete = Individual(space=env_discrete.single_action_space, state=np.array([5]))
 
 
 def test_evolutionary_updater_continuous():
-    np.random.seed(0)
-
-    # Assert population stats
-    updater = NoisyGradientAscent(env_continuous, model_continuous)
-    updater.initialize_population(starting_point=model_continuous.numpy())
-    np.testing.assert_allclose(np.std(updater.population, axis=0), np.ones(2), rtol=0.1)
-    np.testing.assert_allclose(
-        np.mean(updater.population, axis=0), np.array([10, 10]), rtol=0.1
+    actor_continuous = DummyActor(
+        space=env_continuous.single_action_space, state=np.array([10, 10])
+    )
+    critic = DummyCritic(space=env_continuous.single_action_space)
+    model_continuous = ActorCritic(
+        actor=actor_continuous,
+        critic=critic,
+        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
     )
 
-    # Test call
-    _, rewards, _, _ = env_continuous.step(updater.population)
+    # ASSERT POPULATION STATS
+    updater = NoisyGradientAscent(model_continuous)
+    # make sure starting population mean is correct
+    np.testing.assert_allclose(
+        np.mean(model_continuous.numpy_actors(), axis=0), np.array([10, 10]), rtol=0.1
+    )
+
+    # TEST CALL
+    old_model = copy.deepcopy(model_continuous)
+    old_population = model_continuous.numpy_actors()
+    action = model_continuous(np.zeros(POPULATION_SIZE))
+    _, rewards, _, _ = env_continuous.step(action)
     scaled_rewards = (rewards - np.mean(rewards)) / np.std(rewards)
     optimization_direction = np.dot(updater.normal_dist.T, scaled_rewards)
-    updater(learning_rate=0.01, optimization_direction=optimization_direction)
-    new_population = updater.population
-    assert new_population.shape == (POPULATION_SIZE, 2)
-    np.testing.assert_allclose(np.std(new_population, axis=0), np.ones(2), rtol=0.1)
-    np.testing.assert_array_less(updater.mean, np.array([10, 10]))
+    log = updater(learning_rate=0.01, optimization_direction=optimization_direction)
+    new_population = model_continuous.numpy_actors()
+    assert log.divergence > 0
+    # make sure the nerual network has been updated by the updater
+    assert model_continuous != old_model
+    assert np.not_equal(old_population, new_population).any()
+    # make sure the network mean has been updated by the updater
+    np.testing.assert_array_equal(model_continuous.mean_actor, updater.mean)
+    # make sure the new popualtion has the correct std
+    np.testing.assert_allclose(
+        np.std(model_continuous.numpy_actors(), axis=0), np.ones(2), rtol=0.1
+    )
+    # make sure the update direction is correct
+    np.testing.assert_array_less(
+        np.mean(model_continuous.numpy_actors(), axis=0), np.array([10, 10])
+    )
 
 
 def test_evolutionary_updater_discrete():
-    np.random.seed(0)
+    actor_discrete = DummyActor(
+        space=env_discrete.single_action_space, state=np.array([5])
+    )
+    critic = DummyCritic(space=env_discrete.single_action_space)
+    model_discrete = ActorCritic(
+        actor=actor_discrete,
+        critic=critic,
+        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
+    )
 
-    # Assert population stats
-    updater = NoisyGradientAscent(env_discrete, model_discrete)
-    updater.initialize_population(starting_point=model_discrete.numpy())
-    assert np.issubdtype(updater.population.dtype, np.integer)
-    np.testing.assert_allclose(np.std(updater.population, axis=0), np.ones(1), rtol=0.1)
+    # ASSERT POPULATION STATS
+    updater = NoisyGradientAscent(model_discrete)
+    # make sure the population has been discretized
+    assert np.issubdtype(model_discrete.numpy_actors().dtype, np.integer)
+    # make sure starting population mean is correct
     np.testing.assert_allclose(
-        np.mean(updater.population, axis=0), np.array([5]), rtol=0.1
+        np.mean(model_discrete.numpy_actors(), axis=0), np.array([5]), rtol=0.1
     )
 
     # Test call
-    _, rewards, _, _ = env_discrete.step(updater.population)
+    old_model = copy.deepcopy(model_discrete)
+    old_population = model_discrete.numpy_actors()
+    action = model_discrete(np.zeros(POPULATION_SIZE))
+    _, rewards, _, _ = env_discrete.step(action)
     scaled_rewards = (rewards - np.mean(rewards)) / np.std(rewards)
     optimization_direction = np.dot(updater.normal_dist.T, scaled_rewards)
-    updater(learning_rate=1e-5, optimization_direction=optimization_direction)
-    new_population = updater.population
+    log = updater(learning_rate=1e-5, optimization_direction=optimization_direction)
+    new_population = model_discrete.numpy_actors()
+    assert log.divergence > 0
+    # make sure the nerual network has been updated by the updater
+    assert model_discrete != old_model
+    assert np.not_equal(old_population, new_population).any()
+    # make sure the population has been discretized
     assert np.issubdtype(new_population.dtype, np.integer)
-    assert new_population.shape == (POPULATION_SIZE, 1)
+    # make sure the network mean has been updated by the updater
+    np.testing.assert_array_equal(model_discrete.mean_actor, updater.mean)
+    # make sure the new popualtion has the correct std
     np.testing.assert_allclose(np.std(new_population, axis=0), np.ones(1), rtol=0.1)
-    np.testing.assert_array_less(updater.mean, np.array([5]))
+    # make sure the update direction is correct
+    np.testing.assert_array_less(model_discrete.mean_actor, np.array([5]))
 
 
 def test_genetic_updater_continuous():
-    np.random.seed(0)
+    actor_continuous = DummyActor(
+        space=env_continuous.single_action_space, state=np.array([10, 10])
+    )
+    critic = DummyCritic(space=env_continuous.single_action_space)
+    model_continuous = ActorCritic(
+        actor=actor_continuous,
+        critic=critic,
+        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
+    )
 
     # Assert population stats
-    updater = GeneticUpdater(env_continuous, model_continuous)
-    updater.initialize_population(
-        starting_point=model_continuous.numpy(),
-        population_init_strategy=Distribution.NORMAL,
-    )
-    np.testing.assert_allclose(np.std(updater.population, axis=0), np.ones(2), rtol=0.1)
+    updater = GeneticUpdater(model_continuous)
     np.testing.assert_allclose(
-        np.mean(updater.population, axis=0), np.array([10, 10]), rtol=0.1
+        np.mean(model_continuous.numpy_actors(), axis=0), np.array([10, 10]), rtol=0.1
     )
 
     # Test call
-    _, rewards, _, _ = env_continuous.step(updater.population)
-    updater(
+    old_model = copy.deepcopy(model_continuous)
+    old_population = model_continuous.numpy_actors()
+    action = model_continuous(np.zeros(POPULATION_SIZE))
+    _, rewards, _, _ = env_continuous.step(action)
+    log = updater(
         rewards=rewards,
         selection_operator=selection_operators.roulette_selection,
         crossover_operator=crossover_operators.crossover_one_point,
         mutation_operator=mutation_operators.uniform_mutation,
     )
-
-    np.testing.assert_array_less(np.min(updater.population, axis=0), np.array([10, 10]))
+    new_population = model_continuous.numpy_actors()
+    assert log.divergence > 0
+    assert model_continuous != old_model
+    assert np.not_equal(old_population, new_population).any()
+    np.testing.assert_array_less(np.min(new_population, axis=0), np.array([10, 10]))
 
 
 def test_genetic_updater_discrete():
-    np.random.seed(0)
+    actor_discrete = DummyActor(
+        space=env_discrete.single_action_space, state=np.array([5])
+    )
+    critic = DummyCritic(space=env_discrete.single_action_space)
+    model_discrete = ActorCritic(
+        actor=actor_discrete,
+        critic=critic,
+        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
+    )
 
     # Assert population stats
-    updater = GeneticUpdater(env_discrete, model_discrete)
-    updater.initialize_population(
-        population_init_strategy=Distribution.UNIFORM,
-    )
-    assert np.issubdtype(updater.population.dtype, np.integer)
-    np.testing.assert_allclose(
-        np.mean(updater.population, axis=0), np.array([5]), rtol=0.2
-    )
+    updater = GeneticUpdater(model_discrete)
+    old_model = copy.deepcopy(model_discrete)
+    old_population = model_discrete.numpy_actors()
+    assert np.issubdtype(old_population.dtype, np.integer)
+    np.testing.assert_allclose(np.mean(old_population, axis=0), np.array([5]), rtol=0.2)
 
     # Test call
-    _, rewards, _, _ = env_discrete.step(updater.population)
-    updater(
+    action = model_discrete(np.zeros(POPULATION_SIZE))
+    _, rewards, _, _ = env_discrete.step(action)
+    log = updater(
         rewards=rewards,
         selection_operator=selection_operators.roulette_selection,
         crossover_operator=crossover_operators.crossover_one_point,
         mutation_operator=mutation_operators.uniform_mutation,
     )
+    new_population = model_discrete.numpy_actors()
 
-    new_population = updater.population
     assert np.issubdtype(new_population.dtype, np.integer)
+    assert log.divergence > 0
+    assert model_discrete != old_model
+    assert np.not_equal(old_population, new_population).any()
+    np.testing.assert_array_less(np.min(new_population, axis=0), np.array([5]))

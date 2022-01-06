@@ -1,16 +1,13 @@
 from abc import ABC, abstractmethod
-from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 
 import numpy as np
 from gym.spaces import Discrete, MultiDiscrete
-from gym.vector import VectorEnv
 from torch.distributions import Normal, kl_divergence
 
-from anvilrl.common.enumerations import Distribution
 from anvilrl.common.type_aliases import UpdaterLog
-from anvilrl.common.utils import numpy_to_torch
-from anvilrl.models.actor_critics import DeepIndividual, Individual
+from anvilrl.common.utils import to_torch
+from anvilrl.models.actor_critics import ActorCritic
 from anvilrl.signal_processing import (
     crossover_operators,
     mutation_operators,
@@ -22,32 +19,38 @@ class BaseEvolutionUpdater(ABC):
     """
     The base random search updater class with pre-defined methods for derived classes
 
-    :param env: the vector environment
-    :param model: the model representing an individual in the population
+    :param model: the actor critic model containing the population
+    :param population_type: the type of population to update, either "actor" or "critic"
     """
 
-    def __init__(
-        self, env: VectorEnv, model: Union[Individual, DeepIndividual]
-    ) -> None:
+    def __init__(self, model: ActorCritic, population_type: str = "actor") -> None:
         self.model = model
-        self.population = None
-        self.population_size = env.num_envs
+        self.population_type = population_type
+        if population_type == "actor":
+            self.mean = model.mean_actor
+            self.std = self.model.population_settings.actor_std
+            self.population_size = model.num_actors
+            self.normal_dist = model.normal_dist_actor
+            self.space_shape = model.actor.space_shape
+            self.space_range = model.actor.space_range
+            self.space = model.actor.space
+        elif population_type == "critic":
+            self.mean = model.mean_critic
+            self.std = self.model.population_settings.critic_std
+            self.population_size = model.num_critics
+            self.normal_dist = model.normal_dist_critic
+            self.space_shape = model.critic.space_shape
+            self.space_range = model.critic.space_range
+            self.space = model.critic.space
 
-    @abstractmethod
-    def initialize_population(
-        self,
-        population_init_strategy: Distribution,
-        population_std: Optional[Union[float, np.ndarray]] = 1,
-        starting_point: Optional[np.ndarray] = None,
-    ) -> List[Union[Individual, DeepIndividual]]:
+    def update_networks(self, population: np.ndarray) -> None:
         """
-        Initialize the population
-
-        :param population_init_strategy: the population initialization strategy
-        :param population_std: the standard deviation for the population initialization
-        :param starting_point: the starting point for the population initialization
-        :return: the starting population
+        Update the networks in the population
         """
+        if self.population_type == "actor":
+            self.model.set_actors_state(population)
+        elif self.population_type == "critic":
+            self.model.set_critics_state(population)
 
     @abstractmethod
     def __call__(self) -> UpdaterLog:
@@ -58,43 +61,17 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
     """
     Updater for the Natural Evolutionary Strategy
 
-    :param env: the vector environment
-    :param model: the model representing an individual in the population
+    :param model: the actor critic model containing the population
+    :param population_type: the type of population to update, either "actor" or "critic"
     """
 
-    def __init__(
-        self,
-        env: VectorEnv,
-        model: Union[Individual, DeepIndividual],
-    ) -> None:
-        super().__init__(env, model)
-        self.normal_dist = None
-        self.mean = None
-        self.population_std = None
-
-    def initialize_population(
-        self,
-        population_init_strategy: Distribution = Distribution.NORMAL,
-        population_std: Union[float, np.ndarray] = 1,
-        starting_point: Optional[np.ndarray] = None,
-    ) -> List[Union[Individual, DeepIndividual]]:
-        self.population_std = population_std
-        self.mean = starting_point.astype(np.float32)
-        self.normal_dist = np.random.randn(
-            self.population_size, *self.model.space_shape
-        )
-        population = self.mean + (population_std * self.normal_dist)
-
-        if isinstance(self.model.space, (Discrete, MultiDiscrete)):
-            population = np.round(population).astype(np.int32)
-        self.population = np.clip(
-            population, self.model.space_range[0], self.model.space_range[1]
-        )
-
-        return [deepcopy(self.model).set_state(ind) for ind in self.population]
+    def __init__(self, model: ActorCritic, population_type: str = "actor") -> None:
+        super().__init__(model, population_type)
 
     def __call__(
-        self, learning_rate: float, optimization_direction: np.ndarray
+        self,
+        learning_rate: float,
+        optimization_direction: np.ndarray,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -104,36 +81,25 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         :param optimization_direction: the optimization direction
         :return: the updater log
         """
-        assert (
-            self.mean is not None
-        ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
-        std = (
-            numpy_to_torch(self.population_std)
-            if isinstance(self.population_std, np.ndarray)
-            else self.population_std
-        )
         # Snapshot current population dist for kl divergence
         # use copy() to avoid modifying the original
-        old_dist = Normal(numpy_to_torch(self.mean.copy()), std)
+        old_dist = Normal(to_torch(self.mean.copy()), self.std)
 
         # Main update
         self.mean += learning_rate * optimization_direction
 
         # Generate new population
-        self.normal_dist = np.random.randn(
-            self.population_size, *self.model.space_shape
-        )
-        population = self.mean + (self.population_std * self.normal_dist)
+        self.normal_dist = np.random.randn(self.population_size, *self.space_shape)
+        population = self.mean + (self.std * self.normal_dist)
 
         # Discretize and clip population as needed
-        if isinstance(self.model.space, (Discrete, MultiDiscrete)):
+        if isinstance(self.space, (Discrete, MultiDiscrete)):
             population = np.round(population).astype(np.int32)
-        self.population = np.clip(
-            population, self.model.space_range[0], self.model.space_range[1]
-        )
+        population = np.clip(population, self.space_range[0], self.space_range[1])
+        self.update_networks(population)
 
         # Calculate Log metrics
-        new_dist = Normal(numpy_to_torch(self.mean), std)
+        new_dist = Normal(to_torch(self.mean), self.std)
         population_entropy = new_dist.entropy().mean()
         population_kl = kl_divergence(old_dist, new_dist).mean()
 
@@ -144,48 +110,12 @@ class GeneticUpdater(BaseEvolutionUpdater):
     """
     Updater for the Genetic Algorithm
 
-    :param env: the vector environment
-    :param model: the model representing an individual in the population
+    :param model: the actor critic model containing the population
+    :param population_type: the type of population to update, either "actor" or "critic"
     """
 
-    def __init__(
-        self,
-        env: VectorEnv,
-        model: Union[Individual, DeepIndividual],
-    ) -> None:
-        super().__init__(env, model)
-        self.population_std = None
-
-    def initialize_population(
-        self,
-        population_init_strategy: Distribution = Distribution.UNIFORM,
-        population_std: Union[float, np.ndarray] = 1,
-        starting_point: Optional[np.ndarray] = None,
-    ) -> List[Union[Individual, DeepIndividual]]:
-        if population_init_strategy == Distribution.UNIFORM:
-            population = np.random.uniform(
-                self.model.space_range[0],
-                self.model.space_range[1],
-                (self.population_size, *self.model.space_shape),
-            )
-        elif population_init_strategy == Distribution.NORMAL:
-            mean = (starting_point).astype(np.float32)
-            population = np.random.normal(
-                mean, population_std, (self.population_size, *self.model.space_shape)
-            )
-        else:
-            raise ValueError(
-                f"The population initialization strategy {population_init_strategy} is not supported"
-            )
-
-        # Discretize and clip population as needed
-        if isinstance(self.model.space, (Discrete, MultiDiscrete)):
-            population = np.round(population).astype(np.int32)
-        self.population = np.clip(
-            population, self.model.space_range[0], self.model.space_range[1]
-        )
-
-        return [deepcopy(self.model).set_state(ind) for ind in self.population]
+    def __init__(self, model: ActorCritic, population_type: str = "actor") -> None:
+        super().__init__(model, population_type)
 
     def __call__(
         self,
@@ -211,28 +141,26 @@ class GeneticUpdater(BaseEvolutionUpdater):
         :param elitism: fraction of the population to keep as elite
         :return: the updater log
         """
-        assert (
-            self.population is not None
-        ), "Before calling the updater you must call the population initializer `self.initialize_population()`"
-
         # Store elite population
-        old_population = self.population.copy()
+        if self.population_type == "actor":
+            old_population = self.model.numpy_actors()
+        elif self.population_type == "critic":
+            old_population = self.model.numpy_critics()
         num_elite = int(self.population_size * elitism)
         elite_indices = np.argpartition(rewards, -num_elite)[-num_elite:]
         elite_population = old_population[elite_indices]
 
         # Main update
-        parents = selection_operator(self.population, rewards, **selection_settings)
+        parents = selection_operator(old_population, rewards, **selection_settings)
         children = crossover_operator(parents, **crossover_settings)
-        self.population = mutation_operator(
-            children, self.model.space, **mutation_settings
-        )
-        self.population[elite_indices] = elite_population
+        new_population = mutation_operator(children, self.space, **mutation_settings)
+        new_population[elite_indices] = elite_population
+        self.update_networks(new_population)
 
         # Calculate Log metrics
-        divergence = np.mean(np.abs(self.population - old_population))
+        divergence = np.mean(np.abs(new_population - old_population))
         entropy = np.mean(
-            np.abs(np.max(self.population, axis=0) - np.min(self.population, axis=0))
+            np.abs(np.max(new_population, axis=0) - np.min(new_population, axis=0))
         )
 
         return UpdaterLog(divergence=divergence, entropy=entropy)

@@ -4,7 +4,7 @@ import pytest
 import torch as T
 
 from anvilrl.models import Actor, ActorCritic, Critic, EpsilonGreedyActor
-from anvilrl.models.actor_critics import Individual
+from anvilrl.models.actor_critics import DummyActor, DummyCritic
 from anvilrl.models.encoders import (
     CNNEncoder,
     DictEncoder,
@@ -23,6 +23,9 @@ from anvilrl.models.heads import (
 from anvilrl.models.torsos import MLP
 from anvilrl.models.utils import trainable_parameters
 from anvilrl.settings import PopulationSettings
+
+T.manual_seed(0)
+np.random.seed(0)
 
 
 def test_mlp():
@@ -60,7 +63,6 @@ def test_dict_encoder():
 
 
 def test_cnn_encoder():
-    T.manual_seed(0)
     space = gym.spaces.Box(low=0, high=255, shape=(1, 64, 64))
     encoder = CNNEncoder(observation_space=space)
 
@@ -234,12 +236,12 @@ def test_actor_critic(actor_population_size, critic_population_size):
     actual_actor_state = model.actor.numpy()
     actual_critic_state = model.critic.numpy()
     expected_actor_state = (
-        new_actor_state
+        new_actor_state.squeeze()
         if actor_population_size == 1
         else np.mean([actor.state for actor in model.actors], axis=0)
     )
     expected_critic_state = (
-        new_critic_state
+        new_critic_state.squeeze()
         if critic_population_size == 1
         else np.mean([critic.state for critic in model.critics], axis=0)
     )
@@ -370,8 +372,6 @@ def test_actor_critic_targets(actor_population_size, critic_population_size):
 
 
 def test_population_initialize():
-    np.random.seed(0)
-    T.manual_seed(0)
     encoder_actor = IdentityEncoder()
     encoder_critic = IdentityEncoder()
     torso_actor = MLP([5, 5])
@@ -497,19 +497,20 @@ def test_trainable_parameters():
     assert all_params.shape == T.Size([9])
 
 
-def test_individual():
+@pytest.mark.parametrize("model_class", [DummyActor, DummyCritic])
+def test_dummy(model_class):
     env = gym.make("CartPole-v0")
-    T.manual_seed(0)
     expected_state = env.action_space.sample()
-    model = Individual(space=env.action_space, state=expected_state)
+    model = model_class(space=env.action_space, state=expected_state)
 
     actual_state = model.numpy()
-    np.testing.assert_array_almost_equal(actual_state, expected_state)
+    np.testing.assert_array_equal(actual_state, expected_state)
 
     expected_state = env.action_space.sample()
     model.set_state(expected_state)
 
-    np.testing.assert_array_almost_equal(model.numpy(), expected_state)
+    np.testing.assert_array_equal(model.numpy(), expected_state)
 
     actual_state = model(env.observation_space.sample())
+    print(actual_state, expected_state)
     np.testing.assert_array_almost_equal(actual_state, expected_state)
