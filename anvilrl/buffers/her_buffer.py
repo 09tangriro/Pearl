@@ -207,7 +207,7 @@ class HERBuffer(BaseBuffer):
     def sample(
         self,
         batch_size: int,
-        flatten_env: bool = True,
+        flatten_env: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> DictTrajectories:
         if isinstance(dtype, str):
@@ -234,7 +234,7 @@ class HERBuffer(BaseBuffer):
     def last(
         self,
         batch_size: int,
-        flatten_env: bool = True,
+        flatten_env: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> DictTrajectories:
         if isinstance(dtype, str):

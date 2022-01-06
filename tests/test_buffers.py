@@ -219,3 +219,31 @@ def test_flatten_env_axis():
     expected_result = (6, 2)
 
     assert actual_result == expected_result
+
+
+@pytest.mark.parametrize("buffer_class", [ReplayBuffer, RolloutBuffer])
+def test_buffer_multiple_envs(buffer_class):
+    env = gym.vector.make("CartPole-v0", 2)
+    buffer = buffer_class(env, buffer_size=10)
+
+    obs = env.reset()
+    for _ in range(10):
+        action = env.action_space.sample()
+        next_obs, reward, done, _ = env.step(action)
+
+        buffer.add_trajectory(
+            observation=obs,
+            action=action,
+            reward=reward,
+            next_observation=next_obs,
+            done=done,
+        )
+
+        obs = next_obs
+
+    trajectories = buffer.last(batch_size=5)
+    assert trajectories.observations.shape == (2, 5, 4)
+    assert trajectories.actions.shape == (2, 5, 1)
+    assert trajectories.rewards.shape == (2, 5, 1)
+    assert trajectories.next_observations.shape == (2, 5, 4)
+    assert trajectories.dones.shape == (2, 5, 1)

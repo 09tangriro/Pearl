@@ -69,7 +69,7 @@ class RolloutBuffer(BaseBuffer):
     def sample(
         self,
         batch_size: int,
-        flatten_env: bool = True,
+        flatten_env: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         if self.full:
@@ -98,7 +98,7 @@ class RolloutBuffer(BaseBuffer):
     def last(
         self,
         batch_size: int,
-        flatten_env: bool = True,
+        flatten_env: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         assert batch_size <= self.buffer_size

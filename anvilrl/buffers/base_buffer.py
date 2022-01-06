@@ -51,7 +51,7 @@ class BaseBuffer(ABC):
         )
         self.actions = np.zeros(
             (self.buffer_size,) + self.action_shape,
-            dtype=env.observation_space.dtype,
+            dtype=env.action_space.dtype,
         )
         # Use 3 dims for easier calculations without having to think about broadcasting
         self.rewards = np.zeros(self.batch_shape + (1,), dtype=np.float32)
@@ -123,6 +123,12 @@ class BaseBuffer(ABC):
             rewards = self._flatten_env_axis(rewards)
             next_observations = self._flatten_env_axis(next_observations)
             dones = self._flatten_env_axis(dones)
+        elif self.num_envs > 1:
+            observations = observations.swapaxes(0, 1)
+            actions = actions.swapaxes(0, 1)
+            rewards = rewards.swapaxes(0, 1)
+            next_observations = next_observations.swapaxes(0, 1)
+            dones = dones.swapaxes(0, 1)
 
         # return torch tensors instead of numpy arrays
         if dtype == TrajectoryType.TORCH:
@@ -153,7 +159,7 @@ class BaseBuffer(ABC):
         )
         self.actions = np.zeros(
             (self.buffer_size,) + self.action_shape,
-            dtype=self.env.observation_space.dtype,
+            dtype=self.env.action_space.dtype,
         )
         self.rewards = np.zeros(self.batch_shape + (1,), dtype=np.float32)
         self.dones = np.zeros(self.batch_shape + (1,), dtype=np.float32)
@@ -201,7 +207,7 @@ class BaseBuffer(ABC):
     def sample(
         self,
         batch_size: int,
-        flatten_env: bool = True,
+        flatten_env: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         """
@@ -217,7 +223,7 @@ class BaseBuffer(ABC):
     def last(
         self,
         batch_size: int,
-        flatten_env: bool = True,
+        flatten_env: bool = False,
         dtype: Union[str, TrajectoryType] = "numpy",
     ) -> Trajectories:
         """
