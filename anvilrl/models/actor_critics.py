@@ -46,185 +46,6 @@ class Model(T.nn.Module):
         return self.head(out)
 
 
-class Actor(T.nn.Module):
-    """
-    The actor network which determines what actions to take in the environment.
-
-    :param encoder: the encoder network
-    :param torso: the torso network
-    :param head: the head network
-    """
-
-    def __init__(
-        self,
-        encoder: T.nn.Module,
-        torso: T.nn.Module,
-        head: BaseActorHead,
-        create_target: bool = False,
-        polyak_coeff: float = 0.995,
-        device: Union[T.device, str] = "auto",
-    ):
-        super().__init__()
-        self.polyak_coeff = polyak_coeff
-        self.device = get_device(device)
-        self.model = Model(encoder, torso, head).to(self.device)
-        self.state_info = {}
-        self.make_state_info()
-        self.state = np.concatenate(
-            [to_numpy(d.flatten()) for d in self.model.state_dict().values()]
-        )
-        self.space = Box(low=-1e6, high=1e6, shape=self.state.shape)
-        self.space_shape = get_space_shape(self.space)
-        self.space_range = get_space_range(self.space)
-
-        # Create the target network
-        self.target = None
-        self.online_parameters = None
-        self.target_parameters = None
-        if create_target:
-            self.online_parameters = trainable_parameters(self.model)
-            self.target = copy.deepcopy(self.model)
-            self.target_parameters = trainable_parameters(self.target)
-            for target in self.target_parameters:
-                target.requires_grad = False
-            self.assign_targets()
-
-    def make_state_info(self) -> None:
-        """Make the state info dictionary"""
-        start_idx = 0
-        for k, v in self.model.state_dict().items():
-            self.state_info[k] = (v.shape, (start_idx, start_idx + v.numel()))
-            start_idx += v.numel()
-
-    def set_state(self, state: np.ndarray) -> "Actor":
-        """Set the state of the individual"""
-        self.state = state
-        state = to_torch(state, device=self.device)
-        state_dict = {
-            k: state[v[1][0] : v[1][1]].reshape(v[0])
-            for k, v in zip(self.state_info.keys(), self.state_info.values())
-        }
-        self.model.load_state_dict(state_dict)
-        return self
-
-    def numpy(self) -> np.ndarray:
-        """Get the numpy representation of the individual"""
-        return self.state
-
-    def assign_targets(self) -> None:
-        """Assign the target parameters"""
-        self.target.load_state_dict(self.model.state_dict())
-
-    def update_targets(self) -> None:
-        """Update the target parameters"""
-        # target_params = polyak_coeff * target_params + (1 - polyak_coeff) * online_params
-        with T.no_grad():
-            for online, target in zip(self.online_parameters, self.target_parameters):
-                target.data.mul_(self.polyak_coeff)
-                target.data.add_((1 - self.polyak_coeff) * online.data)
-
-    def action_distribution(
-        self, observations: Tensor
-    ) -> Optional[T.distributions.Distribution]:
-        """Get the action distribution, returns None if deterministic"""
-        latent_out = self.model.torso(self.model.encoder(observations))
-        return self.model.head.action_distribution(latent_out)
-
-    def forward_target(self, observations: Tensor) -> T.Tensor:
-        return self.target(observations)
-
-    def forward(self, observations: Tensor) -> T.Tensor:
-        return self.model(observations)
-
-
-class EpsilonGreedyActor(Actor):
-    """
-    Epsilon greedy strategy used in DQN
-    Epsilon represents the probability of choosing a random action in the environment
-
-    :param critic_encoder: encoder of the critic network
-    :param critic_torso: torso of the critic network
-    :param critic_head: head of the critic network
-    :param start_epsilon: epsilon start value, generally set high to promp random exploration
-    :param epsilon_decay: epsilon decay value, epsilon = epsilon * epsilon_decay
-    :param min_epsilon: the minimum epsilon value allowed
-    """
-
-    def __init__(
-        self,
-        critic_encoder: T.nn.Module,
-        critic_torso: T.nn.Module,
-        critic_head: BaseCriticHead,
-        start_epsilon: float = 1,
-        epsilon_decay: float = 0.999,
-        min_epsilon: float = 0,
-        create_target: bool = False,
-        polyak_coeff: float = 0.995,
-        device: Union[T.device, str] = "auto",
-    ):
-        super().__init__(
-            critic_encoder,
-            critic_torso,
-            critic_head,
-            create_target=create_target,
-            polyak_coeff=polyak_coeff,
-            device=device,
-        )
-        self.epsilon = start_epsilon
-        self.epsilon_decay = epsilon_decay
-        self.min_epsilon = min_epsilon
-
-    def update_epsilon(self) -> None:
-        """Update epsilon via epsilon decay"""
-        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
-
-    def forward(self, observations: Tensor) -> T.Tensor:
-        q_values = super().forward(observations)
-        action_size = q_values.shape[-1]
-        trigger = T.rand(1).item()
-
-        if trigger <= self.epsilon:
-            actions = T.randint(low=0, high=action_size, size=q_values.shape[:-1])
-        else:
-            _, actions = T.max(q_values, dim=-1)
-
-        self.update_epsilon()
-        return actions
-
-
-class DummyActor(Actor):
-    """
-    An actor without a nerual network.
-
-    :param space: the individual space
-    :param state: optional starting state of the individual
-    """
-
-    def __init__(self, space: Space, state: Optional[np.ndarray] = None) -> None:
-        # Random network to make compatible with ActorCritic
-        super().__init__(
-            encoder=IdentityEncoder(),
-            torso=MLPEncoder(1, 1),
-            head=DummyHead(),
-        )
-        self.space = space
-        self.space_shape = get_space_shape(self.space)
-        self.space_range = get_space_range(self.space)
-        self.state = np.array(state) if state is not None else np.array(space.sample())
-
-    def set_state(self, state: np.ndarray) -> "DummyActor":
-        """Set the state of the individual"""
-        self.state = np.array(state)
-        return self
-
-    def numpy(self) -> np.ndarray:
-        """Get the numpy representation of the individual"""
-        return self.state
-
-    def forward(self, observation: Tensor) -> np.ndarray:
-        return to_torch(self.state)
-
-
 class Critic(T.nn.Module):
     """
     The critic network which approximates the Q or Value functions.
@@ -297,10 +118,9 @@ class Critic(T.nn.Module):
     def update_targets(self) -> None:
         """Update the target parameters"""
         # target_params = polyak_coeff * target_params + (1 - polyak_coeff) * online_params
-        with T.no_grad():
-            for online, target in zip(self.online_parameters, self.target_parameters):
-                target.data.mul_(self.polyak_coeff)
-                target.data.add_((1 - self.polyak_coeff) * online.data)
+        for online, target in zip(self.model.parameters(), self.target.parameters()):
+            target.data.mul_(self.polyak_coeff)
+            target.data.add_((1 - self.polyak_coeff) * online.data)
 
     def forward_target(
         self, observations: Tensor, actions: Optional[Tensor] = None
@@ -313,9 +133,99 @@ class Critic(T.nn.Module):
         return self.model(observations, actions)
 
 
-class DummyCritic(Critic):
+class Actor(Critic):
     """
-    A critic without a nerual network.
+    The actor network which determines what actions to take in the environment.
+
+    :param encoder: the encoder network
+    :param torso: the torso network
+    :param head: the head network
+    """
+
+    def __init__(
+        self,
+        encoder: T.nn.Module,
+        torso: T.nn.Module,
+        head: BaseActorHead,
+        create_target: bool = False,
+        polyak_coeff: float = 0.995,
+        device: Union[T.device, str] = "auto",
+    ):
+        super().__init__(
+            encoder=encoder,
+            torso=torso,
+            head=head,
+            create_target=create_target,
+            polyak_coeff=polyak_coeff,
+            device=device,
+        )
+
+    def action_distribution(
+        self, observations: Tensor
+    ) -> Optional[T.distributions.Distribution]:
+        """Get the action distribution, returns None if deterministic"""
+        latent_out = self.model.torso(self.model.encoder(observations))
+        return self.model.head.action_distribution(latent_out)
+
+
+class EpsilonGreedyActor(Actor):
+    """
+    Epsilon greedy strategy used in DQN
+    Epsilon represents the probability of choosing a random action in the environment
+
+    :param critic_encoder: encoder of the critic network
+    :param critic_torso: torso of the critic network
+    :param critic_head: head of the critic network
+    :param start_epsilon: epsilon start value, generally set high to promp random exploration
+    :param epsilon_decay: epsilon decay value, epsilon = epsilon * epsilon_decay
+    :param min_epsilon: the minimum epsilon value allowed
+    """
+
+    def __init__(
+        self,
+        critic_encoder: T.nn.Module,
+        critic_torso: T.nn.Module,
+        critic_head: BaseCriticHead,
+        start_epsilon: float = 1,
+        epsilon_decay: float = 0.999,
+        min_epsilon: float = 0,
+        create_target: bool = False,
+        polyak_coeff: float = 0.995,
+        device: Union[T.device, str] = "auto",
+    ):
+        super().__init__(
+            critic_encoder,
+            critic_torso,
+            critic_head,
+            create_target=create_target,
+            polyak_coeff=polyak_coeff,
+            device=device,
+        )
+        self.epsilon = start_epsilon
+        self.epsilon_decay = epsilon_decay
+        self.min_epsilon = min_epsilon
+
+    def update_epsilon(self) -> None:
+        """Update epsilon via epsilon decay"""
+        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
+
+    def forward(self, observations: Tensor) -> T.Tensor:
+        q_values = super().forward(observations)
+        action_size = q_values.shape[-1]
+        trigger = T.rand(1).item()
+
+        if trigger <= self.epsilon:
+            actions = T.randint(low=0, high=action_size, size=q_values.shape[:-1])
+        else:
+            _, actions = T.max(q_values, dim=-1)
+
+        self.update_epsilon()
+        return actions
+
+
+class Dummy(Actor):
+    """
+    A model which can represent and actor or critic without a nerual network.
 
     :param space: the individual space
     :param state: optional starting state of the individual
@@ -326,14 +236,14 @@ class DummyCritic(Critic):
         super().__init__(
             encoder=IdentityEncoder(),
             torso=MLPEncoder(1, 1),
-            head=BaseCriticHead(),
+            head=DummyHead(),
         )
         self.space = space
         self.space_shape = get_space_shape(self.space)
         self.space_range = get_space_range(self.space)
         self.state = np.array(state) if state is not None else np.array(space.sample())
 
-    def set_state(self, state: np.ndarray) -> "DummyCritic":
+    def set_state(self, state: np.ndarray) -> "Dummy":
         """Set the state of the individual"""
         self.state = np.array(state)
         return self

@@ -13,7 +13,7 @@ from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
 from anvilrl.explorers.base_explorer import BaseExplorer
-from anvilrl.models import ActorCritic, DummyActor, DummyCritic
+from anvilrl.models import ActorCritic, Dummy
 from anvilrl.settings import (
     BufferSettings,
     CallbackSettings,
@@ -30,8 +30,8 @@ def default_model(env: VectorEnv):
     """
     Returns a default model for the given environment.
     """
-    actor = DummyActor(space=env.single_action_space)
-    critic = DummyCritic(space=env.single_action_space)
+    actor = Dummy(space=env.single_action_space)
+    critic = Dummy(space=env.single_action_space)
 
     return ActorCritic(
         actor=actor,

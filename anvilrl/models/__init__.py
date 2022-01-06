@@ -2,16 +2,14 @@ from anvilrl.models.actor_critics import (
     Actor,
     ActorCritic,
     Critic,
-    DummyActor,
-    DummyCritic,
+    Dummy,
     EpsilonGreedyActor,
 )
 
 __all__ = [
     "Critic",
-    "DummyCritic",
     "Actor",
-    "DummyActor",
+    "Dummy",
     "ActorCritic",
     "EpsilonGreedyActor",
 ]

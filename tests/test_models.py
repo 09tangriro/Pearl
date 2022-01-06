@@ -3,14 +3,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.models import (
-    Actor,
-    ActorCritic,
-    Critic,
-    DummyActor,
-    DummyCritic,
-    EpsilonGreedyActor,
-)
+from anvilrl.models import Actor, ActorCritic, Critic, Dummy, EpsilonGreedyActor
 from anvilrl.models.encoders import (
     CNNEncoder,
     DictEncoder,
@@ -536,11 +529,10 @@ def test_trainable_parameters():
     assert all_params.shape == T.Size([9])
 
 
-@pytest.mark.parametrize("model_class", [DummyActor, DummyCritic])
-def test_dummy(model_class):
+def test_dummy():
     env = gym.make("CartPole-v0")
     expected_state = env.action_space.sample()
-    model = model_class(space=env.action_space, state=expected_state)
+    model = Dummy(space=env.action_space, state=expected_state)
 
     actual_state = model.numpy()
     np.testing.assert_array_equal(actual_state, expected_state)

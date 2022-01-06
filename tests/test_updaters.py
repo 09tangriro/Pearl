@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.models import Actor, ActorCritic, Critic, DummyActor, DummyCritic
+from anvilrl.models import Actor, ActorCritic, Critic, Dummy
 from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import DiagGaussianHead, ValueHead
 from anvilrl.models.torsos import MLP
@@ -372,10 +372,10 @@ env_discrete = gym.vector.SyncVectorEnv(
 
 
 def test_evolutionary_updater_continuous():
-    actor_continuous = DummyActor(
+    actor_continuous = Dummy(
         space=env_continuous.single_action_space, state=np.array([10, 10])
     )
-    critic = DummyCritic(space=env_continuous.single_action_space)
+    critic = Dummy(space=env_continuous.single_action_space)
     model_continuous = ActorCritic(
         actor=actor_continuous,
         critic=critic,
@@ -417,10 +417,8 @@ def test_evolutionary_updater_continuous():
 
 
 def test_evolutionary_updater_discrete():
-    actor_discrete = DummyActor(
-        space=env_discrete.single_action_space, state=np.array([5])
-    )
-    critic = DummyCritic(space=env_discrete.single_action_space)
+    actor_discrete = Dummy(space=env_discrete.single_action_space, state=np.array([5]))
+    critic = Dummy(space=env_discrete.single_action_space)
     model_discrete = ActorCritic(
         actor=actor_discrete,
         critic=critic,
@@ -462,10 +460,10 @@ def test_evolutionary_updater_discrete():
 
 
 def test_genetic_updater_continuous():
-    actor_continuous = DummyActor(
+    actor_continuous = Dummy(
         space=env_continuous.single_action_space, state=np.array([10, 10])
     )
-    critic = DummyCritic(space=env_continuous.single_action_space)
+    critic = Dummy(space=env_continuous.single_action_space)
     model_continuous = ActorCritic(
         actor=actor_continuous,
         critic=critic,
@@ -499,10 +497,8 @@ def test_genetic_updater_continuous():
 
 
 def test_genetic_updater_discrete():
-    actor_discrete = DummyActor(
-        space=env_discrete.single_action_space, state=np.array([5])
-    )
-    critic = DummyCritic(space=env_discrete.single_action_space)
+    actor_discrete = Dummy(space=env_discrete.single_action_space, state=np.array([5]))
+    critic = Dummy(space=env_discrete.single_action_space)
     model_discrete = ActorCritic(
         actor=actor_discrete,
         critic=critic,

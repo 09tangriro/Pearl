@@ -8,13 +8,7 @@ import torch as T
 from anvilrl.agents import A2C, DDPG, DQN, ES, GA, PPO
 from anvilrl.buffers import HERBuffer
 from anvilrl.common.utils import get_space_shape
-from anvilrl.models import (
-    ActorCritic,
-    Critic,
-    DummyActor,
-    DummyCritic,
-    EpsilonGreedyActor,
-)
+from anvilrl.models import ActorCritic, Critic, Dummy, EpsilonGreedyActor
 from anvilrl.models.encoders import DictEncoder, IdentityEncoder
 from anvilrl.models.heads import DiagGaussianHead, DiscreteQHead
 from anvilrl.models.torsos import MLP
@@ -104,8 +98,8 @@ def es_demo():
 
     POPULATION_SIZE = 10
     env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
-    actor = DummyActor(space=env.single_action_space, state=np.array([10, 10]))
-    critic = DummyCritic(space=env.single_action_space, state=np.array([10, 10]))
+    actor = Dummy(space=env.single_action_space, state=np.array([10, 10]))
+    critic = Dummy(space=env.single_action_space, state=np.array([10, 10]))
 
     model = ActorCritic(
         actor=actor,
