@@ -26,7 +26,7 @@ from anvilrl.models.utils import trainable_parameters
 from anvilrl.settings import PopulationSettings
 
 
-class Model(T.nn.Module):
+class _Model(T.nn.Module):
     def __init__(
         self,
         encoder: T.nn.Module,
@@ -67,7 +67,7 @@ class Critic(T.nn.Module):
         super().__init__()
         self.polyak_coeff = polyak_coeff
         self.device = get_device(device)
-        self.model = Model(encoder, torso, head).to(self.device)
+        self.model = _Model(encoder, torso, head).to(self.device)
         self.state_info = {}
         self.make_state_info()
         self.state = np.concatenate(
