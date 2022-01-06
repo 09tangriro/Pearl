@@ -5,7 +5,7 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvilrl.agents.base_agents import BaseRLAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import BaseBuffer, RolloutBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
@@ -52,7 +52,7 @@ def get_default_model(env: Env) -> ActorCritic:
     return ActorCritic(actor=actor, critic=critic)
 
 
-class A2C(BaseRLAgent):
+class A2C(BaseAgent):
     """
     Actor-Critic Algorithm
 

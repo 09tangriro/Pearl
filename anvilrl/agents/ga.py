@@ -4,7 +4,7 @@ import numpy as np
 import torch as T
 from gym.vector.vector_env import VectorEnv
 
-from anvilrl.agents.base_agents import BaseRLAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
@@ -45,7 +45,7 @@ def default_model(env: VectorEnv):
     )
 
 
-class GA(BaseRLAgent):
+class GA(BaseAgent):
     """
     Genetic Algorithm
     https://www.geeksforgeeks.org/genetic-algorithms/

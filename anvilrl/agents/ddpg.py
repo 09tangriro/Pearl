@@ -4,7 +4,7 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvilrl.agents.base_agents import BaseRLAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import ReplayBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
@@ -59,7 +59,7 @@ def get_default_model(env: Env) -> ActorCritic:
     )
 
 
-class DDPG(BaseRLAgent):
+class DDPG(BaseAgent):
     """
     DDPG Algorithm
 

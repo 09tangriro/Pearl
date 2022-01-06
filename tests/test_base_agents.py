@@ -4,26 +4,19 @@ import gym
 import numpy as np
 import torch as T
 
-from anvilrl.agents.base_agents import BaseEvolutionaryAgent, BaseRLAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import ReplayBuffer
-from anvilrl.common.enumerations import Distribution
 from anvilrl.common.type_aliases import Log
 from anvilrl.common.utils import set_seed
-from anvilrl.models.actor_critics import Actor, ActorCritic, Critic, DeepIndividual
+from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import ContinuousQHead
 from anvilrl.models.torsos import MLP
 from anvilrl.settings import ExplorerSettings, LoggerSettings
-from anvilrl.updaters.evolution import NoisyGradientAscent
 
 
-class MockRLAgent(BaseRLAgent):
+class MockRLAgent(BaseAgent):
     def _fit(self, batch_size, actor_epochs=1, critic_epochs=1):
-        return Log(actor_loss=0, critic_loss=0, entropy=0, divergence=0)
-
-
-class MockEvolutionaryAgent(BaseEvolutionaryAgent):
-    def _fit(self, epochs=1):
         return Log(actor_loss=0, critic_loss=0, entropy=0, divergence=0)
 
 
@@ -36,7 +29,6 @@ head = ContinuousQHead(input_shape=32)
 model = ActorCritic(
     actor=Actor(encoder, torso, head), critic=Critic(encoder, torso, head)
 )
-individual = DeepIndividual(encoder=encoder, torso=torso, head=head)
 
 deep_agent = MockRLAgent(
     env=env,
@@ -50,13 +42,6 @@ vec_deep_agent = MockRLAgent(
     model=model,
     buffer_class=ReplayBuffer,
     explorer_settings=ExplorerSettings(start_steps=0),
-    logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
-)
-evolution_agent = MockEvolutionaryAgent(
-    env=envs,
-    model=individual,
-    updater_class=NoisyGradientAscent,
-    buffer_class=ReplayBuffer,
     logger_settings=LoggerSettings(tensorboard_log_path="runs/tests"),
 )
 
@@ -115,42 +100,6 @@ def test_deep_fit():
     vec_deep_agent.fit(num_steps=200, batch_size=1, train_frequency=("episode", 1))
     assert deep_agent.step == 200
     assert vec_deep_agent.episode == 1
-
-
-def test_evolution_step_env():
-    set_seed(0, envs)
-    observations = envs.reset()
-    population = evolution_agent.updater.initialize_population(
-        Distribution.NORMAL, starting_point=individual.numpy()
-    )
-    action = np.array(
-        [
-            individual(observation)
-            for individual, observation in zip(population, observations)
-        ]
-    )
-    expected_next_obs, _, _, _ = envs.step(action)
-    set_seed(0, envs)
-    evolution_agent.population = evolution_agent.updater.initialize_population(
-        Distribution.NORMAL, starting_point=individual.numpy()
-    )
-    observations = envs.reset()
-    actual_next_obs = evolution_agent.step_env(observations)
-    np.testing.assert_array_equal(actual_next_obs, expected_next_obs)
-
-
-def test_evolution_fit():
-    evolution_agent.step = 0
-    evolution_agent.episode = 0
-    evolution_agent.fit(num_steps=2, train_frequency=("step", 1))
-    assert evolution_agent.episode == 0
-    assert evolution_agent.step == 2
-
-    evolution_agent.step = 0
-    evolution_agent.episode = 0
-    evolution_agent.fit(num_steps=200, train_frequency=("episode", 1))
-    assert evolution_agent.step == 200
-    assert evolution_agent.episode == 1
 
 
 shutil.rmtree("runs/tests")

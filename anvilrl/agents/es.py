@@ -7,7 +7,7 @@ import torch as T
 from gym.vector.vector_env import VectorEnv
 from sklearn.preprocessing import scale
 
-from anvilrl.agents.base_agents import BaseRLAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
@@ -42,7 +42,7 @@ def default_model(env: VectorEnv):
     )
 
 
-class ES(BaseRLAgent):
+class ES(BaseAgent):
     """
     Natural Evolutionary Strategy
     https://towardsdatascience.com/evolutionary-strategy-a-theoretical-implementation-guide-9176217e7ed8
