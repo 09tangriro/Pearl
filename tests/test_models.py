@@ -543,5 +543,4 @@ def test_dummy():
     np.testing.assert_array_equal(model.numpy(), expected_state)
 
     actual_state = model(env.observation_space.sample())
-    print(actual_state, expected_state)
     np.testing.assert_array_almost_equal(actual_state, expected_state)
