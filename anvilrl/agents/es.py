@@ -119,5 +119,6 @@ class ES(BaseRLAgent):
             divergences[i] = log.divergence
             entropies[i] = log.entropy
         self.buffer.reset()
+        self.model.update_global()
 
         return Log(divergence=divergences.sum(), entropy=entropies.mean())
