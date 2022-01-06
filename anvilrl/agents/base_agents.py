@@ -257,7 +257,7 @@ class BaseRLAgent(ABC):
                 actor_epochs=actor_epochs,
                 critic_epochs=critic_epochs,
             )
-
+            self.model.update_global()
             self.logger.add_train_log(train_log)
 
 

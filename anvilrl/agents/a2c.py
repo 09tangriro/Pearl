@@ -174,7 +174,6 @@ class A2C(BaseRLAgent):
             critic_losses[i] = critic_log.loss
 
         self.buffer.reset()
-        self.model.update_global()
 
         return Log(
             actor_loss=actor_losses.mean(),
