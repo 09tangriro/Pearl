@@ -79,13 +79,9 @@ class Critic(T.nn.Module):
 
         # Create the target network
         self.target = None
-        self.online_parameters = None
-        self.target_parameters = None
         if create_target:
-            self.online_parameters = trainable_parameters(self.model)
             self.target = copy.deepcopy(self.model)
-            self.target_parameters = trainable_parameters(self.target)
-            for target in self.target_parameters:
+            for target in self.target.parameters():
                 target.requires_grad = False
             self.assign_targets()
 

@@ -11,12 +11,7 @@ from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
 from anvilrl.common.utils import get_space_shape, to_numpy
 from anvilrl.explorers import BaseExplorer, GaussianExplorer
-from anvilrl.models.actor_critics import (
-    Actor,
-    ActorCritic,
-    ActorCriticWithTargets,
-    Critic,
-)
+from anvilrl.models import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import ContinuousQHead, DeterministicHead
 from anvilrl.models.torsos import MLP
@@ -33,7 +28,7 @@ from anvilrl.updaters.actors import BaseActorUpdater, DeterministicPolicyGradien
 from anvilrl.updaters.critics import BaseCriticUpdater, ContinuousQRegression
 
 
-def get_default_model(env: Env) -> ActorCriticWithTargets:
+def get_default_model(env: Env) -> ActorCritic:
     action_shape = get_space_shape(env.action_space)
     observation_shape = get_space_shape(env.observation_space)
     action_size = get_mlp_size(action_shape)
@@ -48,9 +43,19 @@ def get_default_model(env: Env) -> ActorCriticWithTargets:
         input_shape=300, action_shape=action_shape, activation_fn=T.nn.Tanh
     )
     head_critic = ContinuousQHead(input_shape=300)
-    return ActorCriticWithTargets(
-        actor=Actor(encoder=encoder_actor, torso=torso_actor, head=head_actor),
-        critic=Critic(encoder=encoder_critic, torso=torso_critic, head=head_critic),
+    return ActorCritic(
+        actor=Actor(
+            encoder=encoder_actor,
+            torso=torso_actor,
+            head=head_actor,
+            create_target=True,
+        ),
+        critic=Critic(
+            encoder=encoder_critic,
+            torso=torso_critic,
+            head=head_critic,
+            create_target=True,
+        ),
     )
 
 
@@ -138,8 +143,10 @@ class DDPG(BaseRLAgent):
         for i in range(critic_epochs):
             trajectories = self.buffer.sample(batch_size=batch_size)
             with T.no_grad():
-                next_actions = self.model.target_actor(trajectories.next_observations)
-                next_q_values = self.model.target_critic(
+                next_actions = self.model.forward_target_actors(
+                    trajectories.next_observations
+                )
+                next_q_values = self.model.forward_target_critics(
                     trajectories.next_observations, next_actions
                 )
                 target_q_values = TD_zero(
