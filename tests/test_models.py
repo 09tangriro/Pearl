@@ -318,6 +318,35 @@ def test_shared_network():
         assert actor.model.torso != critic.model.torso
         assert actor.model.head != critic.model.head
 
+    # Shared network
+    encoder = IdentityEncoder()
+    torso = MLP([5, 5])
+    head = DiscreteQHead(input_shape=32, output_shape=2)
+
+    actor = EpsilonGreedyActor(
+        critic_encoder=encoder, critic_torso=torso, critic_head=head
+    )
+    critic = Critic(encoder=encoder, torso=torso, head=head)
+
+    model = ActorCritic(
+        actor,
+        critic,
+        population_settings=PopulationSettings(
+            actor_population_size=1,
+            critic_population_size=1,
+            actor_distribution="normal",
+            critic_distribution=None,
+        ),
+    )
+
+    assert model.actor.model.encoder == model.critic.model.encoder
+    assert model.actor.model.torso == model.critic.model.torso
+    assert model.actor.model.head == model.critic.model.head
+    for actor, critic in zip(model.actors, model.critics):
+        assert actor.model.encoder == critic.model.encoder
+        assert actor.model.torso == critic.model.torso
+        assert actor.model.head == critic.model.head
+
 
 @pytest.mark.parametrize("actor_population_size", [1, 2])
 @pytest.mark.parametrize("critic_population_size", [1, 2])

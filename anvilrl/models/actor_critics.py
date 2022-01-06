@@ -113,8 +113,7 @@ class Actor(T.nn.Module):
 
     def assign_targets(self) -> None:
         """Assign the target parameters"""
-        for online, target in zip(self.online_parameters, self.target_parameters):
-            target.data.copy_(online.data)
+        self.target.load_state_dict(self.model.state_dict())
 
     def update_targets(self) -> None:
         """Update the target parameters"""
@@ -159,9 +158,18 @@ class EpsilonGreedyActor(Actor):
         start_epsilon: float = 1,
         epsilon_decay: float = 0.999,
         min_epsilon: float = 0,
+        create_target: bool = False,
+        polyak_coeff: float = 0.995,
         device: Union[T.device, str] = "auto",
     ):
-        super().__init__(critic_encoder, critic_torso, critic_head, device=device)
+        super().__init__(
+            critic_encoder,
+            critic_torso,
+            critic_head,
+            create_target=create_target,
+            polyak_coeff=polyak_coeff,
+            device=device,
+        )
         self.epsilon = start_epsilon
         self.epsilon_decay = epsilon_decay
         self.min_epsilon = min_epsilon
@@ -284,8 +292,7 @@ class Critic(T.nn.Module):
 
     def assign_targets(self) -> None:
         """Assign the target parameters"""
-        for online, target in zip(self.online_parameters, self.target_parameters):
-            target.data.copy_(online.data)
+        self.target.load_state_dict(self.model.state_dict())
 
     def update_targets(self) -> None:
         """Update the target parameters"""
@@ -422,6 +429,10 @@ class ActorCritic(T.nn.Module):
             assert self.num_critics == self.num_actors
             for actor, critic in zip(self.actors, self.critics):
                 critic.model.torso = actor.model.torso
+        if self.actor.model.head == self.critic.model.head:
+            assert self.num_critics == self.num_actors
+            for actor, critic in zip(self.actors, self.critics):
+                critic.model.head = actor.model.head
         self.assign_targets()
 
     def initialize_population(

@@ -37,7 +37,7 @@ class BaseActorUpdater(ABC):
         else:
             params = []
             for actor in model.actors:
-                params.extend(actor.parameters())
+                params.extend(actor.model.parameters())
             return params
 
     def run_optimizer(

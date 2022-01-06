@@ -37,7 +37,7 @@ class BaseCriticUpdater(ABC):
         else:
             params = []
             for critic in model.critics:
-                params.extend(critic.parameters())
+                params.extend(critic.model.parameters())
             return params
 
     def run_optimizer(
