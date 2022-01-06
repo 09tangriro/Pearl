@@ -9,11 +9,11 @@ from anvilrl.agents import A2C, DDPG, DQN, ES, GA, PPO
 from anvilrl.buffers import HERBuffer
 from anvilrl.common.utils import get_space_shape
 from anvilrl.models.actor_critics import (
-    ActorCriticWithCriticTarget,
+    ActorCritic,
     Critic,
-    DeepIndividual,
+    DummyActor,
+    DummyCritic,
     EpsilonGreedyActor,
-    Individual,
 )
 from anvilrl.models.encoders import DictEncoder, IdentityEncoder
 from anvilrl.models.heads import DiagGaussianHead, DiscreteQHead
@@ -51,7 +51,7 @@ def dqn_parallel_demo():
         critic_encoder=encoder, critic_torso=torso, critic_head=head
     )
     critic = Critic(encoder=encoder, torso=torso, head=head)
-    model = ActorCriticWithCriticTarget(actor=actor, critic=critic)
+    model = ActorCritic(actor=actor, critic=critic)
 
     agent = DQN(
         env=env,
@@ -104,7 +104,16 @@ def es_demo():
 
     POPULATION_SIZE = 10
     env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
-    model = Individual(env.single_action_space, np.array([10, 10]))
+    actor = DummyActor(space=env.single_action_space, state=np.array([10, 10]))
+    critic = DummyCritic(space=env.single_action_space, state=np.array([10, 10]))
+
+    model = ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=env.num_envs, actor_distribution="normal"
+        ),
+    )
 
     agent = ES(
         env=env,
@@ -114,7 +123,7 @@ def es_demo():
             tensorboard_log_path="runs/ES-demo", log_frequency=("step", 1)
         ),
     )
-    agent.fit(num_steps=20)
+    agent.fit(num_steps=20, batch_size=1)
 
 
 def es_deep_demo():
@@ -124,11 +133,9 @@ def es_deep_demo():
     encoder = IdentityEncoder()
     torso = MLP(layer_sizes=[observation_shape[0], 64, 32], activation_fn=T.nn.ReLU)
     head = DiagGaussianHead(input_shape=32, action_size=1)
-    model = DeepIndividual(encoder=encoder, torso=torso, head=head)
 
     agent = ES(
         env=env,
-        model=model,
         learning_rate=0.1,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/DeepES-demo", log_frequency=("episode", 1)
@@ -181,11 +188,9 @@ def ga_demo():
     env = gym.vector.SyncVectorEnv(
         [lambda: Mastermind() for _ in range(POPULATION_SIZE)]
     )
-    model = Individual(env.single_action_space)
 
     agent = GA(
         env=env,
-        model=model,
         population_settings=PopulationSettings(strategy="uniform"),
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/GA-demo", log_frequency=("step", 1)
@@ -416,7 +421,7 @@ def her_demo():
         critic_encoder=encoder, critic_torso=torso, critic_head=head
     )
     critic = Critic(encoder=encoder, torso=torso, head=head)
-    model = ActorCriticWithCriticTarget(actor=actor, critic=critic)
+    model = ActorCritic(actor=actor, critic=critic)
 
     agent = DQN(
         env=env,

@@ -13,7 +13,7 @@ from anvilrl.common.logging_ import Logger
 from anvilrl.common.type_aliases import Log, Observation, Tensor, Trajectories
 from anvilrl.common.utils import get_device, set_seed
 from anvilrl.explorers.base_explorer import BaseExplorer
-from anvilrl.models.actor_critics import ActorCritic, DeepIndividual, Individual
+from anvilrl.models.actor_critics import ActorCritic
 from anvilrl.settings import (
     BufferSettings,
     CallbackSettings,
@@ -109,14 +109,14 @@ class BaseRLAgent(ABC):
     def predict(self, observations: Union[Tensor, Dict[str, Tensor]]) -> T.Tensor:
         """Run the agent actor model"""
         self.model.eval()
-        return self.model(observations)
+        return self.model.predict(observations)
 
     def action_distribution(
         self, observations: Union[Tensor, Dict[str, Tensor]]
     ) -> T.distributions.Distribution:
         """Get the policy distribution given an observation"""
         self.model.eval()
-        return self.model.action_distribution(observations)
+        return self.model.predict_distribution(observations)
 
     def critic(
         self,
@@ -125,7 +125,7 @@ class BaseRLAgent(ABC):
     ) -> T.Tensor:
         """Run the agent critic model"""
         self.model.eval()
-        return self.model.critic(observations, actions)
+        return self.model.predict_critic(observations, actions)
 
     def dump_log(self) -> None:
         """
@@ -290,7 +290,7 @@ class BaseEvolutionaryAgent(ABC):
     def __init__(
         self,
         env: VectorEnv,
-        model: Union[Individual, DeepIndividual],
+        model: ActorCritic,
         updater_class: Type[BaseEvolutionUpdater],
         population_settings: PopulationSettings = PopulationSettings(),
         buffer_class: Type[BaseBuffer] = BaseBuffer,
