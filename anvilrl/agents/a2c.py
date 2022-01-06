@@ -11,7 +11,7 @@ from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
 from anvilrl.common.utils import get_space_shape
 from anvilrl.explorers import BaseExplorer
-from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
+from anvilrl.models import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import CategoricalHead, ValueHead
 from anvilrl.models.torsos import MLP
