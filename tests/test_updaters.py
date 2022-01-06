@@ -380,7 +380,9 @@ def test_evolutionary_updater_continuous():
     model_continuous = ActorCritic(
         actor=actor_continuous,
         critic=critic,
-        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
+        population_settings=PopulationSettings(
+            actor_population_size=POPULATION_SIZE, actor_distribution="normal"
+        ),
     )
 
     # ASSERT POPULATION STATS
@@ -423,7 +425,9 @@ def test_evolutionary_updater_discrete():
     model_discrete = ActorCritic(
         actor=actor_discrete,
         critic=critic,
-        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
+        population_settings=PopulationSettings(
+            actor_population_size=POPULATION_SIZE, actor_distribution="normal"
+        ),
     )
 
     # ASSERT POPULATION STATS
@@ -466,7 +470,9 @@ def test_genetic_updater_continuous():
     model_continuous = ActorCritic(
         actor=actor_continuous,
         critic=critic,
-        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
+        population_settings=PopulationSettings(
+            actor_population_size=POPULATION_SIZE, actor_distribution="normal"
+        ),
     )
 
     # Assert population stats
@@ -501,7 +507,9 @@ def test_genetic_updater_discrete():
     model_discrete = ActorCritic(
         actor=actor_discrete,
         critic=critic,
-        population_settings=PopulationSettings(actor_population_size=POPULATION_SIZE),
+        population_settings=PopulationSettings(
+            actor_population_size=POPULATION_SIZE, actor_distribution="uniform"
+        ),
     )
 
     # Assert population stats

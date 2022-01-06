@@ -383,7 +383,11 @@ def test_population_initialize():
     critic = Critic(encoder_critic, torso_critic, head_critic)
 
     model = ActorCritic(
-        actor, critic, population_settings=PopulationSettings(actor_population_size=500)
+        actor,
+        critic,
+        population_settings=PopulationSettings(
+            actor_population_size=500, actor_distribution="normal"
+        ),
     )
 
     actor_state = model.numpy_actors()

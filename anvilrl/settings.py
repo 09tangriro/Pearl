@@ -40,8 +40,8 @@ class PopulationSettings:
 
     actor_population_size: int = 1
     critic_population_size: int = 1
-    actor_distribution: Optional[Union[str, Distribution]] = Distribution.NORMAL
-    critic_distribution: Optional[Union[str, Distribution]] = Distribution.NORMAL
+    actor_distribution: Optional[Union[str, Distribution]] = None
+    critic_distribution: Optional[Union[str, Distribution]] = None
     actor_std: Optional[Union[float, np.ndarray]] = 1
     critic_std: Optional[Union[float, np.ndarray]] = 1
 
