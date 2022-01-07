@@ -486,7 +486,7 @@ def test_genetic_updater_continuous():
     log = updater(
         rewards=rewards,
         selection_operator=selection_operators.roulette_selection,
-        crossover_operator=crossover_operators.crossover_one_point,
+        crossover_operator=crossover_operators.one_point_crossover,
         mutation_operator=mutation_operators.uniform_mutation,
     )
     new_population = model_continuous.numpy_actors()
@@ -520,7 +520,7 @@ def test_genetic_updater_discrete():
     log = updater(
         rewards=rewards,
         selection_operator=selection_operators.roulette_selection,
-        crossover_operator=crossover_operators.crossover_one_point,
+        crossover_operator=crossover_operators.one_point_crossover,
         mutation_operator=mutation_operators.uniform_mutation,
     )
     new_population = model_discrete.numpy_actors()

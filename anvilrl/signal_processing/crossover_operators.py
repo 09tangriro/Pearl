@@ -20,7 +20,7 @@ def fit_gaussian(parents: np.ndarray, population_shape: Tuple[int, ...]):
     return np.random.normal(mean, std, size=population_shape)
 
 
-def crossover_one_point(
+def one_point_crossover(
     parents: np.ndarray,
     crossover_index: Optional[int] = None,
 ) -> np.ndarray:

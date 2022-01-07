@@ -80,7 +80,7 @@ class GA(BaseAgent):
         updater_class: Type[BaseEvolutionUpdater] = GeneticUpdater,
         selection_operator: selection_operators = selection_operators.roulette_selection,
         selection_settings: SelectionSettings = SelectionSettings(),
-        crossover_operator: crossover_operators = crossover_operators.crossover_one_point,
+        crossover_operator: crossover_operators = crossover_operators.one_point_crossover,
         crossover_settings: CrossoverSettings = CrossoverSettings(),
         mutation_operator: mutation_operators = mutation_operators.uniform_mutation,
         mutation_settings: MutationSettings = MutationSettings(),

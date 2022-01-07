@@ -8,8 +8,8 @@ from anvilrl.signal_processing.advantage_estimators import (
     generalized_advantage_estimate,
 )
 from anvilrl.signal_processing.crossover_operators import (
-    crossover_one_point,
     fit_gaussian,
+    one_point_crossover,
 )
 from anvilrl.signal_processing.mutation_operators import (
     gaussian_mutation,
@@ -176,11 +176,11 @@ def test_one_point_crossover():
     np.random.seed(8)
     population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    actual_population = crossover_one_point(population, 1)
+    actual_population = one_point_crossover(population, 1)
     expected_population = np.array([[1, 5, 6], [4, 2, 3], [7, 8, 9]])
     np.testing.assert_array_equal(actual_population, expected_population)
 
-    actual_population = crossover_one_point(population)
+    actual_population = one_point_crossover(population)
     expected_population = np.array([[4, 5, 6], [1, 2, 3], [7, 8, 9]])
     np.testing.assert_array_equal(actual_population, expected_population)
 
