@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 from gym.spaces import Discrete, MultiDiscrete
@@ -8,11 +8,6 @@ from torch.distributions import Normal, kl_divergence
 from anvilrl.common.type_aliases import UpdaterLog
 from anvilrl.common.utils import to_torch
 from anvilrl.models.actor_critics import ActorCritic
-from anvilrl.signal_processing import (
-    crossover_operators,
-    mutation_operators,
-    selection_operators,
-)
 
 
 class BaseEvolutionUpdater(ABC):
@@ -121,9 +116,9 @@ class GeneticUpdater(BaseEvolutionUpdater):
     def __call__(
         self,
         rewards: np.ndarray,
-        selection_operator: selection_operators,
-        crossover_operator: crossover_operators,
-        mutation_operator: mutation_operators,
+        selection_operator: Optional[Callable] = None,
+        crossover_operator: Optional[Callable] = None,
+        mutation_operator: Optional[Callable] = None,
         selection_settings: Dict[str, Any] = {},
         crossover_settings: Dict[str, Any] = {},
         mutation_settings: Dict[str, Any] = {},
@@ -152,9 +147,16 @@ class GeneticUpdater(BaseEvolutionUpdater):
         elite_population = old_population[elite_indices]
 
         # Main update
-        parents = selection_operator(old_population, rewards, **selection_settings)
-        children = crossover_operator(parents, **crossover_settings)
-        new_population = mutation_operator(children, self.space, **mutation_settings)
+        if selection_operator is not None:
+            new_population = selection_operator(
+                old_population, rewards, **selection_settings
+            )
+        if crossover_operator is not None:
+            new_population = crossover_operator(new_population, **crossover_settings)
+        if mutation_operator is not None:
+            new_population = mutation_operator(
+                new_population, self.space, **mutation_settings
+            )
         new_population[elite_indices] = elite_population
         self.update_networks(new_population)
 
