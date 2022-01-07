@@ -7,7 +7,10 @@ from anvilrl.common.utils import to_torch
 from anvilrl.signal_processing.advantage_estimators import (
     generalized_advantage_estimate,
 )
-from anvilrl.signal_processing.crossover_operators import crossover_one_point
+from anvilrl.signal_processing.crossover_operators import (
+    crossover_one_point,
+    fit_gaussian,
+)
 from anvilrl.signal_processing.mutation_operators import (
     gaussian_mutation,
     uniform_mutation,
@@ -149,6 +152,24 @@ def test_roulette_selection():
     expected_population = np.array([[7, 8, 9], [7, 8, 9], [7, 8, 9]])
 
     np.testing.assert_array_equal(actual_population, expected_population)
+
+
+def test_fit_gaussian():
+    np.random.seed(9)
+    parents = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    actual_population = fit_gaussian(parents, population_shape=(6, 3))
+    expected_population = np.array(
+        [
+            [4.00271539, 4.29076477, 3.26620704],
+            [3.96844382, 4.07320747, 4.82146386],
+            [0.28331284, 3.79761412, 5.41045539],
+            [2.41285934, 6.55760868, 10.26239949],
+            [4.72672005, 6.73302296, 10.46496851],
+            [5.05516432, 8.77890039, 3.79369273],
+        ]
+    )
+    assert actual_population.shape == (6, 3)
+    np.testing.assert_array_almost_equal(actual_population, expected_population)
 
 
 def test_one_point_crossover():

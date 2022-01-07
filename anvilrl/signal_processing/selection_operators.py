@@ -14,7 +14,7 @@ def naive_selection(
     :param ratio: the ratio of the number of individuals to select from the population
     :return: the selected individuals
     """
-    num_selected = int(ratio * population.shape[0])
+    num_selected = max(1, int(ratio * population.shape[0]))
     return population[np.argpartition(fitness_scores, -num_selected)[-num_selected:]]
 
 
