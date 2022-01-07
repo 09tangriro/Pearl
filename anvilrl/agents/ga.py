@@ -121,7 +121,7 @@ class GA(BaseAgent):
         trajectories = self.buffer.sample(batch_size, flatten_env=False)
         rewards = trajectories.rewards.squeeze()
         if rewards.ndim > 1:
-            rewards = rewards.sum(dim=0)
+            rewards = rewards.sum(dim=-1)
         for i in range(actor_epochs):
             log = self.updater(
                 rewards=rewards,

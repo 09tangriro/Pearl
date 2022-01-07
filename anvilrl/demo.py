@@ -9,6 +9,7 @@ from anvilrl.agents import A2C, DDPG, DQN, ES, GA, PPO
 from anvilrl.buffers import HERBuffer
 from anvilrl.common.utils import get_space_shape
 from anvilrl.models import ActorCritic, Critic, Dummy, EpsilonGreedyActor
+from anvilrl.models.actor_critics import Actor
 from anvilrl.models.encoders import DictEncoder, IdentityEncoder
 from anvilrl.models.heads import DiagGaussianHead, DiscreteQHead
 from anvilrl.models.torsos import MLP
@@ -130,21 +131,35 @@ def es_demo():
 
 
 def es_deep_demo():
-    POPULATION_SIZE = 100
+    POPULATION_SIZE = 50
     env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=False)
     observation_shape = get_space_shape(env.single_observation_space)
     encoder = IdentityEncoder()
     torso = MLP(layer_sizes=[observation_shape[0], 64, 32], activation_fn=T.nn.ReLU)
     head = DiagGaussianHead(input_shape=32, action_size=1)
+    actor = Actor(encoder=encoder, torso=torso, head=head)
+    critic = Dummy(space=env.single_action_space)
+    model = ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=POPULATION_SIZE,
+            actor_distribution="normal",
+            actor_std=1,
+        ),
+    )
 
     agent = ES(
         env=env,
-        learning_rate=0.1,
+        model=model,
+        learning_rate=1,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/DeepES-demo", log_frequency=("episode", 1)
         ),
     )
-    agent.fit(num_steps=50000, epochs=8, train_frequency=("step", 50))
+    agent.fit(
+        num_steps=50000, batch_size=1, actor_epochs=8, train_frequency=("step", 50)
+    )
 
 
 def ga_demo():

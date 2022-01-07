@@ -105,7 +105,7 @@ class ES(BaseAgent):
         trajectories = self.buffer.sample(batch_size, flatten_env=False)
         rewards = trajectories.rewards.squeeze()
         if rewards.ndim > 1:
-            rewards = rewards.sum(axis=0)
+            rewards = rewards.sum(axis=-1)
         scaled_rewards = scale(rewards)
         learning_rate = self.learning_rate / (
             np.mean(self.updater.std) * self.env.num_envs
