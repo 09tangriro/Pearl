@@ -24,24 +24,24 @@ from anvilrl.settings import (
 
 class BaseAgent(ABC):
     """
-    The BaseAgent class is given to handle all the stuff around the actual Deep RL algorithm.
-    It's recommended to inherit this class when implementing your own Deep RL agent. You'll need
-    to implement the _fit() abstract method and override the __init__ to add updaters along with
-    it's settings.
+    The BaseAgent class is given to handle all the stuff around either RL or EC algorithms.
+    It's recommended to inherit this class when implementing your own agents. You'll need
+    to implement the _fit() abstract method and override the __init__ to add updaters along
+    with their settings.
 
-    See the example deep agents already done for guidance and settings.py for settings objects
+    See the example agents already done for guidance and settings.py for settings objects
     that can be used.
 
     :param env: the gym-like environment to be used
     :param model: the neural network model
+    :param buffer_class: the buffer class for storing and sampling trajectories
+    :param buffer_settings: settings for the buffer
     :param action_explorer_class: the explorer class for random search at beginning of training and
         adding noise to actions
     :param explorer settings: settings for the action explorer
-    :param buffer_class: the buffer class for storing and sampling trajectories
-    :param buffer_settings: settings for the buffer
-    :param logger_settings: settings for the logger
     :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
     :param callback_settings: settings for callbacks
+    :param logger_settings: settings for the logger
     :param device: device to run on, accepts "auto", "cuda" or "cpu"
     :param render: whether to render the environment or not
     :param seed: optional seed for the random number generator
@@ -51,13 +51,13 @@ class BaseAgent(ABC):
         self,
         env: Env,
         model: ActorCritic,
-        action_explorer_class: Type[BaseExplorer] = BaseExplorer,
-        explorer_settings: ExplorerSettings = ExplorerSettings(),
         buffer_class: Type[BaseBuffer] = BaseBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
-        logger_settings: LoggerSettings = LoggerSettings(),
+        action_explorer_class: Type[BaseExplorer] = BaseExplorer,
+        explorer_settings: ExplorerSettings = ExplorerSettings(),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         callback_settings: Optional[List[CallbackSettings]] = None,
+        logger_settings: LoggerSettings = LoggerSettings(),
         device: Union[str, T.device] = "auto",
         render: bool = False,
         seed: Optional[int] = None,

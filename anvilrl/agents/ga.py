@@ -50,16 +50,26 @@ class GA(BaseAgent):
     Genetic Algorithm
     https://www.geeksforgeeks.org/genetic-algorithms/
 
-    :param env: the gym vecotrized environment
-    :param model: the model representing an individual in the population
-    :param updater_class: the class to use for the updater handling the actual update algorithm
-    :param population_settings: the settings object for population initialization
+    :param env: the gym-like environment to be used, should be a VectorEnv
+    :param model: the neural network model
+    :param updater_class: the updater class to be used
+    :param selection_operator: the selection operator to be used
+    :param selection_settings: the selection settings to be used
+    :param crossover_operator: the crossover operator to be used
+    :param crossover_settings: the crossover settings to be used
+    :param mutation_operator: the mutation operator to be used
+    :param mutation_settings: the mutation settings to be used
+    :param elitism: the elitism ratio
     :param buffer_class: the buffer class for storing and sampling trajectories
     :param buffer_settings: settings for the buffer
+    :param action_explorer_class: the explorer class for random search at beginning of training and
+        adding noise to actions
+    :param explorer settings: settings for the action explorer
+    :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
+    :param callback_settings: settings for callbacks
     :param logger_settings: settings for the logger
-    :param device: device to run on, accepts "auto", "cuda" or "cpu" (needed to pass to buffer,
-        can mostly be ignored)
-    :param learning_rate: learning rate for the updater
+    :param device: device to run on, accepts "auto", "cuda" or "cpu"
+    :param render: whether to render the environment or not
     :param seed: optional seed for the random number generator
     """
 

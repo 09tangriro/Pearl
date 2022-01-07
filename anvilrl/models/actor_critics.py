@@ -22,7 +22,6 @@ from anvilrl.models.heads import (
     DiagGaussianHead,
     DummyHead,
 )
-from anvilrl.models.utils import trainable_parameters
 from anvilrl.settings import PopulationSettings
 
 
@@ -53,6 +52,9 @@ class Critic(T.nn.Module):
     :param encoder: the encoder network
     :param torso: the torso network
     :param head: the head network
+    :param create_target: whether to create a target network
+    :param polyak_coeff: the polyak coefficient for the target network
+    :param device: the device to use
     """
 
     def __init__(
@@ -93,7 +95,12 @@ class Critic(T.nn.Module):
             start_idx += v.numel()
 
     def set_state(self, state: np.ndarray) -> "Actor":
-        """Set the state of the individual"""
+        """
+        Set the state of the individual
+
+        :param state: the state to set
+        :return: self
+        """
         self.state = state
         state = to_torch(state, device=self.device)
         state_dict = {
@@ -121,6 +128,12 @@ class Critic(T.nn.Module):
     def forward_target(
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
+        """
+        Run a forward pass of the target network
+
+        :param observations: the observations
+        :param actions: the optional actions
+        """
         return self.target(observations, actions)
 
     def forward(
@@ -136,6 +149,9 @@ class Actor(Critic):
     :param encoder: the encoder network
     :param torso: the torso network
     :param head: the head network
+    :param create_target: whether to create a target network
+    :param polyak_coeff: the polyak coefficient for the target network
+    :param device: the device to use
     """
 
     def __init__(
@@ -175,6 +191,9 @@ class EpsilonGreedyActor(Actor):
     :param start_epsilon: epsilon start value, generally set high to promp random exploration
     :param epsilon_decay: epsilon decay value, epsilon = epsilon * epsilon_decay
     :param min_epsilon: the minimum epsilon value allowed
+    :param create_target: whether to create a target network
+    :param polyak_coeff: the polyak coefficient for the target network
+    :param device: the device to use
     """
 
     def __init__(
@@ -257,13 +276,16 @@ class ActorCritic(T.nn.Module):
     A basic actor critic network.
     This module is designed flexibly to allow for:
         1. Shared or separate network architectures.
-        2. Multiple actors and/or critics.
+        2. Multiple actors and/or critics defined by `self.actors` and `self.critics`.
+        3. A global actor and critic defined as `self.actor` and `self.critic` which is updated as the average of the actor and critic populations.
+        4. Handling any target networks embedded in the actor and critic models.
 
     To define shared layers, simply have the
     actor and critic embedded networks use the same encoder/torso/head
     in memory.
 
     Separate architecture:
+        ```
         encoder_critic = IdentityEncoder()
         encoder_actor = IdentityEncoder()
         torso_critic = MLP([2, 2])
@@ -273,8 +295,10 @@ class ActorCritic(T.nn.Module):
         actor = Actor(encoder=encoder_actor, torso=torso_actor, head=head_actor)
         critic = Critic(encoder=encoder_actor, torso=torso_critic, head=head_critic)
         actor_critic = ActorCritic(actor=actor, critic=critic)
+        ```
 
     Shared architecture:
+        ```
         encoder = IdentityEncoder()
         torso = MLP([2, 2])
         head_actor = DiagGaussianHead(input_shape=2, action_size=1)
@@ -282,9 +306,11 @@ class ActorCritic(T.nn.Module):
         actor = Actor(encoder=encoder, torso=torso, head=head_actor)
         critic = Critic(encoder=encoder, torso=torso, head=head_critic)
         actor_critic = ActorCritic(actor=actor, critic=critic)
+        ```
 
     :param actor: the actor/policy network
     :param critic: the critic network
+    :param population_settings: the settings for the actor and critic populations
     """
 
     def __init__(
@@ -350,6 +376,11 @@ class ActorCritic(T.nn.Module):
     ) -> List[Union[Actor, Critic]]:
         """
         Initialize the population of networks.
+
+        :param model: the model base from which the population is generated.
+        :param population_size: the size of the population
+        :param population_distribution: the distribution of the population
+        :param population_std: the standard deviation of the population if a normal distribution
         """
         if population_distribution is None:
             return [copy.deepcopy(model) for _ in range(population_size)]
@@ -382,15 +413,11 @@ class ActorCritic(T.nn.Module):
         return [copy.deepcopy(model).set_state(ind) for ind in population]
 
     def numpy_actors(self) -> np.ndarray:
-        """
-        Get the numpy representation of the actor population.
-        """
+        """Get the numpy representation of the actor population."""
         return np.array([ind.numpy() for ind in self.actors])
 
     def numpy_critics(self) -> np.ndarray:
-        """
-        Get the numpy representation of the critic population.
-        """
+        """Get the numpy representation of the critic population."""
         return np.array([ind.numpy() for ind in self.critics])
 
     def set_actors_state(self, state: np.ndarray) -> "ActorCritic":
@@ -485,7 +512,7 @@ class ActorCritic(T.nn.Module):
     def forward_critics(
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
-        """Get the population critic outputs"""
+        """Get the population online critic outputs"""
         if self.num_critics == 1:
             return self.critics[0](observations, actions)
         elif actions is None:
@@ -500,7 +527,7 @@ class ActorCritic(T.nn.Module):
         )
 
     def forward(self, observations: Tensor) -> T.Tensor:
-        """The default forward pass retrieves the population actor outputs"""
+        """The default forward pass retrieves the population online actor outputs"""
         if self.num_actors == 1:
             return self.actors[0](observations)
         return T.stack([actor(obs) for actor, obs in zip(self.actors, observations)])

@@ -46,6 +46,8 @@ class BaseEvolutionUpdater(ABC):
     def update_networks(self, population: np.ndarray) -> None:
         """
         Update the networks in the population
+
+        :param population: the population state to set the networks to
         """
         if self.population_type == "actor":
             self.model.set_actors_state(population)
@@ -76,7 +78,6 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         """
         Perform an optimization step
 
-        :param rewards: the rewards for the current population
         :param learning_rate: the learning rate
         :param optimization_direction: the optimization direction
         :return: the updater log

@@ -13,7 +13,6 @@ class BaseExplorer(object):
     """
     Base explorer class that should be used when no extra noise is added to the actions/a stochastic actor is used
 
-    :param model: actor or actor critic network
     :param action_space: action space
     :param start_steps: the fist n steps to uniformally sample actions
     """
@@ -32,6 +31,13 @@ class BaseExplorer(object):
     def __call__(
         self, model: Union[Actor, ActorCritic], observation: Observation, step: int
     ) -> np.ndarray:
+        """
+        Get an action for the given observation in training.
+
+        :param model: the model to use
+        :param observation: the observation
+        :param step: the current training step
+        """
         if step >= self.start_steps:
             action = to_numpy(model(observation))
             action = np.clip(action, self.action_range[0], self.action_range[1])

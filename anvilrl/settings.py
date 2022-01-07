@@ -34,8 +34,12 @@ class PopulationSettings:
     """
     Settings for the population initializer
 
-    :param population_init_strategy: strategy for population initialization, accepts 'normal' or 'uniform'
-    :param population_std: std for population initialization (only used if strategy is 'normal')
+    :param actor_population_size: number of actors in the population
+    :param critic_population_size: number of critics in the population
+    :param actor_distribution: distribution of the actor population
+    :param critic_distribution: distribution of the critic population
+    :param actor_std: standard deviation of the actor population if normally distributed
+    :param critic_std: standard deviation of the critic population if normally distributed
     """
 
     actor_population_size: int = 1
