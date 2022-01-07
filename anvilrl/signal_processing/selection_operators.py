@@ -3,6 +3,21 @@
 import numpy as np
 
 
+def naive_selection(
+    population: np.ndarray, fitness_scores: np.ndarray, ratio: float = 0.5
+) -> np.ndarray:
+    """
+    Selects individuals for the next algorithm iteration using naive selection.
+
+    :param population: the population of individuals to select from
+    :param fitness_scores: the fitness scores of the individuals in the population
+    :param ratio: the ratio of the number of individuals to select from the population
+    :return: the selected individuals
+    """
+    num_selected = int(ratio * population.shape[0])
+    return population[np.argpartition(fitness_scores, -num_selected)[-num_selected:]]
+
+
 def tournament_selection(
     population: np.ndarray,
     fitness_scores: np.ndarray,

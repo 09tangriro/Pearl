@@ -22,6 +22,7 @@ from anvilrl.signal_processing.sample_estimators import (
     sample_reverse_kl_divergence,
 )
 from anvilrl.signal_processing.selection_operators import (
+    naive_selection,
     roulette_selection,
     tournament_selection,
 )
@@ -108,6 +109,26 @@ def test_soft_q_target(dtype):
     expected_target = np.array([3, 3, 3], dtype=np.float32)
 
     np.equal(actual_target, expected_target)
+
+
+def test_naive_selection():
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    fitness = np.array([2, 1, 3])
+    actual_population = naive_selection(population, fitness)
+    expected_population = np.array([[7, 8, 9]])
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+    fitness = np.array([2, 1, 3, 4])
+    actual_population = naive_selection(population, fitness, ratio=0.8)
+    expected_population = np.array([[1, 2, 3], [7, 8, 9], [10, 11, 12]])
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+    fitness = np.array([1, 1, 1, 1])
+    actual_population = naive_selection(population, fitness, ratio=0.75)
+    expected_population = np.array([[4, 5, 6], [7, 8, 9], [10, 11, 12]])
+    np.testing.assert_array_equal(actual_population, expected_population)
 
 
 def test_tournament_selection():
