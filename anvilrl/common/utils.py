@@ -159,7 +159,9 @@ def filter_rewards(rewards: np.ndarray, dones: np.ndarray) -> np.ndarray:
         rewards = rewards[np.newaxis, :]
         dones = dones[np.newaxis, :]
     for i, env_dones in enumerate(dones):
-        done_index = np.where(env_dones == 1)[0][0]
-        rewards[i][done_index:] = 0
+        done_indices = np.where(env_dones == 1)[0]
+        if done_indices.size > 0:
+            done_index = done_indices[0]
+            rewards[i][done_index:] = 0
 
     return rewards.squeeze()
