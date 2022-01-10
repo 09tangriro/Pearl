@@ -132,5 +132,8 @@ class CrossoverSettings:
 class MutationSettings:
     """Settings for the mutation process. Extend this class to add params for each mutation method."""
 
+    mutation_rate: float = 0.1
+    mutation_std: Optional[float] = None
+
     def filter_none(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}

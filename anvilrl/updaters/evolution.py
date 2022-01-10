@@ -69,12 +69,16 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         self,
         learning_rate: float,
         optimization_direction: np.ndarray,
+        mutation_operator: Optional[Callable] = None,
+        mutation_settings: Dict[str, Any] = {},
     ) -> UpdaterLog:
         """
         Perform an optimization step
 
         :param learning_rate: the learning rate
         :param optimization_direction: the optimization direction
+        :param mutation_operator: the mutation operator
+        :param mutation_settings: the mutation settings
         :return: the updater log
         """
         # Snapshot current population dist for kl divergence
@@ -87,6 +91,8 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         # Generate new population
         self.normal_dist = np.random.randn(self.population_size, *self.space_shape)
         population = self.mean + (self.std * self.normal_dist)
+        if mutation_operator is not None:
+            population = mutation_operator(population, self.space, **mutation_settings)
 
         # Discretize and clip population as needed
         if isinstance(self.space, (Discrete, MultiDiscrete)):
