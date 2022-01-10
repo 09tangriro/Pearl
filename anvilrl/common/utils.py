@@ -146,3 +146,20 @@ def set_seed(seed: int, env: Env) -> None:
     env.seed(seed)
     env.action_space.seed(seed)
     env.observation_space.seed(seed)
+
+
+def filter_rewards(rewards: np.ndarray, dones: np.ndarray) -> np.ndarray:
+    """
+    Filter rewards based on done flags, all rewards after a done are set to 0.
+    :param rewards: The rewards to filter (num_envs, num_steps) or (num_steps,)
+    :param dones: The done flags (num_envs, num_steps) or (num_steps,)
+    :return: The filtered rewards
+    """
+    if rewards.ndim == 1:
+        rewards = rewards[np.newaxis, :]
+        dones = dones[np.newaxis, :]
+    for i, env_dones in enumerate(dones):
+        done_index = np.where(env_dones == 1)[0][0]
+        rewards[i][done_index:] = 0
+
+    return rewards.squeeze()

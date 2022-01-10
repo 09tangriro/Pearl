@@ -7,6 +7,7 @@ from gym import spaces
 from anvilrl.common.utils import (
     extend_shape,
     filter_dataclass_by_none,
+    filter_rewards,
     get_space_range,
     get_space_shape,
     set_seed,
@@ -146,3 +147,22 @@ def test_set_seed():
     set_seed(seed, env)
     actual_arr = env.observation_space.sample()
     np.testing.assert_array_equal(actual_arr, expected_arr)
+
+
+def test_filter_rewards():
+    rewards = np.ones((2, 5))
+    dones = np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0]])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([[1, 1, 1, 0, 0], [1, 0, 0, 0, 0]])
+    np.testing.assert_array_equal(actual_output, expected_output)
+
+    rewards = np.ones(5)
+    dones = np.array([0, 0, 0, 1, 1])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([1, 1, 1, 0, 0])
+    np.testing.assert_array_equal(actual_output, expected_output)
+
+    dones = np.array([0, 1, 0, 0, 0])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([1, 0, 0, 0, 0])
+    np.testing.assert_array_equal(actual_output, expected_output)
