@@ -18,3 +18,4 @@ omit =
     anvilrl/agents/ppo.py
     anvilrl/settings.py
     anvilrl/plot.py
+    anvilrl/agents/cem_rl.py

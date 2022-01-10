@@ -6,12 +6,18 @@ import numpy as np
 import torch as T
 
 from anvilrl.agents import A2C, DDPG, DQN, ES, GA, PPO
+from anvilrl.agents.cem_rl import CEM_RL
 from anvilrl.buffers import HERBuffer
 from anvilrl.common.utils import get_space_shape
 from anvilrl.models import ActorCritic, Critic, Dummy, EpsilonGreedyActor
 from anvilrl.models.actor_critics import Actor
 from anvilrl.models.encoders import DictEncoder, IdentityEncoder
-from anvilrl.models.heads import DiagGaussianHead, DiscreteQHead
+from anvilrl.models.heads import (
+    CategoricalHead,
+    DeterministicHead,
+    DiagGaussianHead,
+    DiscreteQHead,
+)
 from anvilrl.models.torsos import MLP
 from anvilrl.settings import (
     BufferSettings,
@@ -37,7 +43,7 @@ def dqn_demo():
 
 
 def dqn_parallel_demo():
-    env = gym.vector.make("CartPole-v0", 2, asynchronous=False)
+    env = gym.vector.make("CartPole-v0", 2, asynchronous=True)
     encoder = IdentityEncoder()
     torso = MLP(layer_sizes=[4, 64, 32], activation_fn=T.nn.ReLU)
     head = DiscreteQHead(input_shape=32, output_shape=2)
@@ -61,7 +67,7 @@ def dqn_parallel_demo():
         env=env,
         model=model,
         logger_settings=LoggerSettings(
-            tensorboard_log_path="runs/DQN-parallel-demo", verbose=True
+            tensorboard_log_path="runs/DQN-parallel-demo", log_frequency=("episode", 1)
         ),
         explorer_settings=ExplorerSettings(start_steps=1000),
     )
@@ -131,12 +137,14 @@ def es_demo():
 
 
 def es_deep_demo():
-    POPULATION_SIZE = 50
-    env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=False)
+    POPULATION_SIZE = 20
+    env = gym.vector.make("CartPole-v0", POPULATION_SIZE, asynchronous=True)
     observation_shape = get_space_shape(env.single_observation_space)
     encoder = IdentityEncoder()
-    torso = MLP(layer_sizes=[observation_shape[0], 64, 32], activation_fn=T.nn.ReLU)
-    head = DiagGaussianHead(input_shape=32, action_size=1)
+    torso = MLP(layer_sizes=[observation_shape[0], 20, 10], activation_fn=T.nn.ReLU)
+    head = CategoricalHead(
+        input_shape=10, action_size=env.single_action_space.n, activation_fn=T.nn.Tanh
+    )
     actor = Actor(encoder=encoder, torso=torso, head=head)
     critic = Dummy(space=env.single_action_space)
     model = ActorCritic(
@@ -145,20 +153,20 @@ def es_deep_demo():
         population_settings=PopulationSettings(
             actor_population_size=POPULATION_SIZE,
             actor_distribution="normal",
-            actor_std=1,
+            actor_std=0.01,
         ),
     )
 
     agent = ES(
         env=env,
         model=model,
-        learning_rate=1,
+        learning_rate=0.001,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/DeepES-demo", log_frequency=("episode", 1)
         ),
     )
     agent.fit(
-        num_steps=50000, batch_size=1, actor_epochs=8, train_frequency=("step", 50)
+        num_steps=100000, batch_size=0, actor_epochs=1, train_frequency=("episode", 1)
     )
 
 
@@ -503,6 +511,29 @@ def ppo_demo():
     )
 
 
+def cem_ddpg_demo():
+    POPULATION_SIZE = 10
+    env = gym.make("Pendulum-v0")
+    env = gym.vector.SyncVectorEnv([lambda: env for _ in range(POPULATION_SIZE)])
+    # env = gym.wrappers.TimeLimit(env, max_episode_steps=200)
+
+    agent = CEM_RL(
+        env=env,
+        model=None,
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/CEM-DDPG-demo", log_frequency=("step", 200)
+        ),
+        value_coefficient=1,
+    )
+
+    agent.fit(
+        num_steps=100000,
+        batch_size=64,
+        actor_epochs=1,
+        critic_epochs=8,
+    )
+
+
 if __name__ == "__main__":
     parser = ArgumentParser(description="AnvilRL demo with preloaded hyperparameters")
     parser.add_argument("--agent", help="Agent to demo")
@@ -526,5 +557,7 @@ if __name__ == "__main__":
         a2c_demo()
     elif kwargs.agent.lower() == "ppo":
         ppo_demo()
+    elif kwargs.agent.lower() == "cem-ddpg":
+        cem_ddpg_demo()
     else:
         raise ValueError(f"Agent {kwargs.agent} not found")
