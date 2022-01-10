@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, Union
+from typing import Callable, List, Optional, Type, Union
 
 import numpy as np
 import torch as T
@@ -78,11 +78,11 @@ class GA(BaseAgent):
         env: VectorEnv,
         model: Optional[ActorCritic] = None,
         updater_class: Type[BaseEvolutionUpdater] = GeneticUpdater,
-        selection_operator: selection_operators = selection_operators.roulette_selection,
+        selection_operator: Callable = selection_operators.roulette_selection,
         selection_settings: SelectionSettings = SelectionSettings(),
-        crossover_operator: crossover_operators = crossover_operators.one_point_crossover,
+        crossover_operator: Callable = crossover_operators.one_point_crossover,
         crossover_settings: CrossoverSettings = CrossoverSettings(),
-        mutation_operator: mutation_operators = mutation_operators.uniform_mutation,
+        mutation_operator: Callable = mutation_operators.uniform_mutation,
         mutation_settings: MutationSettings = MutationSettings(),
         elitism: float = 0.1,
         buffer_class: Type[BaseBuffer] = RolloutBuffer,
