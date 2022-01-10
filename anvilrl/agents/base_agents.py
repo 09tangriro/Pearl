@@ -154,16 +154,7 @@ class BaseAgent(ABC):
             )
             # Add reward to current episode log
             self.logger.add_reward(reward)
-            # Get indices of episodes that are done, especially useful for vectorized environments
-            done_indices = np.where(done)[0]
-
-            if isinstance(self.env, VectorEnv):
-                not_done_indices = np.where(~done)[0]
-                observation[not_done_indices] = next_observation[not_done_indices]
-                if not done_indices.size == 0:
-                    observation[done_indices] = self.env.reset()[done_indices]
-            else:
-                observation = next_observation
+            observation = next_observation
 
             # If all environment episodes are done, reset and check if we should dump the log
             if self.logger.check_episode_done(done):
