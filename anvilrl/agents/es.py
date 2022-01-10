@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Optional, Type, Union
+from typing import Callable, List, Optional, Type, Union
 
 import gym
 import numpy as np
@@ -12,6 +12,7 @@ from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
+from anvilrl.common.utils import filter_rewards
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models import ActorCritic, Dummy
 from anvilrl.settings import (
@@ -19,6 +20,7 @@ from anvilrl.settings import (
     CallbackSettings,
     ExplorerSettings,
     LoggerSettings,
+    MutationSettings,
     PopulationSettings,
 )
 from anvilrl.updaters.evolution import BaseEvolutionUpdater, NoisyGradientAscent
@@ -69,6 +71,8 @@ class ES(BaseAgent):
         env: VectorEnv,
         model: Optional[ActorCritic] = None,
         updater_class: Type[BaseEvolutionUpdater] = NoisyGradientAscent,
+        mutation_operator: Optional[Callable] = None,
+        mutation_settings: MutationSettings = MutationSettings(mutation_std=0.5),
         learning_rate: float = 1e-3,
         buffer_class: Type[BaseBuffer] = RolloutBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
@@ -99,6 +103,8 @@ class ES(BaseAgent):
 
         self.learning_rate = learning_rate
         self.updater = updater_class(model=self.model)
+        self.mutation_operator = mutation_operator
+        self.mutation_settings = mutation_settings.filter_none()
 
     def _fit(
         self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1
@@ -106,8 +112,9 @@ class ES(BaseAgent):
         divergences = np.zeros(actor_epochs)
         entropies = np.zeros(actor_epochs)
 
-        trajectories = self.buffer.sample(batch_size, flatten_env=False)
+        trajectories = self.buffer.all(flatten_env=False)
         rewards = trajectories.rewards.squeeze()
+        rewards = filter_rewards(rewards, trajectories.dones.squeeze())
         if rewards.ndim > 1:
             rewards = rewards.sum(axis=-1)
         scaled_rewards = scale(rewards)
@@ -119,6 +126,8 @@ class ES(BaseAgent):
             log = self.updater(
                 learning_rate=learning_rate,
                 optimization_direction=optimization_direction,
+                mutation_operator=self.mutation_operator,
+                mutation_settings=self.mutation_settings,
             )
             divergences[i] = log.divergence
             entropies[i] = log.entropy

@@ -9,6 +9,7 @@ from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
+from anvilrl.common.utils import filter_rewards
 from anvilrl.explorers.base_explorer import BaseExplorer
 from anvilrl.models import ActorCritic, Dummy
 from anvilrl.settings import (
@@ -130,6 +131,7 @@ class GA(BaseAgent):
 
         trajectories = self.buffer.sample(batch_size, flatten_env=False)
         rewards = trajectories.rewards.squeeze()
+        rewards = filter_rewards(rewards, trajectories.dones.squeeze())
         if rewards.ndim > 1:
             rewards = rewards.sum(dim=-1)
         for i in range(actor_epochs):
