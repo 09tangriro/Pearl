@@ -262,7 +262,9 @@ class HERBuffer(BaseBuffer):
             dones=trajectories[4],
         )
 
-    def all(self) -> DictTrajectories:
+    def all(
+        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "numpy"
+    ) -> DictTrajectories:
         return DictTrajectories(
             observations={
                 "observation": self.observations[: self.pos],

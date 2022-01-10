@@ -236,9 +236,13 @@ class BaseBuffer(ABC):
         """
 
     @abstractmethod
-    def all(self) -> Trajectories:
+    def all(
+        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "numpy"
+    ) -> Trajectories:
         """
         Get all stored trajectories
 
+        :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
+        :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
         :return: stored trajectories
         """
