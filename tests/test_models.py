@@ -3,15 +3,15 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.models import Actor, ActorCritic, Critic, Dummy, EpsilonGreedyActor
-from anvilrl.models.encoders import (
+from pearll.models import Actor, ActorCritic, Critic, Dummy, EpsilonGreedyActor
+from pearll.models.encoders import (
     CNNEncoder,
     DictEncoder,
     FlattenEncoder,
     IdentityEncoder,
     MLPEncoder,
 )
-from anvilrl.models.heads import (
+from pearll.models.heads import (
     CategoricalHead,
     ContinuousQHead,
     DeterministicHead,
@@ -19,9 +19,9 @@ from anvilrl.models.heads import (
     DiscreteQHead,
     ValueHead,
 )
-from anvilrl.models.torsos import MLP
-from anvilrl.models.utils import trainable_parameters
-from anvilrl.settings import PopulationSettings
+from pearll.models.torsos import MLP
+from pearll.models.utils import trainable_parameters
+from pearll.settings import PopulationSettings
 
 T.manual_seed(0)
 np.random.seed(0)

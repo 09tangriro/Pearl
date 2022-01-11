@@ -1,4 +1,4 @@
-anvilrl package
+pearll package
 ===============
 
 Subpackages
@@ -7,21 +7,21 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   anvilrl.agents
-   anvilrl.buffers
-   anvilrl.callbacks
-   anvilrl.explorers
-   anvilrl.models
-   anvilrl.signal_processing
-   anvilrl.updaters
+   pearll.agents
+   pearll.buffers
+   pearll.callbacks
+   pearll.explorers
+   pearll.models
+   pearll.signal_processing
+   pearll.updaters
 
 Submodules
 ----------
 
-anvilrl.settings module
+pearll.settings module
 -----------------------
 
-.. automodule:: anvilrl.settings
+.. automodule:: pearll.settings
    :members:
    :undoc-members:
    :show-inheritance:
@@ -29,7 +29,7 @@ anvilrl.settings module
 Module contents
 ---------------
 
-.. automodule:: anvilrl
+.. automodule:: pearll
    :members:
    :undoc-members:
    :show-inheritance:

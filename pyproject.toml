@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "anvilrl"
+name = "pearll"
 version = "0.4.0"
 description = "Adaptable tools to make reinforcement learning and evolutionary computation algorithms"
 license = "MIT"
@@ -31,7 +31,7 @@ addopts = """
     -p no:warnings
     -m 'not integration'
     --tb=short -rEf
-    --cov anvilrl
+    --cov pearll
     --cov-config=.coveragerc
     --cov-report xml:build/reports/coverage.xml
     --cov-report term

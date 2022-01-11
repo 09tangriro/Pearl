@@ -1,13 +1,13 @@
 import gym
 import pytest
 
-from anvilrl.explorers import BaseExplorer, GaussianExplorer
-from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
-from anvilrl.models.encoders import IdentityEncoder
-from anvilrl.models.heads import DeterministicHead, ValueHead
-from anvilrl.models.torsos import MLP
-from anvilrl.models.utils import get_mlp_size
-from anvilrl.settings import PopulationSettings
+from pearll.explorers import BaseExplorer, GaussianExplorer
+from pearll.models.actor_critics import Actor, ActorCritic, Critic
+from pearll.models.encoders import IdentityEncoder
+from pearll.models.heads import DeterministicHead, ValueHead
+from pearll.models.torsos import MLP
+from pearll.models.utils import get_mlp_size
+from pearll.settings import PopulationSettings
 
 
 @pytest.mark.parametrize("explorer_class", [BaseExplorer, GaussianExplorer])

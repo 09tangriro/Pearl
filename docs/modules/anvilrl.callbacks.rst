@@ -1,21 +1,21 @@
-anvilrl.callbacks package
+pearll.callbacks package
 =========================
 
 Submodules
 ----------
 
-anvilrl.callbacks.base\_callback module
+pearll.callbacks.base\_callback module
 ---------------------------------------
 
-.. automodule:: anvilrl.callbacks.base_callback
+.. automodule:: pearll.callbacks.base_callback
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.callbacks.checkpoint\_callback module
+pearll.callbacks.checkpoint\_callback module
 ---------------------------------------------
 
-.. automodule:: anvilrl.callbacks.checkpoint_callback
+.. automodule:: pearll.callbacks.checkpoint_callback
    :members:
    :undoc-members:
    :show-inheritance:
@@ -23,7 +23,7 @@ anvilrl.callbacks.checkpoint\_callback module
 Module contents
 ---------------
 
-.. automodule:: anvilrl.callbacks
+.. automodule:: pearll.callbacks
    :members:
    :undoc-members:
    :show-inheritance:

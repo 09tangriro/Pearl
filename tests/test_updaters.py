@@ -6,28 +6,28 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.models import Actor, ActorCritic, Critic, Dummy
-from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
-from anvilrl.models.heads import DiagGaussianHead, ValueHead
-from anvilrl.models.torsos import MLP
-from anvilrl.settings import PopulationSettings
-from anvilrl.signal_processing import (
+from pearll.models import Actor, ActorCritic, Critic, Dummy
+from pearll.models.encoders import IdentityEncoder, MLPEncoder
+from pearll.models.heads import DiagGaussianHead, ValueHead
+from pearll.models.torsos import MLP
+from pearll.settings import PopulationSettings
+from pearll.signal_processing import (
     crossover_operators,
     mutation_operators,
     selection_operators,
 )
-from anvilrl.updaters.actors import (
+from pearll.updaters.actors import (
     DeterministicPolicyGradient,
     PolicyGradient,
     ProximalPolicyClip,
     SoftPolicyGradient,
 )
-from anvilrl.updaters.critics import (
+from pearll.updaters.critics import (
     ContinuousQRegression,
     DiscreteQRegression,
     ValueRegression,
 )
-from anvilrl.updaters.evolution import GeneticUpdater, NoisyGradientAscent
+from pearll.updaters.evolution import GeneticUpdater, NoisyGradientAscent
 
 ############################### SET UP MODELS ###############################
 

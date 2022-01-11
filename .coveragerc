@@ -8,14 +8,14 @@ exclude_lines =
     @(abc\.)?abstractmethod
 
 omit = 
-    anvilrl/demo.py
-    anvilrl/agents/templates.py
-    anvilrl/agents/ddpg.py
-    anvilrl/agents/dqn.py
-    anvilrl/agents/es.py
-    anvilrl/agents/ga.py
-    anvilrl/agents/a2c.py
-    anvilrl/agents/ppo.py
-    anvilrl/settings.py
-    anvilrl/plot.py
-    anvilrl/agents/cem_rl.py
+    pearll/demo.py
+    pearll/agents/templates.py
+    pearll/agents/ddpg.py
+    pearll/agents/dqn.py
+    pearll/agents/es.py
+    pearll/agents/ga.py
+    pearll/agents/a2c.py
+    pearll/agents/ppo.py
+    pearll/settings.py
+    pearll/plot.py
+    pearll/agents/cem_rl.py

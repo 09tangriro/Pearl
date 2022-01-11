@@ -3,28 +3,22 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.common.utils import to_torch
-from anvilrl.signal_processing.advantage_estimators import (
-    generalized_advantage_estimate,
-)
-from anvilrl.signal_processing.crossover_operators import (
+from pearll.common.utils import to_torch
+from pearll.signal_processing.advantage_estimators import generalized_advantage_estimate
+from pearll.signal_processing.crossover_operators import (
     fit_gaussian,
     one_point_crossover,
 )
-from anvilrl.signal_processing.mutation_operators import (
+from pearll.signal_processing.mutation_operators import (
     gaussian_mutation,
     uniform_mutation,
 )
-from anvilrl.signal_processing.return_estimators import (
-    TD_lambda,
-    TD_zero,
-    soft_q_target,
-)
-from anvilrl.signal_processing.sample_estimators import (
+from pearll.signal_processing.return_estimators import TD_lambda, TD_zero, soft_q_target
+from pearll.signal_processing.sample_estimators import (
     sample_forward_kl_divergence,
     sample_reverse_kl_divergence,
 )
-from anvilrl.signal_processing.selection_operators import (
+from pearll.signal_processing.selection_operators import (
     naive_selection,
     roulette_selection,
     tournament_selection,

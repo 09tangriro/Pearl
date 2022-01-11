@@ -1,14 +1,15 @@
-[![pipeline status](https://github.com/LondonNode/AnvilRL/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/AnvilRL/actions/workflows/ci.yaml)
-[![codecov](https://codecov.io/gh/LondonNode/AnvilRL/branch/main/graph/badge.svg?token=M3OUCWYAWM)](https://codecov.io/gh/LondonNode/AnvilRL)
+[![pipeline status](https://github.com/LondonNode/pearll/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/pearll/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/LondonNode/pearll/branch/main/graph/badge.svg?token=M3OUCWYAWM)](https://codecov.io/gh/LondonNode/pearll)
 [![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-<img src="docs/images/logo.png" align="right" width="50%"/>
+<img src="docs/images/logo.jpg" align="right" width="50%"/>
 
-# AnvilRL
-AnvilRL (referred to as *Anvil*) is a pytorch based reinforcement learning (RL) and evolutionary computation (EC) library with the goal of being excellent for rapid prototyping of new algorithms and ideas. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
+
+# pearll
+The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (pearll) is a pytorch based reinforcement learning (RL) and evolutionary computation (EC) library with the goal of being excellent for rapid prototyping of new algorithms and ideas. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
 
 ## Main Features
-| **Features**                      | **AnvilRL** |
+| **Features**                      | **pearll** |
 | ---------------------------       | ----------------------|
 | RL tools (e.g. Actor Critic) | :heavy_check_mark: |
 | EC tools (e.g. Genetic Algorithm)   | :heavy_check_mark: |
@@ -24,8 +25,8 @@ AnvilRL (referred to as *Anvil*) is a pytorch based reinforcement learning (RL) 
 
 ### Installation
 There are two options to install this package:
-1. `pip install anvilrl`
-2. `git clone git@github.com:LondonNode/AnvilRL.git`
+1. `pip install pearll`
+2. `git clone git@github.com:LondonNode/pearll.git`
 
 ### Module Guide
 - `agents`: implementations of RL and EC agents where the other modular components are put together
@@ -39,17 +40,17 @@ There are two options to install this package:
 - `settings.py`: settings objects for the above components, can be extended for custom components
 
 ### Agent Templates
-See `anvilrl/agents/templates.py` for the templates to create your own agents! 
-For more examples, see specific agent implementations under `anvilrl/agents`.
+See `pearll/agents/templates.py` for the templates to create your own agents! 
+For more examples, see specific agent implementations under `pearll/agents`.
 
 ### Agent Performance
 To see training performance, use the command `tensorboard --logdir runs` or `tensorboard --logdir <tensorboard_log_path>` defined in your algorithm class initialization.
 
 ### Python Scripts
-To run these you'll need to go to wherever the library is installed, `cd AnvilRL`.
+To run these you'll need to go to wherever the library is installed, `cd pearll`.
 
-- `demo.py`: script to run very basic demos of agents with pre-defined hyperparameters, run `python3 -m anvilrl.demo -h` for more info
-- `plot.py`: script to plot more complex plots that can't be obtained via Tensorboard (e.g. multiple subplots), run `python3 -m anvilrl.plot -h` for more info
+- `demo.py`: script to run very basic demos of agents with pre-defined hyperparameters, run `python3 -m pearll.demo -h` for more info
+- `plot.py`: script to plot more complex plots that can't be obtained via Tensorboard (e.g. multiple subplots), run `python3 -m pearll.plot -h` for more info
 
 ## Developer Guide
 ### Scripts
@@ -62,10 +63,10 @@ To run these you'll need to go to wherever the library is installed, `cd AnvilRL
 2. `scripts/windows_run_tests.bat`: run tests
 
 ### Dependency Management
-Anvil uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release instead of pip. As a quick guide:
+pearll uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release instead of pip. As a quick guide:
 1. Run `poetry add [package]` to add more package dependencies.
 2. Poetry automatically handles the virtual environment used, check `pyproject.toml` for specifics on the virtual environment setup.
 3. If you want to run something in the poetry virtual environment, add `poetry run` as a prefix to the command you want to execute. For example, to run a python file: `poetry run python3 script.py`.
 
 ## Credit
-Anvil was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
+pearll was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
