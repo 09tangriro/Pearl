@@ -148,9 +148,10 @@ class GeneticUpdater(BaseEvolutionUpdater):
             old_population = self.model.numpy_actors()
         elif self.population_type == "critic":
             old_population = self.model.numpy_critics()
-        num_elite = int(self.population_size * elitism)
-        elite_indices = np.argpartition(rewards, -num_elite)[-num_elite:]
-        elite_population = old_population[elite_indices]
+        if elitism > 0:
+            num_elite = int(self.population_size * elitism)
+            elite_indices = np.argpartition(rewards, -num_elite)[-num_elite:]
+            elite_population = old_population[elite_indices]
 
         # Main update
         if selection_operator is not None:
@@ -163,7 +164,8 @@ class GeneticUpdater(BaseEvolutionUpdater):
             new_population = mutation_operator(
                 new_population, self.space, **mutation_settings
             )
-        new_population[elite_indices] = elite_population
+        if elitism > 0:
+            new_population[elite_indices] = elite_population
         self.update_networks(new_population)
 
         # Calculate Log metrics
