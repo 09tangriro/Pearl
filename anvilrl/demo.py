@@ -512,18 +512,17 @@ def ppo_demo():
 
 
 def cem_ddpg_demo():
-    POPULATION_SIZE = 10
-    env = gym.make("Pendulum-v0")
-    env = gym.vector.SyncVectorEnv([lambda: env for _ in range(POPULATION_SIZE)])
-    # env = gym.wrappers.TimeLimit(env, max_episode_steps=200)
+    POPULATION_SIZE = 20
+    env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=True)
+    eval_env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=True)
 
     agent = CEM_RL(
         env=env,
+        eval_env=eval_env,
         model=None,
         logger_settings=LoggerSettings(
-            tensorboard_log_path="runs/CEM-DDPG-demo", log_frequency=("step", 200)
+            tensorboard_log_path="runs/CEM-DDPG-demo", log_frequency=("episode", 1)
         ),
-        value_coefficient=1,
     )
 
     agent.fit(
@@ -531,6 +530,7 @@ def cem_ddpg_demo():
         batch_size=64,
         actor_epochs=1,
         critic_epochs=8,
+        train_frequency=("step", 100),
     )
 
 

@@ -5,6 +5,7 @@ from typing import Callable, List, Optional, Type, Union
 import numpy as np
 import torch as T
 from gym import Env
+from gym.vector.vector_env import VectorEnv
 
 from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import ReplayBuffer
@@ -43,11 +44,11 @@ def get_default_model(env: Env) -> ActorCritic:
     observation_size = get_mlp_size(observation_shape)
     encoder_actor = IdentityEncoder()
     encoder_critic = MLPEncoder(observation_size + action_size, observation_size)
-    torso = MLP(layer_sizes=[observation_size, 400, 300], activation_fn=T.nn.ReLU)
+    torso = MLP(layer_sizes=[observation_size, 40, 30], activation_fn=T.nn.ReLU)
     head_actor = DeterministicHead(
-        input_shape=300, action_shape=action_shape, activation_fn=T.nn.Tanh
+        input_shape=30, action_shape=action_shape, activation_fn=T.nn.Tanh
     )
-    head_critic = ContinuousQHead(input_shape=300)
+    head_critic = ContinuousQHead(input_shape=30)
     return ActorCritic(
         actor=Actor(
             encoder=encoder_actor,
@@ -62,10 +63,10 @@ def get_default_model(env: Env) -> ActorCritic:
             create_target=True,
         ),
         population_settings=PopulationSettings(
-            actor_population_size=10,
-            critic_population_size=10,
+            actor_population_size=env.num_envs,
+            critic_population_size=env.num_envs,
             actor_distribution="normal",
-            actor_std=1,
+            actor_std=2,
         ),
     )
 
@@ -80,6 +81,7 @@ class CEM_RL(BaseAgent):
     CEM-RL Algorithm
 
     :param env: the gym-like environment to be used
+    :param eval_env: the environment to be used for evaluating agent before evolutionary update
     :param model: the neural network model
     :param td_gamma: trajectory discount factor
     :param value_coefficient: value loss weight
@@ -102,7 +104,8 @@ class CEM_RL(BaseAgent):
 
     def __init__(
         self,
-        env: Env,
+        env: VectorEnv,
+        eval_env: VectorEnv,
         model: Optional[ActorCritic],
         td_gamma: float = 0.99,
         value_coefficient: float = 0.5,
@@ -138,6 +141,7 @@ class CEM_RL(BaseAgent):
             render=render,
             seed=seed,
         )
+        self.eval_env = eval_env
         self.actor_updater = actor_updater_class(self.model)
         self.critic_updater = critic_updater_class(
             optimizer_class=critic_optimizer_settings.optimizer_class,
@@ -191,20 +195,20 @@ class CEM_RL(BaseAgent):
         self.model.set_actors_state(new_state)
 
         # Evaluate new model
-        observation = self.env.reset()
-        for _ in range(batch_size):
+        episode_dones = [False for _ in range(self.eval_env.num_envs)]
+        observation = self.eval_env.reset()
+        episode_length = 0
+        while not np.all(episode_dones):
             action = to_numpy(self.model(observation))
-            next_observation, reward, done, _ = self.env.step(action)
+            next_observation, reward, done, _ = self.eval_env.step(action)
             self.buffer.add_trajectory(
                 observation, action, reward, next_observation, done
             )
-            done_indices = np.where(done)[0]
-            not_done_indices = np.where(~done)[0]
-            observation[not_done_indices] = next_observation[not_done_indices]
-            if not done_indices.size == 0:
-                observation[done_indices] = self.env.reset()[done_indices]
+            episode_length += 1
+            observation = next_observation
+            episode_dones = np.logical_or(episode_dones, done)
 
-        trajectories = self.buffer.last(batch_size, flatten_env=False)
+        trajectories = self.buffer.last(episode_length, flatten_env=False)
         rewards = trajectories.rewards.squeeze()
         rewards = filter_rewards(rewards, trajectories.dones.squeeze())
         if rewards.ndim > 1:
