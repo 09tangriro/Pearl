@@ -1,15 +1,15 @@
-[![pipeline status](https://github.com/LondonNode/Pearll/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/Pearll/actions/workflows/ci.yaml)
-[![codecov](https://codecov.io/gh/LondonNode/Pearll/branch/main/graph/badge.svg?token=M3OUCWYAWM)](https://codecov.io/gh/LondonNode/Pearll)
+[![pipeline status](https://github.com/LondonNode/Pearl/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/Pearl/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/LondonNode/Pearl/branch/main/graph/badge.svg?token=M3OUCWYAWM)](https://codecov.io/gh/LondonNode/Pearl)
 [![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <img src="docs/images/logo.jpg" align="right" width="50%"/>
 
 
-# Pearll
-The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (pearll) is a pytorch based reinforcement learning (RL) and evolutionary computation (EC) library with the goal of being excellent for rapid prototyping of new algorithms and ideas. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
+# Pearl
+The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (Pearl) is a pytorch based reinforcement learning (RL) and evolutionary computation (EC) library with the goal of being excellent for rapid prototyping of new algorithms and ideas. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
 
 ## Main Features
-| **Features**                      | **pearll** |
+| **Features**                      | **Pearl** |
 | ---------------------------       | ----------------------|
 | RL tools (e.g. Actor Critic) | :heavy_check_mark: |
 | EC tools (e.g. Genetic Algorithm)   | :heavy_check_mark: |
@@ -26,7 +26,7 @@ The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ib
 ### Installation
 There are two options to install this package:
 1. `pip install pearll`
-2. `git clone git@github.com:LondonNode/Pearll.git`
+2. `git clone git@github.com:LondonNode/Pearl.git`
 
 ### Module Guide
 - `agents`: implementations of RL and EC agents where the other modular components are put together
@@ -63,10 +63,10 @@ To run these you'll need to go to wherever the library is installed, `cd pearll`
 2. `scripts/windows_run_tests.bat`: run tests
 
 ### Dependency Management
-Pearll uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release instead of pip. As a quick guide:
+Pearl uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release instead of pip. As a quick guide:
 1. Run `poetry add [package]` to add more package dependencies.
 2. Poetry automatically handles the virtual environment used, check `pyproject.toml` for specifics on the virtual environment setup.
 3. If you want to run something in the poetry virtual environment, add `poetry run` as a prefix to the command you want to execute. For example, to run a python file: `poetry run python3 script.py`.
 
 ## Credit
-Pearll was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
+Pearl was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
