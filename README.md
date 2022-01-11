@@ -11,15 +11,14 @@ The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ib
 ## Main Features
 | **Features**                      | **Pearl** |
 | ---------------------------       | ----------------------|
-| RL tools (e.g. Actor Critic) | :heavy_check_mark: |
-| EC tools (e.g. Genetic Algorithm)   | :heavy_check_mark: |
-| Tensorboard support               | :heavy_check_mark: |
+| RL algorithms (e.g. Actor Critic) | :heavy_check_mark: |
+| EC algorithms (e.g. Genetic Algorithm)   | :heavy_check_mark: |
+| Hybrid algorithms (e.g. CEM-DDPG) | :heavy_check_mark: |
+| Multi-agent suppport              | :heavy_check_mark: |
+| Tensorboard integration           | :heavy_check_mark: |
 | Modular and extensible components | :heavy_check_mark: |
 | Opinionated module settings       | :heavy_check_mark: |
-| Type hints                        | :heavy_check_mark: |
-| PEP8 code style                   | :heavy_check_mark: |
 | Custom callbacks                  | :heavy_check_mark: |
-| Unit Tests                        | :heavy_check_mark: |
 
 ## User Guide
 
