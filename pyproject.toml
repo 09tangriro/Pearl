@@ -14,7 +14,6 @@ psutil = "^5.8.0"
 tensorboard = "^2.7.0"
 scikit-learn = "^1.0.1"
 matplotlib = "^3.5.0"
-Box2D = "^2.3.10"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
