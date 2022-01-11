@@ -4,6 +4,7 @@
 
 <img src="docs/images/logo.jpg" align="right" width="50%"/>
 
+
 # pearll
 The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (pearll) is a pytorch based reinforcement learning (RL) and evolutionary computation (EC) library with the goal of being excellent for rapid prototyping of new algorithms and ideas. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
 
