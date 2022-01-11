@@ -1,11 +1,11 @@
-[![pipeline status](https://github.com/LondonNode/pearll/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/pearll/actions/workflows/ci.yaml)
-[![codecov](https://codecov.io/gh/LondonNode/pearll/branch/main/graph/badge.svg?token=M3OUCWYAWM)](https://codecov.io/gh/LondonNode/pearll)
+[![pipeline status](https://github.com/LondonNode/Pearll/actions/workflows/ci.yaml/badge.svg)](https://github.com/LondonNode/Pearll/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/LondonNode/Pearll/branch/main/graph/badge.svg?token=M3OUCWYAWM)](https://codecov.io/gh/LondonNode/Pearll)
 [![codestyle](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 <img src="docs/images/logo.jpg" align="right" width="50%"/>
 
 
-# pearll
+# Pearll
 The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (pearll) is a pytorch based reinforcement learning (RL) and evolutionary computation (EC) library with the goal of being excellent for rapid prototyping of new algorithms and ideas. As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
 
 ## Main Features
@@ -63,10 +63,10 @@ To run these you'll need to go to wherever the library is installed, `cd pearll`
 2. `scripts/windows_run_tests.bat`: run tests
 
 ### Dependency Management
-pearll uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release instead of pip. As a quick guide:
+Pearll uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency management and build release instead of pip. As a quick guide:
 1. Run `poetry add [package]` to add more package dependencies.
 2. Poetry automatically handles the virtual environment used, check `pyproject.toml` for specifics on the virtual environment setup.
 3. If you want to run something in the poetry virtual environment, add `poetry run` as a prefix to the command you want to execute. For example, to run a python file: `poetry run python3 script.py`.
 
 ## Credit
-pearll was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
+Pearll was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
