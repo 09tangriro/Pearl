@@ -4,7 +4,7 @@ import pytest
 import torch as T
 from gym import spaces
 
-from anvilrl.common.utils import (
+from pearll.common.utils import (
     extend_shape,
     filter_dataclass_by_none,
     filter_rewards,
@@ -14,7 +14,7 @@ from anvilrl.common.utils import (
     to_numpy,
     to_torch,
 )
-from anvilrl.settings import ExplorerSettings
+from pearll.settings import ExplorerSettings
 
 numpy_data = (np.zeros(shape=(2, 2)), np.zeros(shape=(3, 3)))
 torch_data = (T.zeros(2, 2), T.zeros(3, 3))

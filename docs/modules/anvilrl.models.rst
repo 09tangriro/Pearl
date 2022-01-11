@@ -1,45 +1,45 @@
-anvilrl.models package
+pearll.models package
 ======================
 
 Submodules
 ----------
 
-anvilrl.models.actor\_critics module
+pearll.models.actor\_critics module
 ------------------------------------
 
-.. automodule:: anvilrl.models.actor_critics
+.. automodule:: pearll.models.actor_critics
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.models.encoders module
+pearll.models.encoders module
 ------------------------------
 
-.. automodule:: anvilrl.models.encoders
+.. automodule:: pearll.models.encoders
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.models.heads module
+pearll.models.heads module
 ---------------------------
 
-.. automodule:: anvilrl.models.heads
+.. automodule:: pearll.models.heads
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.models.torsos module
+pearll.models.torsos module
 ----------------------------
 
-.. automodule:: anvilrl.models.torsos
+.. automodule:: pearll.models.torsos
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.models.utils module
+pearll.models.utils module
 ---------------------------
 
-.. automodule:: anvilrl.models.utils
+.. automodule:: pearll.models.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -47,7 +47,7 @@ anvilrl.models.utils module
 Module contents
 ---------------
 
-.. automodule:: anvilrl.models
+.. automodule:: pearll.models
    :members:
    :undoc-members:
    :show-inheritance:

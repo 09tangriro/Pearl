@@ -6,7 +6,7 @@ import pytest
 from gym import GoalEnv, spaces
 from gym.envs.registration import EnvSpec
 
-from anvilrl.buffers import HERBuffer
+from pearll.buffers import HERBuffer
 
 
 class BitFlippingEnv(GoalEnv):

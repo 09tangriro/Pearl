@@ -1,37 +1,37 @@
-anvilrl.agents package
+pearll.agents package
 ======================
 
 Submodules
 ----------
 
-anvilrl.agents.base\_agents module
+pearll.agents.base\_agents module
 ----------------------------------
 
-.. automodule:: anvilrl.agents.base_agents
+.. automodule:: pearll.agents.base_agents
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.agents.ddpg module
+pearll.agents.ddpg module
 --------------------------
 
-.. automodule:: anvilrl.agents.ddpg
+.. automodule:: pearll.agents.ddpg
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.agents.dqn module
+pearll.agents.dqn module
 -------------------------
 
-.. automodule:: anvilrl.agents.dqn
+.. automodule:: pearll.agents.dqn
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.agents.templates module
+pearll.agents.templates module
 -------------------------------
 
-.. automodule:: anvilrl.agents.templates
+.. automodule:: pearll.agents.templates
    :members:
    :undoc-members:
    :show-inheritance:
@@ -39,7 +39,7 @@ anvilrl.agents.templates module
 Module contents
 ---------------
 
-.. automodule:: anvilrl.agents
+.. automodule:: pearll.agents
    :members:
    :undoc-members:
    :show-inheritance:

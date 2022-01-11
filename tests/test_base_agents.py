@@ -4,15 +4,15 @@ import gym
 import numpy as np
 import torch as T
 
-from anvilrl.agents.base_agents import BaseAgent
-from anvilrl.buffers import ReplayBuffer
-from anvilrl.common.type_aliases import Log
-from anvilrl.common.utils import set_seed
-from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
-from anvilrl.models.encoders import IdentityEncoder
-from anvilrl.models.heads import ContinuousQHead
-from anvilrl.models.torsos import MLP
-from anvilrl.settings import ExplorerSettings, LoggerSettings
+from pearll.agents.base_agents import BaseAgent
+from pearll.buffers import ReplayBuffer
+from pearll.common.type_aliases import Log
+from pearll.common.utils import set_seed
+from pearll.models.actor_critics import Actor, ActorCritic, Critic
+from pearll.models.encoders import IdentityEncoder
+from pearll.models.heads import ContinuousQHead
+from pearll.models.torsos import MLP
+from pearll.settings import ExplorerSettings, LoggerSettings
 
 
 class MockRLAgent(BaseAgent):

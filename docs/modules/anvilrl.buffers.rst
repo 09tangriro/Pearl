@@ -1,37 +1,37 @@
-anvilrl.buffers package
+pearll.buffers package
 =======================
 
 Submodules
 ----------
 
-anvilrl.buffers.base\_buffer module
+pearll.buffers.base\_buffer module
 -----------------------------------
 
-.. automodule:: anvilrl.buffers.base_buffer
+.. automodule:: pearll.buffers.base_buffer
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.buffers.her\_buffer module
+pearll.buffers.her\_buffer module
 ----------------------------------
 
-.. automodule:: anvilrl.buffers.her_buffer
+.. automodule:: pearll.buffers.her_buffer
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.buffers.replay\_buffer module
+pearll.buffers.replay\_buffer module
 -------------------------------------
 
-.. automodule:: anvilrl.buffers.replay_buffer
+.. automodule:: pearll.buffers.replay_buffer
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.buffers.rollout\_buffer module
+pearll.buffers.rollout\_buffer module
 --------------------------------------
 
-.. automodule:: anvilrl.buffers.rollout_buffer
+.. automodule:: pearll.buffers.rollout_buffer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -39,7 +39,7 @@ anvilrl.buffers.rollout\_buffer module
 Module contents
 ---------------
 
-.. automodule:: anvilrl.buffers
+.. automodule:: pearll.buffers
    :members:
    :undoc-members:
    :show-inheritance:

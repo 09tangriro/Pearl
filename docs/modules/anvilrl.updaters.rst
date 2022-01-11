@@ -1,21 +1,21 @@
-anvilrl.updaters package
+pearll.updaters package
 ========================
 
 Submodules
 ----------
 
-anvilrl.updaters.actors module
+pearll.updaters.actors module
 ------------------------------
 
-.. automodule:: anvilrl.updaters.actors
+.. automodule:: pearll.updaters.actors
    :members:
    :undoc-members:
    :show-inheritance:
 
-anvilrl.updaters.critics module
+pearll.updaters.critics module
 -------------------------------
 
-.. automodule:: anvilrl.updaters.critics
+.. automodule:: pearll.updaters.critics
    :members:
    :undoc-members:
    :show-inheritance:
@@ -23,7 +23,7 @@ anvilrl.updaters.critics module
 Module contents
 ---------------
 
-.. automodule:: anvilrl.updaters
+.. automodule:: pearll.updaters
    :members:
    :undoc-members:
    :show-inheritance:

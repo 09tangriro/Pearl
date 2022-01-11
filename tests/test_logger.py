@@ -2,8 +2,8 @@ import shutil
 
 import numpy as np
 
-from anvilrl.common.logging_ import Logger
-from anvilrl.common.type_aliases import Log
+from pearll.common.logging_ import Logger
+from pearll.common.type_aliases import Log
 
 path = "runs/tests"
 
