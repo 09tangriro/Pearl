@@ -26,7 +26,7 @@ The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ib
 ### Installation
 There are two options to install this package:
 1. `pip install pearll`
-2. `git clone git@github.com:LondonNode/pearll.git`
+2. `git clone git@github.com:LondonNode/Pearll.git`
 
 ### Module Guide
 - `agents`: implementations of RL and EC agents where the other modular components are put together
