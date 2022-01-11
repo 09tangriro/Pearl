@@ -8,7 +8,7 @@ import numpy as np
 import torch as T
 from torch.optim.optimizer import Optimizer
 
-from anvilrl.common.enumerations import PopulationInitStrategy
+from anvilrl.common.enumerations import Distribution
 
 
 @dataclass
@@ -30,16 +30,24 @@ class OptimizerSettings:
 
 
 @dataclass
-class PopulationInitializerSettings:
+class PopulationSettings:
     """
     Settings for the population initializer
 
-    :param population_init_strategy: strategy for population initialization, accepts 'normal' or 'uniform'
-    :param population_std: std for population initialization (only used if strategy is 'normal')
+    :param actor_population_size: number of actors in the population
+    :param critic_population_size: number of critics in the population
+    :param actor_distribution: distribution of the actor population
+    :param critic_distribution: distribution of the critic population
+    :param actor_std: standard deviation of the actor population if normally distributed
+    :param critic_std: standard deviation of the critic population if normally distributed
     """
 
-    strategy: Union[str, PopulationInitStrategy] = PopulationInitStrategy.NORMAL
-    population_std: Optional[Union[float, np.ndarray]] = 1
+    actor_population_size: int = 1
+    critic_population_size: int = 1
+    actor_distribution: Optional[Union[str, Distribution]] = None
+    critic_distribution: Optional[Union[str, Distribution]] = None
+    actor_std: Optional[Union[float, np.ndarray]] = 1
+    critic_std: Optional[Union[float, np.ndarray]] = 1
 
     def filter_none(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
@@ -77,17 +85,7 @@ class BufferSettings:
 
 @dataclass
 class CallbackSettings:
-    """
-    Settings for callbacks, pick which ones apply!
-
-    :param save_freq: how often to save
-    :param save_path: path to save to
-    :name_prefix: prefix of the model file name
-    """
-
-    save_freq: Optional[int] = None
-    save_path: Optional[str] = None
-    name_prefix: Optional[str] = None
+    """Settings for callbacks. Extend this class to add __init__ params for each callback."""
 
     def filter_none(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
@@ -116,15 +114,7 @@ class LoggerSettings:
 
 @dataclass
 class SelectionSettings:
-    """
-    Settings for the selection process
-
-    :param tournament_size: size of the tournament (only used if strategy is 'tournament')
-    :param tournament_prob: probability of a random selection (only used if strategy is 'tournament')
-    """
-
-    tournament_size: Optional[int] = None
-    tournament_prob: Optional[float] = None
+    """Settings for the selection process. Extend this class to add params for each selection method."""
 
     def filter_none(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
@@ -132,13 +122,7 @@ class SelectionSettings:
 
 @dataclass
 class CrossoverSettings:
-    """
-    Settings for the crossover process
-
-    :param crossover_index: crossover point index, if None then randomly selected
-    """
-
-    crossover_index: Optional[int] = None
+    """Settings for the crossover process. Extend this class to add params for each crossover method."""
 
     def filter_none(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if v is not None}
@@ -146,12 +130,7 @@ class CrossoverSettings:
 
 @dataclass
 class MutationSettings:
-    """
-    Settings for the mutation process
-
-    :param mutation_rate: probability of a mutation
-    :param mutation_std: std of the mutation
-    """
+    """Settings for the mutation process. Extend this class to add params for each mutation method."""
 
     mutation_rate: float = 0.1
     mutation_std: Optional[float] = None

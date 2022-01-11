@@ -6,23 +6,24 @@ import numpy as np
 import torch as T
 
 from anvilrl.agents import A2C, DDPG, DQN, ES, GA, PPO
+from anvilrl.agents.cem_rl import CEM_RL
 from anvilrl.buffers import HERBuffer
 from anvilrl.common.utils import get_space_shape
-from anvilrl.models.actor_critics import (
-    ActorCriticWithCriticTarget,
-    Critic,
-    DeepIndividual,
-    EpsilonGreedyActor,
-    Individual,
-)
+from anvilrl.models import ActorCritic, Critic, Dummy, EpsilonGreedyActor
+from anvilrl.models.actor_critics import Actor
 from anvilrl.models.encoders import DictEncoder, IdentityEncoder
-from anvilrl.models.heads import DiagGaussianHead, DiscreteQHead
+from anvilrl.models.heads import (
+    CategoricalHead,
+    DeterministicHead,
+    DiagGaussianHead,
+    DiscreteQHead,
+)
 from anvilrl.models.torsos import MLP
 from anvilrl.settings import (
     BufferSettings,
     ExplorerSettings,
     LoggerSettings,
-    PopulationInitializerSettings,
+    PopulationSettings,
 )
 
 
@@ -42,7 +43,7 @@ def dqn_demo():
 
 
 def dqn_parallel_demo():
-    env = gym.vector.make("CartPole-v0", 10, asynchronous=False)
+    env = gym.vector.make("CartPole-v0", 2, asynchronous=True)
     encoder = IdentityEncoder()
     torso = MLP(layer_sizes=[4, 64, 32], activation_fn=T.nn.ReLU)
     head = DiscreteQHead(input_shape=32, output_shape=2)
@@ -50,20 +51,29 @@ def dqn_parallel_demo():
     actor = EpsilonGreedyActor(
         critic_encoder=encoder, critic_torso=torso, critic_head=head
     )
-    critic = Critic(encoder=encoder, torso=torso, head=head)
-    model = ActorCriticWithCriticTarget(actor=actor, critic=critic)
+    critic = Critic(encoder=encoder, torso=torso, head=head, create_target=True)
+    model = ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=2,
+            critic_population_size=2,
+            actor_distribution="normal",
+            critic_distribution="normal",
+        ),
+    )
 
     agent = DQN(
         env=env,
         model=model,
         logger_settings=LoggerSettings(
-            tensorboard_log_path="runs/DQN-parallel-demo", verbose=True
+            tensorboard_log_path="runs/DQN-parallel-demo", log_frequency=("episode", 1)
         ),
         explorer_settings=ExplorerSettings(start_steps=1000),
     )
     agent.fit(
         num_steps=50000,
-        batch_size=320,
+        batch_size=32,
         critic_epochs=16,
         train_frequency=("episode", 1),
     )
@@ -104,7 +114,16 @@ def es_demo():
 
     POPULATION_SIZE = 10
     env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
-    model = Individual(env.single_action_space, np.array([10, 10]))
+    actor = Dummy(space=env.single_action_space, state=np.array([10, 10]))
+    critic = Dummy(space=env.single_action_space, state=np.array([10, 10]))
+
+    model = ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=env.num_envs, actor_distribution="normal"
+        ),
+    )
 
     agent = ES(
         env=env,
@@ -114,27 +133,41 @@ def es_demo():
             tensorboard_log_path="runs/ES-demo", log_frequency=("step", 1)
         ),
     )
-    agent.fit(num_steps=20)
+    agent.fit(num_steps=20, batch_size=1)
 
 
 def es_deep_demo():
-    POPULATION_SIZE = 100
-    env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=False)
+    POPULATION_SIZE = 20
+    env = gym.vector.make("CartPole-v0", POPULATION_SIZE, asynchronous=True)
     observation_shape = get_space_shape(env.single_observation_space)
     encoder = IdentityEncoder()
-    torso = MLP(layer_sizes=[observation_shape[0], 64, 32], activation_fn=T.nn.ReLU)
-    head = DiagGaussianHead(input_shape=32, action_size=1)
-    model = DeepIndividual(encoder=encoder, torso=torso, head=head)
+    torso = MLP(layer_sizes=[observation_shape[0], 20, 10], activation_fn=T.nn.ReLU)
+    head = CategoricalHead(
+        input_shape=10, action_size=env.single_action_space.n, activation_fn=T.nn.Tanh
+    )
+    actor = Actor(encoder=encoder, torso=torso, head=head)
+    critic = Dummy(space=env.single_action_space)
+    model = ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=POPULATION_SIZE,
+            actor_distribution="normal",
+            actor_std=0.01,
+        ),
+    )
 
     agent = ES(
         env=env,
         model=model,
-        learning_rate=0.1,
+        learning_rate=0.001,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/DeepES-demo", log_frequency=("episode", 1)
         ),
     )
-    agent.fit(num_steps=50000, epochs=8, train_frequency=("step", 50))
+    agent.fit(
+        num_steps=100000, batch_size=0, actor_epochs=1, train_frequency=("episode", 1)
+    )
 
 
 def ga_demo():
@@ -181,17 +214,14 @@ def ga_demo():
     env = gym.vector.SyncVectorEnv(
         [lambda: Mastermind() for _ in range(POPULATION_SIZE)]
     )
-    model = Individual(env.single_action_space)
 
     agent = GA(
         env=env,
-        model=model,
-        population_settings=PopulationInitializerSettings(strategy="uniform"),
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/GA-demo", log_frequency=("step", 1)
         ),
     )
-    agent.fit(num_steps=25)
+    agent.fit(num_steps=30, batch_size=1)
 
 
 def her_demo():
@@ -415,8 +445,8 @@ def her_demo():
     actor = EpsilonGreedyActor(
         critic_encoder=encoder, critic_torso=torso, critic_head=head
     )
-    critic = Critic(encoder=encoder, torso=torso, head=head)
-    model = ActorCriticWithCriticTarget(actor=actor, critic=critic)
+    critic = Critic(encoder=encoder, torso=torso, head=head, create_target=True)
+    model = ActorCritic(actor=actor, critic=critic)
 
     agent = DQN(
         env=env,
@@ -481,6 +511,29 @@ def ppo_demo():
     )
 
 
+def cem_ddpg_demo():
+    POPULATION_SIZE = 20
+    env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=True)
+    eval_env = gym.vector.make("Pendulum-v0", POPULATION_SIZE, asynchronous=True)
+
+    agent = CEM_RL(
+        env=env,
+        eval_env=eval_env,
+        model=None,
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/CEM-DDPG-demo", log_frequency=("episode", 1)
+        ),
+    )
+
+    agent.fit(
+        num_steps=100000,
+        batch_size=64,
+        actor_epochs=1,
+        critic_epochs=8,
+        train_frequency=("step", 100),
+    )
+
+
 if __name__ == "__main__":
     parser = ArgumentParser(description="AnvilRL demo with preloaded hyperparameters")
     parser.add_argument("--agent", help="Agent to demo")
@@ -504,5 +557,7 @@ if __name__ == "__main__":
         a2c_demo()
     elif kwargs.agent.lower() == "ppo":
         ppo_demo()
+    elif kwargs.agent.lower() == "cem-ddpg":
+        cem_ddpg_demo()
     else:
         raise ValueError(f"Agent {kwargs.agent} not found")

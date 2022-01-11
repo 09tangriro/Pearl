@@ -4,19 +4,14 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvilrl.agents.base_agents import BaseRLAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.buffers.replay_buffer import ReplayBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
-from anvilrl.common.utils import get_space_shape, torch_to_numpy
+from anvilrl.common.utils import get_space_shape, to_numpy
 from anvilrl.explorers.base_explorer import BaseExplorer
-from anvilrl.models.actor_critics import (
-    ActorCritic,
-    ActorCriticWithCriticTarget,
-    Critic,
-    EpsilonGreedyActor,
-)
+from anvilrl.models.actor_critics import ActorCritic, Critic, EpsilonGreedyActor
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import DiscreteQHead
 from anvilrl.models.torsos import MLP
@@ -44,12 +39,12 @@ def get_default_model(env: Env):
     actor = EpsilonGreedyActor(
         critic_encoder=encoder, critic_torso=torso, critic_head=head
     )
-    critic = Critic(encoder=encoder, torso=torso, head=head)
+    critic = Critic(encoder=encoder, torso=torso, head=head, create_target=True)
 
-    return ActorCriticWithCriticTarget(actor, critic)
+    return ActorCritic(actor, critic)
 
 
-class DQN(BaseRLAgent):
+class DQN(BaseAgent):
     """
     DQN Algorithm
 
@@ -117,12 +112,14 @@ class DQN(BaseRLAgent):
     ) -> Log:
         critic_losses = np.zeros(shape=(critic_epochs))
         for i in range(critic_epochs):
-            trajectories = self.buffer.sample(batch_size=batch_size)
+            trajectories = self.buffer.sample(batch_size=batch_size, flatten_env=False)
 
             with T.no_grad():
-                next_q_values = self.model.target_critic(trajectories.next_observations)
-                next_q_values, _ = next_q_values.max(dim=-1)
-                next_q_values = torch_to_numpy(next_q_values.reshape(-1, 1))
+                next_q_values = self.model.forward_target_critics(
+                    trajectories.next_observations
+                )
+                next_q_values = to_numpy(next_q_values.max(dim=-1)[0])
+                next_q_values = next_q_values[..., np.newaxis]
                 target_q_values = TD_zero(
                     trajectories.rewards,
                     next_q_values,

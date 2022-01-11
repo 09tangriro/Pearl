@@ -78,7 +78,9 @@ class Logger(object):
         if isinstance(reward, (float, np.floating)):
             self.rewards.append(reward)
         elif isinstance(reward, np.ndarray):
-            self.rewards.append(reward[np.where(self.episode_dones == False)[0]].mean())
+            log_reward = reward[np.where(self.episode_dones == False)[0]].mean()
+            if not np.isnan(log_reward):
+                self.rewards.append(log_reward)
         else:
             raise TypeError(
                 f"Reward must be a float or numpy array, got {type(reward)}"

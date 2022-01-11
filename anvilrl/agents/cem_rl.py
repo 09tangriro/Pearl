@@ -1,18 +1,21 @@
-from typing import List, Optional, Type, Union
+import copy
+from dataclasses import dataclass
+from typing import Callable, List, Optional, Type, Union
 
 import numpy as np
 import torch as T
 from gym import Env
+from gym.vector.vector_env import VectorEnv
 
 from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import ReplayBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
-from anvilrl.common.utils import get_space_shape, to_numpy
-from anvilrl.explorers import BaseExplorer, GaussianExplorer
+from anvilrl.common.utils import filter_rewards, get_space_shape, to_numpy
+from anvilrl.explorers import BaseExplorer
 from anvilrl.models import Actor, ActorCritic, Critic
-from anvilrl.models.encoders import IdentityEncoder
+from anvilrl.models.encoders import IdentityEncoder, MLPEncoder
 from anvilrl.models.heads import ContinuousQHead, DeterministicHead
 from anvilrl.models.torsos import MLP
 from anvilrl.models.utils import get_mlp_size
@@ -22,48 +25,63 @@ from anvilrl.settings import (
     ExplorerSettings,
     LoggerSettings,
     OptimizerSettings,
+    PopulationSettings,
+    SelectionSettings,
 )
-from anvilrl.signal_processing.return_estimators import TD_zero
-from anvilrl.updaters.actors import BaseActorUpdater, DeterministicPolicyGradient
+from anvilrl.signal_processing import (
+    crossover_operators,
+    return_estimators,
+    selection_operators,
+)
 from anvilrl.updaters.critics import BaseCriticUpdater, ContinuousQRegression
+from anvilrl.updaters.evolution import BaseEvolutionUpdater, GeneticUpdater
 
 
 def get_default_model(env: Env) -> ActorCritic:
-    action_shape = get_space_shape(env.action_space)
-    observation_shape = get_space_shape(env.observation_space)
+    action_shape = get_space_shape(env.single_action_space)
+    observation_shape = get_space_shape(env.single_observation_space)
     action_size = get_mlp_size(action_shape)
     observation_size = get_mlp_size(observation_shape)
     encoder_actor = IdentityEncoder()
-    encoder_critic = IdentityEncoder()
-    torso_actor = MLP(layer_sizes=[observation_size, 400, 300], activation_fn=T.nn.ReLU)
-    torso_critic = MLP(
-        layer_sizes=[observation_size + action_size, 400, 300], activation_fn=T.nn.ReLU
-    )
+    encoder_critic = MLPEncoder(observation_size + action_size, observation_size)
+    torso = MLP(layer_sizes=[observation_size, 40, 30], activation_fn=T.nn.ReLU)
     head_actor = DeterministicHead(
-        input_shape=300, action_shape=action_shape, activation_fn=T.nn.Tanh
+        input_shape=30, action_shape=action_shape, activation_fn=T.nn.Tanh
     )
-    head_critic = ContinuousQHead(input_shape=300)
+    head_critic = ContinuousQHead(input_shape=30)
     return ActorCritic(
         actor=Actor(
             encoder=encoder_actor,
-            torso=torso_actor,
+            torso=torso,
             head=head_actor,
             create_target=True,
         ),
         critic=Critic(
             encoder=encoder_critic,
-            torso=torso_critic,
+            torso=torso,
             head=head_critic,
             create_target=True,
+        ),
+        population_settings=PopulationSettings(
+            actor_population_size=env.num_envs,
+            critic_population_size=env.num_envs,
+            actor_distribution="normal",
+            actor_std=2,
         ),
     )
 
 
-class DDPG(BaseAgent):
+@dataclass
+class NaiveSelectionSettings(SelectionSettings):
+    ratio: float = 0.5
+
+
+class CEM_RL(BaseAgent):
     """
-    DDPG Algorithm
+    CEM-RL Algorithm
 
     :param env: the gym-like environment to be used
+    :param eval_env: the environment to be used for evaluating agent before evolutionary update
     :param model: the neural network model
     :param td_gamma: trajectory discount factor
     :param value_coefficient: value loss weight
@@ -86,20 +104,21 @@ class DDPG(BaseAgent):
 
     def __init__(
         self,
-        env: Env,
+        env: VectorEnv,
+        eval_env: VectorEnv,
         model: Optional[ActorCritic],
         td_gamma: float = 0.99,
         value_coefficient: float = 0.5,
-        actor_updater_class: Type[BaseActorUpdater] = DeterministicPolicyGradient,
-        actor_optimizer_settings: OptimizerSettings = OptimizerSettings(),
+        actor_updater_class: Type[BaseEvolutionUpdater] = GeneticUpdater,
+        selection_operator: Callable = selection_operators.naive_selection,
+        selection_settings: SelectionSettings = NaiveSelectionSettings(),
+        crossover_operator: Callable = crossover_operators.fit_gaussian,
         critic_updater_class: Type[BaseCriticUpdater] = ContinuousQRegression,
         critic_optimizer_settings: OptimizerSettings = OptimizerSettings(),
         buffer_class: Type[BaseBuffer] = ReplayBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
-        action_explorer_class: Type[BaseExplorer] = GaussianExplorer,
-        explorer_settings: ExplorerSettings = ExplorerSettings(
-            start_steps=1000, scale=0.1
-        ),
+        action_explorer_class: Type[BaseExplorer] = BaseExplorer,
+        explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=0),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         callback_settings: Optional[List[CallbackSettings]] = None,
         logger_settings: LoggerSettings = LoggerSettings(),
@@ -122,11 +141,8 @@ class DDPG(BaseAgent):
             render=render,
             seed=seed,
         )
-        self.actor_updater = actor_updater_class(
-            optimizer_class=actor_optimizer_settings.optimizer_class,
-            lr=actor_optimizer_settings.learning_rate,
-            max_grad=actor_optimizer_settings.max_grad,
-        )
+        self.eval_env = eval_env
+        self.actor_updater = actor_updater_class(self.model)
         self.critic_updater = critic_updater_class(
             optimizer_class=critic_optimizer_settings.optimizer_class,
             lr=critic_optimizer_settings.learning_rate,
@@ -135,10 +151,18 @@ class DDPG(BaseAgent):
         )
 
         self.td_gamma = td_gamma
+        self.selection_operator = selection_operator
+        self.selection_settings = selection_settings.filter_none()
+        self.crossover_operator = crossover_operator
+        self.crossover_settings = {"population_shape": self.model.numpy_actors().shape}
 
     def _fit(self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1):
-        critic_losses = np.zeros(shape=(critic_epochs))
-        actor_losses = np.zeros(shape=(actor_epochs))
+        critic_losses = np.zeros(critic_epochs)
+        divergences = np.zeros(actor_epochs)
+        entropies = np.zeros(actor_epochs)
+
+        model_copy = copy.deepcopy(self.model)
+
         # Train critic for critic_epochs
         for i in range(critic_epochs):
             trajectories = self.buffer.sample(batch_size=batch_size)
@@ -149,7 +173,7 @@ class DDPG(BaseAgent):
                 next_q_values = self.model.forward_target_critics(
                     trajectories.next_observations, next_actions
                 )
-                target_q_values = TD_zero(
+                target_q_values = return_estimators.TD_zero(
                     trajectories.rewards,
                     to_numpy(next_q_values),
                     trajectories.dones,
@@ -163,16 +187,51 @@ class DDPG(BaseAgent):
             )
             critic_losses[i] = critic_log.loss
 
+        # Reset half the actors to their state before being updated by the critic updater
+        half_actors = self.model.num_actors // 2
+        actors_no_update = model_copy.numpy_actors()[:half_actors]
+        actors_with_update = self.model.numpy_actors()[half_actors:]
+        new_state = np.concatenate([actors_no_update, actors_with_update], axis=0)
+        self.model.set_actors_state(new_state)
+
+        # Evaluate new model
+        episode_dones = [False for _ in range(self.eval_env.num_envs)]
+        observation = self.eval_env.reset()
+        episode_length = 0
+        while not np.all(episode_dones):
+            action = to_numpy(self.model(observation))
+            next_observation, reward, done, _ = self.eval_env.step(action)
+            self.buffer.add_trajectory(
+                observation, action, reward, next_observation, done
+            )
+            episode_length += 1
+            observation = next_observation
+            episode_dones = np.logical_or(episode_dones, done)
+
+        trajectories = self.buffer.last(episode_length, flatten_env=False)
+        rewards = trajectories.rewards.squeeze()
+        rewards = filter_rewards(rewards, trajectories.dones.squeeze())
+        if rewards.ndim > 1:
+            rewards = rewards.sum(axis=-1)
+
         # Train actor for actor_epochs
         for i in range(actor_epochs):
-            trajectories = self.buffer.sample(batch_size=batch_size)
-            actor_log = self.actor_updater(self.model, trajectories.observations)
-            actor_losses[i] = actor_log.loss
+            actor_log = self.actor_updater(
+                rewards=rewards,
+                selection_operator=self.selection_operator,
+                crossover_operator=self.crossover_operator,
+                selection_settings=self.selection_settings,
+                crossover_settings=self.crossover_settings,
+                elitism=0,
+            )
+            divergences[i] = actor_log.divergence
+            entropies[i] = actor_log.entropy
 
         # Update target networks
         self.model.update_targets()
 
         return Log(
-            actor_loss=np.mean(actor_losses),
             critic_loss=np.mean(critic_losses),
+            divergence=np.mean(divergences),
+            entropy=np.mean(entropies),
         )

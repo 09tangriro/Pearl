@@ -5,13 +5,13 @@ import numpy as np
 import torch as T
 from gym import Env
 
-from anvilrl.agents.base_agents import BaseRLAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import BaseBuffer, RolloutBuffer
 from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
 from anvilrl.common.utils import get_space_shape
 from anvilrl.explorers import BaseExplorer
-from anvilrl.models.actor_critics import Actor, ActorCritic, Critic
+from anvilrl.models import Actor, ActorCritic, Critic
 from anvilrl.models.encoders import IdentityEncoder
 from anvilrl.models.heads import CategoricalHead, ValueHead
 from anvilrl.models.torsos import MLP
@@ -52,7 +52,7 @@ def get_default_model(env: Env) -> ActorCritic:
     return ActorCritic(actor=actor, critic=critic)
 
 
-class PPO(BaseRLAgent):
+class PPO(BaseAgent):
     """
     Proximal Policy Optimization Algorithm
 
@@ -143,8 +143,8 @@ class PPO(BaseRLAgent):
         # Sample rollout and compute advantages/returns
         trajectories = self.buffer.sample(batch_size, dtype="torch")
         with T.no_grad():
-            old_values = self.model.forward_critic(trajectories.observations)
-            next_values = self.model.forward_critic(trajectories.next_observations)
+            old_values = self.model.forward_critics(trajectories.observations)
+            next_values = self.model.forward_critics(trajectories.next_observations)
             advantages, returns = generalized_advantage_estimate(
                 rewards=trajectories.rewards,
                 old_values=old_values,
@@ -153,7 +153,7 @@ class PPO(BaseRLAgent):
                 gae_lambda=self.gae_lambda,
                 gamma=self.gae_gamma,
             )
-            old_distributions = self.model.get_action_distribution(
+            old_distributions = self.model.action_distribution(
                 trajectories.observations
             )
             old_log_probs = old_distributions.log_prob(trajectories.actions).sum(dim=-1)

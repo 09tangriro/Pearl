@@ -24,8 +24,8 @@ class GoalSelectionStrategy(Enum):
     EPISODE = "episode"
 
 
-class PopulationInitStrategy(Enum):
-    """Population initialization strategy for random search agents"""
+class Distribution(Enum):
+    """Distribution types"""
 
     NORMAL = "normal"
     UNIFORM = "uniform"

@@ -7,11 +7,12 @@ from gym import spaces
 from anvilrl.common.utils import (
     extend_shape,
     filter_dataclass_by_none,
+    filter_rewards,
     get_space_range,
     get_space_shape,
-    numpy_to_torch,
     set_seed,
-    torch_to_numpy,
+    to_numpy,
+    to_torch,
 )
 from anvilrl.settings import ExplorerSettings
 
@@ -20,27 +21,34 @@ torch_data = (T.zeros(2, 2), T.zeros(3, 3))
 mixed_data = (np.zeros(shape=(2, 2)), T.zeros(3, 3))
 one_numpy = np.zeros(shape=(2, 2))
 one_torch = T.zeros(2, 2)
+zero_dim_numpy = np.array(1)
 
 
 @pytest.mark.parametrize("input", [numpy_data, torch_data, mixed_data])
-def test_numpy_to_torch(input):
-    actual_output = numpy_to_torch(*input)
+def test_to_torch(input):
+    actual_output = to_torch(*input)
     for i in range(len(actual_output)):
         assert T.equal(actual_output[i], torch_data[i])
 
 
+def test_zero_dim_to_torch():
+    actual_output = to_torch(zero_dim_numpy)
+    expected_output = T.tensor(1)
+    assert T.equal(actual_output, expected_output)
+
+
 @pytest.mark.parametrize("input", [numpy_data, torch_data, mixed_data])
-def test_torch_to_numpy(input):
-    actual_output = torch_to_numpy(*input)
+def test_to_numpy(input):
+    actual_output = to_numpy(*input)
     for i in range(len(actual_output)):
         np.testing.assert_array_equal(actual_output[i], numpy_data[i])
 
 
 def test_one_input():
-    actual_output = torch_to_numpy(one_torch)
+    actual_output = to_numpy(one_torch)
     np.testing.assert_array_equal(actual_output, one_numpy)
 
-    actual_output = numpy_to_torch(one_numpy)
+    actual_output = to_torch(one_numpy)
     T.equal(actual_output, one_torch)
 
 
@@ -139,3 +147,35 @@ def test_set_seed():
     set_seed(seed, env)
     actual_arr = env.observation_space.sample()
     np.testing.assert_array_equal(actual_arr, expected_arr)
+
+
+def test_filter_rewards():
+    rewards = np.ones((2, 5))
+    dones = np.array([[0, 0, 0, 1, 1], [0, 1, 0, 0, 0]])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([[1, 1, 1, 1, 0], [1, 1, 0, 0, 0]])
+    np.testing.assert_array_equal(actual_output, expected_output)
+
+    rewards = np.ones(5)
+    dones = np.array([0, 0, 0, 1, 1])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([1, 1, 1, 1, 0])
+    np.testing.assert_array_equal(actual_output, expected_output)
+
+    rewards = np.ones(5)
+    dones = np.array([0, 1, 0, 0, 0])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([1, 1, 0, 0, 0])
+    np.testing.assert_array_equal(actual_output, expected_output)
+
+    rewards = np.ones(5)
+    dones = np.array([0, 0, 0, 0, 0])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([1, 1, 1, 1, 1])
+    np.testing.assert_array_equal(actual_output, expected_output)
+
+    rewards = np.ones(5)
+    dones = np.array([0, 0, 0, 0, 1])
+    actual_output = filter_rewards(rewards, dones)
+    expected_output = np.array([1, 1, 1, 1, 1])
+    np.testing.assert_array_equal(actual_output, expected_output)

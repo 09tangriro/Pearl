@@ -1,11 +1,26 @@
 """Methods for generating a new population from selected individuals"""
 
-from typing import Optional
+from typing import Optional, Tuple
 
 import numpy as np
 
 
-def crossover_one_point(
+def fit_gaussian(parents: np.ndarray, population_shape: Tuple[int, ...]):
+    """
+    Generates a new population given selected parents fitted to a Gaussian distribution.
+
+    :param parents: the parent population
+    :param population_shape: the shape of the new population
+    :return: the new population
+    """
+    # Get the mean and standard deviation of the parents
+    mean = np.mean(parents, axis=0)
+    std = np.std(parents, axis=0)
+
+    return np.random.normal(mean, std, size=population_shape)
+
+
+def one_point_crossover(
     parents: np.ndarray,
     crossover_index: Optional[int] = None,
 ) -> np.ndarray:

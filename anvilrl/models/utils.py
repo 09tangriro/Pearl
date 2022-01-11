@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 import torch as T
 
 from anvilrl.common.type_aliases import Tensor
-from anvilrl.common.utils import numpy_to_torch
+from anvilrl.common.utils import to_torch
 
 
 def trainable_parameters(model: T.nn.Module) -> list:
@@ -33,6 +33,6 @@ def get_mlp_size(data_shape: Union[int, Tuple[int]]) -> int:
 
 def concat_obs_actions(observations: Tensor, actions: Optional[Tensor]) -> T.Tensor:
     if actions is not None:
-        observations, actions = numpy_to_torch(observations, actions)
+        observations, actions = to_torch(observations, actions)
         return T.cat([observations, actions], dim=-1)
-    return numpy_to_torch(observations)
+    return to_torch(observations)

@@ -3,11 +3,14 @@ import numpy as np
 import pytest
 import torch as T
 
-from anvilrl.common.utils import numpy_to_torch
+from anvilrl.common.utils import to_torch
 from anvilrl.signal_processing.advantage_estimators import (
     generalized_advantage_estimate,
 )
-from anvilrl.signal_processing.crossover_operators import crossover_one_point
+from anvilrl.signal_processing.crossover_operators import (
+    fit_gaussian,
+    one_point_crossover,
+)
 from anvilrl.signal_processing.mutation_operators import (
     gaussian_mutation,
     uniform_mutation,
@@ -22,6 +25,7 @@ from anvilrl.signal_processing.sample_estimators import (
     sample_reverse_kl_divergence,
 )
 from anvilrl.signal_processing.selection_operators import (
+    naive_selection,
     roulette_selection,
     tournament_selection,
 )
@@ -48,9 +52,7 @@ def test_kl_divergence(kl_divergence, dtype):
     else:
         full_kl_div = T.distributions.kl_divergence(dist2, dist1)
 
-    approx_kl_div = numpy_to_torch(
-        kl_divergence(log_probs1.exp(), log_probs2.exp(), dtype)
-    )
+    approx_kl_div = to_torch(kl_divergence(log_probs1.exp(), log_probs2.exp(), dtype))
     mean_approx_kl_div = T.mean(approx_kl_div)
 
     assert T.allclose(full_kl_div, mean_approx_kl_div, rtol=5e-3)
@@ -112,6 +114,26 @@ def test_soft_q_target(dtype):
     np.equal(actual_target, expected_target)
 
 
+def test_naive_selection():
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    fitness = np.array([2, 1, 3])
+    actual_population = naive_selection(population, fitness)
+    expected_population = np.array([[7, 8, 9]])
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+    fitness = np.array([2, 1, 3, 4])
+    actual_population = naive_selection(population, fitness, ratio=0.8)
+    expected_population = np.array([[1, 2, 3], [7, 8, 9], [10, 11, 12]])
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+    population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+    fitness = np.array([1, 1, 1, 1])
+    actual_population = naive_selection(population, fitness, ratio=0.75)
+    expected_population = np.array([[4, 5, 6], [7, 8, 9], [10, 11, 12]])
+    np.testing.assert_array_equal(actual_population, expected_population)
+
+
 def test_tournament_selection():
     np.random.seed(8)
     population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -132,15 +154,33 @@ def test_roulette_selection():
     np.testing.assert_array_equal(actual_population, expected_population)
 
 
+def test_fit_gaussian():
+    np.random.seed(9)
+    parents = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    actual_population = fit_gaussian(parents, population_shape=(6, 3))
+    expected_population = np.array(
+        [
+            [4.00271539, 4.29076477, 3.26620704],
+            [3.96844382, 4.07320747, 4.82146386],
+            [0.28331284, 3.79761412, 5.41045539],
+            [2.41285934, 6.55760868, 10.26239949],
+            [4.72672005, 6.73302296, 10.46496851],
+            [5.05516432, 8.77890039, 3.79369273],
+        ]
+    )
+    assert actual_population.shape == (6, 3)
+    np.testing.assert_array_almost_equal(actual_population, expected_population)
+
+
 def test_one_point_crossover():
     np.random.seed(8)
     population = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    actual_population = crossover_one_point(population, 1)
+    actual_population = one_point_crossover(population, 1)
     expected_population = np.array([[1, 5, 6], [4, 2, 3], [7, 8, 9]])
     np.testing.assert_array_equal(actual_population, expected_population)
 
-    actual_population = crossover_one_point(population)
+    actual_population = one_point_crossover(population)
     expected_population = np.array([[4, 5, 6], [1, 2, 3], [7, 8, 9]])
     np.testing.assert_array_equal(actual_population, expected_population)
 

@@ -35,7 +35,10 @@ class BaseActorUpdater(ABC):
         if isinstance(model, Actor):
             return model.parameters()
         else:
-            return model.actor.parameters()
+            params = []
+            for actor in model.actors:
+                params.extend(actor.model.parameters())
+            return params
 
     def run_optimizer(
         self,
@@ -51,7 +54,7 @@ class BaseActorUpdater(ABC):
         optimizer.step()
 
     @abstractmethod
-    def __call__(self) -> UpdaterLog:
+    def __call__(self, model: Union[Actor, ActorCritic]) -> UpdaterLog:
         """Run an optimization step"""
 
 
@@ -93,7 +96,7 @@ class PolicyGradient(BaseActorUpdater):
         """
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        old_distributions = model.get_action_distribution(observations)
+        old_distributions = model.action_distribution(observations)
         log_probs = old_distributions.log_prob(actions).sum(dim=-1)
         entropy = old_distributions.entropy().mean()
 
@@ -104,7 +107,7 @@ class PolicyGradient(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        new_distributions = model.get_action_distribution(observations)
+        new_distributions = model.action_distribution(observations)
         loss = loss.detach()
         entropy = entropy.detach()
         kl = kl_divergence(new_distributions, old_distributions).mean()
@@ -157,7 +160,7 @@ class ProximalPolicyClip(BaseActorUpdater):
         """
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
-        old_distributions = model.get_action_distribution(observations)
+        old_distributions = model.action_distribution(observations)
         log_probs = old_distributions.log_prob(actions).sum(dim=-1)
         entropy = old_distributions.entropy().mean()
 
@@ -175,7 +178,7 @@ class ProximalPolicyClip(BaseActorUpdater):
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 
-        new_distributions = model.get_action_distribution(observations)
+        new_distributions = model.action_distribution(observations)
         loss = loss.detach()
         entropy = entropy.detach()
         kl = kl_divergence(new_distributions, old_distributions).mean()
@@ -218,7 +221,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
 
         actions = model(observations)
-        values = model.critic(observations, actions)
+        values = model.forward_critics(observations, actions)
 
         loss = -values.mean()
 
@@ -264,7 +267,7 @@ class SoftPolicyGradient(BaseActorUpdater):
         actor_parameters = self._get_model_parameters(model)
         optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
 
-        distributions = model.get_action_distribution(observations)
+        distributions = model.action_distribution(observations)
         # use the reparametrization trick for backpropagation
         # https://gregorygundersen.com/blog/2018/04/29/reparameterization/
         actions = distributions.rsample()
@@ -275,10 +278,10 @@ class SoftPolicyGradient(BaseActorUpdater):
 
         with T.no_grad():
             if hasattr(model, "critic2"):
-                values1, values2 = model.forward_critic(observations, actions)
+                values1, values2 = model.forward_critics(observations, actions)
                 values = T.min(values1, values2)
             else:
-                values = model.forward_critic(observations, actions)
+                values = model.forward_critics(observations, actions)
 
         loss = (self.entropy_coeff * log_probs - values).mean()
 

@@ -1,88 +1,133 @@
 import warnings
-from typing import Optional, Type, Union
+from typing import Callable, List, Optional, Type, Union
 
+import gym
 import numpy as np
 import torch as T
 from gym.vector.vector_env import VectorEnv
 from sklearn.preprocessing import scale
 
-from anvilrl.agents.base_agents import BaseEvolutionaryAgent
+from anvilrl.agents.base_agents import BaseAgent
 from anvilrl.buffers import RolloutBuffer
 from anvilrl.buffers.base_buffer import BaseBuffer
+from anvilrl.callbacks.base_callback import BaseCallback
 from anvilrl.common.type_aliases import Log
-from anvilrl.models.actor_critics import DeepIndividual, Individual
+from anvilrl.common.utils import filter_rewards
+from anvilrl.explorers.base_explorer import BaseExplorer
+from anvilrl.models import ActorCritic, Dummy
 from anvilrl.settings import (
     BufferSettings,
+    CallbackSettings,
+    ExplorerSettings,
     LoggerSettings,
-    PopulationInitializerSettings,
+    MutationSettings,
+    PopulationSettings,
 )
 from anvilrl.updaters.evolution import BaseEvolutionUpdater, NoisyGradientAscent
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-class ES(BaseEvolutionaryAgent):
+def default_model(env: VectorEnv):
+    """
+    Returns a default model for the given environment.
+    """
+    actor = Dummy(space=env.single_action_space)
+    critic = Dummy(space=env.single_action_space)
+
+    return ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=env.num_envs, actor_distribution="normal"
+        ),
+    )
+
+
+class ES(BaseAgent):
     """
     Natural Evolutionary Strategy
     https://towardsdatascience.com/evolutionary-strategy-a-theoretical-implementation-guide-9176217e7ed8
 
-    :param env: the gym vecotrized environment
-    :param model: the model representing an individual in the population
-    :param updater_class: the class to use for the updater handling the actual update algorithm
-    :param population_settings: the settings object for population initialization
+    :param env: the gym-like environment to be used, should be a VectorEnv
+    :param model: the neural network model
+    :param updater_class: the updater class to be used
+    :param learning_rate: the learning rate
     :param buffer_class: the buffer class for storing and sampling trajectories
     :param buffer_settings: settings for the buffer
+    :param action_explorer_class: the explorer class for random search at beginning of training and
+        adding noise to actions
+    :param explorer settings: settings for the action explorer
+    :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
+    :param callback_settings: settings for callbacks
     :param logger_settings: settings for the logger
-    :param device: device to run on, accepts "auto", "cuda" or "cpu" (needed to pass to buffer,
-        can mostly be ignored)
-    :param learning_rate: learning rate for the updater
+    :param device: device to run on, accepts "auto", "cuda" or "cpu"
+    :param render: whether to render the environment or not
     :param seed: optional seed for the random number generator
     """
 
     def __init__(
         self,
         env: VectorEnv,
-        model: Union[Individual, DeepIndividual],
+        model: Optional[ActorCritic] = None,
         updater_class: Type[BaseEvolutionUpdater] = NoisyGradientAscent,
-        learning_rate: float = 0.001,
-        population_settings: PopulationInitializerSettings = PopulationInitializerSettings(),
+        mutation_operator: Optional[Callable] = None,
+        mutation_settings: MutationSettings = MutationSettings(mutation_std=0.5),
+        learning_rate: float = 1e-3,
         buffer_class: Type[BaseBuffer] = RolloutBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
+        action_explorer_class: Type[BaseExplorer] = BaseExplorer,
+        explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=0),
+        callbacks: Optional[List[Type[BaseCallback]]] = None,
+        callback_settings: Optional[List[CallbackSettings]] = None,
         logger_settings: LoggerSettings = LoggerSettings(),
-        device: Union[str, T.device] = "auto",
+        device: Union[T.device, str] = "auto",
+        render: bool = False,
         seed: Optional[int] = None,
     ) -> None:
+        model = model if model is not None else default_model(env)
         super().__init__(
             env=env,
             model=model,
-            updater_class=updater_class,
-            population_settings=population_settings,
+            action_explorer_class=action_explorer_class,
+            explorer_settings=explorer_settings,
             buffer_class=buffer_class,
             buffer_settings=buffer_settings,
             logger_settings=logger_settings,
+            callbacks=callbacks,
+            callback_settings=callback_settings,
             device=device,
+            render=render,
             seed=seed,
         )
 
         self.learning_rate = learning_rate
+        self.updater = updater_class(model=self.model)
+        self.mutation_operator = mutation_operator
+        self.mutation_settings = mutation_settings.filter_none()
 
-    def _fit(self, epochs: int = 1) -> Log:
-        divergences = np.zeros(epochs)
-        entropies = np.zeros(epochs)
+    def _fit(
+        self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1
+    ) -> Log:
+        divergences = np.zeros(actor_epochs)
+        entropies = np.zeros(actor_epochs)
 
-        trajectories = self.buffer.all()
+        trajectories = self.buffer.all(flatten_env=False)
         rewards = trajectories.rewards.squeeze()
+        rewards = filter_rewards(rewards, trajectories.dones.squeeze())
         if rewards.ndim > 1:
-            rewards = rewards.sum(axis=0)
+            rewards = rewards.sum(axis=-1)
         scaled_rewards = scale(rewards)
         learning_rate = self.learning_rate / (
-            np.mean(self.population_settings.population_std) * self.env.num_envs
+            np.mean(self.updater.std) * self.env.num_envs
         )
         optimization_direction = np.dot(self.updater.normal_dist.T, scaled_rewards)
-        for i in range(epochs):
+        for i in range(actor_epochs):
             log = self.updater(
                 learning_rate=learning_rate,
                 optimization_direction=optimization_direction,
+                mutation_operator=self.mutation_operator,
+                mutation_settings=self.mutation_settings,
             )
             divergences[i] = log.divergence
             entropies[i] = log.entropy
