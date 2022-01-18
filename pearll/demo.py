@@ -6,18 +6,14 @@ import numpy as np
 import torch as T
 
 from pearll.agents import A2C, DDPG, DQN, ES, GA, PPO
+from pearll.agents.adames import AdamES
 from pearll.agents.cem_rl import CEM_RL
 from pearll.buffers import HERBuffer
 from pearll.common.utils import get_space_shape
 from pearll.models import ActorCritic, Critic, Dummy, EpsilonGreedyActor
 from pearll.models.actor_critics import Actor
 from pearll.models.encoders import DictEncoder, IdentityEncoder
-from pearll.models.heads import (
-    CategoricalHead,
-    DeterministicHead,
-    DiagGaussianHead,
-    DiscreteQHead,
-)
+from pearll.models.heads import CategoricalHead, DiscreteQHead
 from pearll.models.torsos import MLP
 from pearll.settings import (
     BufferSettings,
@@ -25,6 +21,22 @@ from pearll.settings import (
     LoggerSettings,
     PopulationSettings,
 )
+
+
+class Sphere(gym.Env):
+    """
+    Sphere(2) function for testing ES agent.
+    """
+
+    def __init__(self):
+        self.action_space = gym.spaces.Box(low=-100, high=100, shape=(2,))
+        self.observation_space = gym.spaces.Discrete(1)
+
+    def step(self, action):
+        return 0, -(action[0] ** 2 + action[1] ** 2), False, {}
+
+    def reset(self):
+        return 0
 
 
 def dqn_demo():
@@ -38,7 +50,7 @@ def dqn_demo():
         explorer_settings=ExplorerSettings(start_steps=1000),
     )
     agent.fit(
-        num_steps=50000, batch_size=32, critic_epochs=16, train_frequency=("episode", 1)
+        num_steps=20000, batch_size=32, critic_epochs=16, train_frequency=("episode", 1)
     )
 
 
@@ -72,7 +84,7 @@ def dqn_parallel_demo():
         explorer_settings=ExplorerSettings(start_steps=1000),
     )
     agent.fit(
-        num_steps=50000,
+        num_steps=20000,
         batch_size=32,
         critic_epochs=16,
         train_frequency=("episode", 1),
@@ -97,21 +109,6 @@ def ddpg_demo():
 
 
 def es_demo():
-    class Sphere(gym.Env):
-        """
-        Sphere(2) function for testing ES agent.
-        """
-
-        def __init__(self):
-            self.action_space = gym.spaces.Box(low=-100, high=100, shape=(2,))
-            self.observation_space = gym.spaces.Discrete(1)
-
-        def step(self, action):
-            return 0, -(action[0] ** 2 + action[1] ** 2), False, {}
-
-        def reset(self):
-            return 0
-
     POPULATION_SIZE = 10
     env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
     actor = Dummy(space=env.single_action_space, state=np.array([10, 10]))
@@ -526,12 +523,39 @@ def cem_ddpg_demo():
     )
 
     agent.fit(
-        num_steps=100000,
+        num_steps=50000,
         batch_size=64,
         actor_epochs=1,
         critic_epochs=8,
         train_frequency=("step", 100),
     )
+
+
+def adames_demo():
+    POPULATION_SIZE = 10
+    env = gym.vector.SyncVectorEnv([lambda: Sphere() for _ in range(POPULATION_SIZE)])
+    actor = Dummy(space=env.single_action_space, state=np.array([10, 10]))
+    critic = Dummy(space=env.single_action_space, state=np.array([10, 10]))
+
+    model = ActorCritic(
+        actor=actor,
+        critic=critic,
+        population_settings=PopulationSettings(
+            actor_population_size=env.num_envs, actor_distribution="normal"
+        ),
+    )
+
+    agent = AdamES(
+        env=env,
+        model=model,
+        learning_rate=5,
+        momentum_weight=0,
+        damping_weight=0,
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/AdamES-demo", log_frequency=("step", 1)
+        ),
+    )
+    agent.fit(num_steps=20, batch_size=1)
 
 
 if __name__ == "__main__":
@@ -559,5 +583,7 @@ if __name__ == "__main__":
         ppo_demo()
     elif kwargs.agent.lower() == "cem-ddpg":
         cem_ddpg_demo()
+    elif kwargs.agent.lower() == "adames":
+        adames_demo()
     else:
         raise ValueError(f"Agent {kwargs.agent} not found")
