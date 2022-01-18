@@ -16,6 +16,7 @@ omit =
     pearll/agents/ga.py
     pearll/agents/a2c.py
     pearll/agents/ppo.py
+    pearll/agents/adames.py
     pearll/settings.py
     pearll/plot.py
     pearll/agents/cem_rl.py

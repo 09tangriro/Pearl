@@ -1,5 +1,7 @@
 from pearll.agents.a2c import A2C
+from pearll.agents.adames import AdamES
 from pearll.agents.base_agents import BaseAgent
+from pearll.agents.cem_rl import CEM_RL
 from pearll.agents.ddpg import DDPG
 from pearll.agents.dqn import DQN
 from pearll.agents.es import ES
@@ -14,4 +16,5 @@ __all__ = [
     "ES",
     "GA",
     "PPO",
+    "AdamES",
 ]

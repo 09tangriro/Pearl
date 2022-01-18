@@ -5,9 +5,7 @@ import gym
 import numpy as np
 import torch as T
 
-from pearll.agents import A2C, DDPG, DQN, ES, GA, PPO
-from pearll.agents.adames import AdamES
-from pearll.agents.cem_rl import CEM_RL
+from pearll.agents import A2C, CEM_RL, DDPG, DQN, ES, GA, PPO, AdamES
 from pearll.buffers import HERBuffer
 from pearll.common.utils import get_space_shape
 from pearll.models import ActorCritic, Critic, Dummy, EpsilonGreedyActor
