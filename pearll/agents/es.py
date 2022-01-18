@@ -118,13 +118,12 @@ class ES(BaseAgent):
         if rewards.ndim > 1:
             rewards = rewards.sum(axis=-1)
         scaled_rewards = scale(rewards)
-        learning_rate = self.learning_rate / (
+        optimization_direction = np.dot(self.updater.normal_dist.T, scaled_rewards) / (
             np.mean(self.updater.std) * self.env.num_envs
         )
-        optimization_direction = np.dot(self.updater.normal_dist.T, scaled_rewards)
         for i in range(actor_epochs):
             log = self.updater(
-                learning_rate=learning_rate,
+                learning_rate=self.learning_rate,
                 optimization_direction=optimization_direction,
                 mutation_operator=self.mutation_operator,
                 mutation_settings=self.mutation_settings,
