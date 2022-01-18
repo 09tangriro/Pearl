@@ -549,8 +549,6 @@ def adames_demo():
         env=env,
         model=model,
         learning_rate=5,
-        momentum_weight=0,
-        damping_weight=0,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/AdamES-demo", log_frequency=("step", 1)
         ),
