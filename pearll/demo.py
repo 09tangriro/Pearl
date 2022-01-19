@@ -546,7 +546,7 @@ def adames_demo():
     agent = AdamES(
         env=env,
         model=model,
-        learning_rate=5,
+        learning_rate=1,
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/AdamES-demo", log_frequency=("step", 1)
         ),
