@@ -1,7 +1,6 @@
 import warnings
 from typing import Callable, List, Optional, Type, Union
 
-import gym
 import numpy as np
 import torch as T
 from gym.vector.vector_env import VectorEnv

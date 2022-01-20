@@ -11,6 +11,7 @@ from pearll.agents.ppo import PPO
 __all__ = [
     "A2C",
     "BaseAgent",
+    "CEM_RL",
     "DDPG",
     "DQN",
     "ES",
