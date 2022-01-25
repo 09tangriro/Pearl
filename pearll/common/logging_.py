@@ -73,9 +73,9 @@ class Logger(object):
         if train_log.divergence is not None:
             self.divergences.append(train_log.divergence)
 
-    def add_reward(self, reward: Union[float, np.ndarray]) -> None:
+    def add_reward(self, reward: Union[float, np.ndarray, int]) -> None:
         """Add step reward to the episode rewards"""
-        if isinstance(reward, (float, np.floating)):
+        if isinstance(reward, (float, np.floating, int)):
             self.rewards.append(reward)
         elif isinstance(reward, np.ndarray):
             log_reward = reward[np.where(self.episode_dones == False)[0]].mean()
@@ -83,7 +83,7 @@ class Logger(object):
                 self.rewards.append(log_reward)
         else:
             raise TypeError(
-                f"Reward must be a float or numpy array, got {type(reward)}"
+                f"Reward must be a number or numpy array, got {type(reward)}"
             )
 
     def check_episode_done(self, done: np.ndarray) -> bool:
