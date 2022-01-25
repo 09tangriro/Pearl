@@ -6,7 +6,7 @@
 
 
 # Pearl
-The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (Pearl) is a pytorch based package with the goal of being excellent for rapid prototyping of new adaptive decision making algorithms in the intersection between reinforcement learning (RL) and evolutionary computation (EC). As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. 
+The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (Pearl) is a pytorch based package with the goal of being excellent for rapid prototyping of new adaptive decision making algorithms in the intersection between reinforcement learning (RL) and evolutionary computation (EC). As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. A technical report can be found [here](https://arxiv.org/abs/2201.09568).
 
 ## Main Features
 | **Features**                      | **Pearl** |
@@ -68,4 +68,20 @@ Pearl uses [poetry](https://python-poetry.org/docs/basic-usage/) for dependency 
 3. If you want to run something in the poetry virtual environment, add `poetry run` as a prefix to the command you want to execute. For example, to run a python file: `poetry run python3 script.py`.
 
 ## Credit
+
+### Citing Pearl
+
+```
+@misc{tangri2022pearl,
+      title={Pearl: Parallel Evolutionary and Reinforcement Learning Library}, 
+      author={Rohan Tangri and Danilo P. Mandic and Anthony G. Constantinides},
+      year={2022},
+      eprint={2201.09568},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
+
+### Acknowledgements
+
 Pearl was inspired by [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3) and [Tonic](https://github.com/fabiopardo/tonic)
