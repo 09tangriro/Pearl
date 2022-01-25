@@ -16,11 +16,12 @@ from pearll.explorers.base_explorer import BaseExplorer
 from pearll.models import ActorCritic, Dummy
 from pearll.settings import (
     BufferSettings,
-    CallbackSettings,
     ExplorerSettings,
     LoggerSettings,
+    MiscellaneousSettings,
     MutationSettings,
     PopulationSettings,
+    Settings,
 )
 from pearll.updaters.evolution import BaseEvolutionUpdater, NoisyGradientAscent
 
@@ -64,9 +65,7 @@ class AdamES(BaseAgent):
     :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
     :param callback_settings: settings for callbacks
     :param logger_settings: settings for the logger
-    :param device: device to run on, accepts "auto", "cuda" or "cpu"
-    :param render: whether to render the environment or not
-    :param seed: optional seed for the random number generator
+    :param misc_settings: settings for miscellaneous parameters
     """
 
     def __init__(
@@ -84,11 +83,9 @@ class AdamES(BaseAgent):
         action_explorer_class: Type[BaseExplorer] = BaseExplorer,
         explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=0),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
-        callback_settings: Optional[List[CallbackSettings]] = None,
+        callback_settings: Optional[List[Settings]] = None,
         logger_settings: LoggerSettings = LoggerSettings(),
-        device: Union[T.device, str] = "auto",
-        render: bool = False,
-        seed: Optional[int] = None,
+        misc_settings: MiscellaneousSettings = MiscellaneousSettings(),
     ) -> None:
         model = model if model is not None else default_model(env)
         super().__init__(
@@ -101,9 +98,7 @@ class AdamES(BaseAgent):
             logger_settings=logger_settings,
             callbacks=callbacks,
             callback_settings=callback_settings,
-            device=device,
-            render=render,
-            seed=seed,
+            misc_settings=misc_settings,
         )
 
         self.learning_rate = learning_rate

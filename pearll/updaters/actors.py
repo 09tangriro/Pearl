@@ -14,18 +14,15 @@ class BaseActorUpdater(ABC):
     The base actor updater class with pre-defined methods for derived classes
 
     :param optimizer_class: the type of optimizer to use, defaults to Adam
-    :param lr: the learning rate for the optimizer algorithm
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
     def __init__(
         self,
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
-        lr: float = 1e-3,
         max_grad: float = 0,
     ) -> None:
         self.optimizer_class = optimizer_class
-        self.lr = lr
         self.max_grad = max_grad
 
     def _get_model_parameters(
@@ -64,20 +61,15 @@ class PolicyGradient(BaseActorUpdater):
     loss = -E[A(state,action) * log(policy(action|state)) + entropy_coeff * entropy(policy)]
 
     :param optimizer_class: the type of optimizer to use, defaults to Adam
-    :param lr: the learning rate for the optimizer algorithm
-    :param entropy_coeff: entropy regulation coefficient
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
     def __init__(
         self,
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
-        lr: float = 1e-3,
-        entropy_coeff: float = 0.01,
         max_grad: float = 0,
     ) -> None:
-        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
-        self.entropy_coeff = entropy_coeff
+        super().__init__(optimizer_class=optimizer_class, max_grad=max_grad)
 
     def __call__(
         self,
@@ -85,6 +77,8 @@ class PolicyGradient(BaseActorUpdater):
         observations: Tensor,
         actions: T.Tensor,
         advantages: T.Tensor,
+        learning_rate: float = 1e-3,
+        entropy_coeff: float = 0.01,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -93,15 +87,17 @@ class PolicyGradient(BaseActorUpdater):
         :param observations:
         :param actions:
         :param advantages:
+        :param learning_rate: the learning rate for the optimizer algorithm
+        :param entropy_coeff: entropy regulation coefficient
         """
         actor_parameters = self._get_model_parameters(model)
-        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
+        optimizer = self.optimizer_class(actor_parameters, lr=learning_rate)
         old_distributions = model.action_distribution(observations)
         log_probs = old_distributions.log_prob(actions).sum(dim=-1)
         entropy = old_distributions.entropy().mean()
 
         batch_loss = -(advantages * log_probs).mean()
-        entropy_loss = -self.entropy_coeff * entropy
+        entropy_loss = -entropy_coeff * entropy
 
         loss = batch_loss + entropy_loss
 
@@ -123,23 +119,15 @@ class ProximalPolicyClip(BaseActorUpdater):
     loss = E[min(r)]
 
     :param optimizer_class: the type of optimizer to use, defaults to Adam
-    :param lr: the learning rate for the optimizer algorithm
-    :param ratio_clip: the clipping factor for the clipped loss
-    :param entropy_coeff: entropy regulation coefficient
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
     def __init__(
         self,
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
-        lr: float = 1e-3,
-        ratio_clip: float = 0.2,
-        entropy_coeff: float = 0.01,
         max_grad: float = 0,
     ) -> None:
-        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
-        self.ratio_clip = ratio_clip
-        self.entropy_coeff = entropy_coeff
+        super().__init__(optimizer_class=optimizer_class, max_grad=max_grad)
 
     def __call__(
         self,
@@ -148,6 +136,9 @@ class ProximalPolicyClip(BaseActorUpdater):
         actions: T.Tensor,
         advantages: T.Tensor,
         old_log_probs: T.Tensor,
+        learning_rate: float = 1e-3,
+        ratio_clip: float = 0.2,
+        entropy_coeff: float = 0.01,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -157,9 +148,12 @@ class ProximalPolicyClip(BaseActorUpdater):
         :param actions:
         :param advantages:
         :param old_log_probs:
+        :param learning_rate: the learning rate for the optimizer algorithm
+        :param ratio_clip: the clipping factor for the clipped loss
+        :param entropy_coeff: entropy regulation coefficient
         """
         actor_parameters = self._get_model_parameters(model)
-        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
+        optimizer = self.optimizer_class(actor_parameters, lr=learning_rate)
         old_distributions = model.action_distribution(observations)
         log_probs = old_distributions.log_prob(actions).sum(dim=-1)
         entropy = old_distributions.entropy().mean()
@@ -167,12 +161,10 @@ class ProximalPolicyClip(BaseActorUpdater):
         ratios = (log_probs - old_log_probs).exp()
 
         raw_loss = ratios * advantages
-        clipped_loss = (
-            T.clamp(ratios, 1 - self.ratio_clip, 1 + self.ratio_clip) * advantages
-        )
+        clipped_loss = T.clamp(ratios, 1 - ratio_clip, 1 + ratio_clip) * advantages
 
         batch_loss = -(T.min(raw_loss, clipped_loss)).mean()
-        entropy_loss = -self.entropy_coeff * entropy
+        entropy_loss = -entropy_coeff * entropy
 
         loss = batch_loss + entropy_loss
 
@@ -194,31 +186,31 @@ class DeterministicPolicyGradient(BaseActorUpdater):
     loss = -E[critic(state, actor(state))]
 
     :param optimizer_class: the type of optimizer to use, defaults to Adam
-    :param lr: the learning rate for the optimizer algorithm
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
 
     def __init__(
         self,
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
-        lr: float = 1e-3,
         max_grad: float = 0,
     ) -> None:
-        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
+        super().__init__(optimizer_class=optimizer_class, max_grad=max_grad)
 
     def __call__(
         self,
         model: ActorCritic,
         observations: Tensor,
+        learning_rate: float = 1e-3,
     ) -> UpdaterLog:
         """
         Perform an optimization step
 
         :param model: an actor critic model
         :param observations:
+        :param learning_rate: the learning rate for the optimizer algorithm
         """
         actor_parameters = self._get_model_parameters(model)
-        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
+        optimizer = self.optimizer_class(actor_parameters, lr=learning_rate)
 
         actions = model(observations)
         values = model.forward_critics(observations, actions)
@@ -235,8 +227,6 @@ class SoftPolicyGradient(BaseActorUpdater):
     Policy gradient update used in SAC: https://spinningup.openai.com/en/latest/algorithms/sac.html
 
     :param optimizer_class: the type of optimizer to use, defaults to Adam
-    :param lr: the learning rate for the optimizer algorithm
-    :param entropy_coeff: entropy weighting coefficient
     :param squashed_output: whether to squash the actions using tanh, defaults to True
     :param max_grad: maximum gradient clip value, defaults to no clipping with a value of 0
     """
@@ -244,28 +234,29 @@ class SoftPolicyGradient(BaseActorUpdater):
     def __init__(
         self,
         optimizer_class: Type[T.optim.Optimizer] = T.optim.Adam,
-        lr: float = 1e-3,
-        entropy_coeff: float = 0.2,
         squashed_output: bool = True,
         max_grad: float = 0,
     ) -> None:
-        super().__init__(optimizer_class=optimizer_class, lr=lr, max_grad=max_grad)
-        self.entropy_coeff = entropy_coeff
+        super().__init__(optimizer_class=optimizer_class, max_grad=max_grad)
         self.squashed_output = squashed_output
 
     def __call__(
         self,
         model: ActorCritic,
         observations: Tensor,
+        learning_rate: float = 1e-3,
+        entropy_coeff: float = 0.01,
     ) -> UpdaterLog:
         """
         Perform an optimization step
 
         :param model: an actor critic model with either 1 or 2 critic networks
         :param observations:
+        :param learning_rate: the learning rate for the optimizer algorithm
+        :param entropy_coeff: entropy weighting coefficient
         """
         actor_parameters = self._get_model_parameters(model)
-        optimizer = self.optimizer_class(actor_parameters, lr=self.lr)
+        optimizer = self.optimizer_class(actor_parameters, lr=learning_rate)
 
         distributions = model.action_distribution(observations)
         # use the reparametrization trick for backpropagation
@@ -283,7 +274,7 @@ class SoftPolicyGradient(BaseActorUpdater):
             else:
                 values = model.forward_critics(observations, actions)
 
-        loss = (self.entropy_coeff * log_probs - values).mean()
+        loss = (entropy_coeff * log_probs - values).mean()
 
         self.run_optimizer(optimizer, loss, actor_parameters)
 

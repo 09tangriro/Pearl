@@ -472,7 +472,7 @@ def a2c_demo():
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/A2C-demo", verbose=True
         ),
-        entropy_coefficient=0,
+        entropy_coeff=0,
     )
 
     agent.fit(
@@ -494,7 +494,7 @@ def ppo_demo():
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/PPO-demo", verbose=True
         ),
-        entropy_coefficient=0,
+        entropy_coeff=0,
     )
 
     agent.fit(

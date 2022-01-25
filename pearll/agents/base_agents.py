@@ -16,9 +16,10 @@ from pearll.explorers.base_explorer import BaseExplorer
 from pearll.models.actor_critics import ActorCritic
 from pearll.settings import (
     BufferSettings,
-    CallbackSettings,
     ExplorerSettings,
     LoggerSettings,
+    MiscellaneousSettings,
+    Settings,
 )
 
 
@@ -42,9 +43,7 @@ class BaseAgent(ABC):
     :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
     :param callback_settings: settings for callbacks
     :param logger_settings: settings for the logger
-    :param device: device to run on, accepts "auto", "cuda" or "cpu"
-    :param render: whether to render the environment or not
-    :param seed: optional seed for the random number generator
+    :param misc_settings: settings for miscellaneous parameters
     """
 
     def __init__(
@@ -56,21 +55,21 @@ class BaseAgent(ABC):
         action_explorer_class: Type[BaseExplorer] = BaseExplorer,
         explorer_settings: ExplorerSettings = ExplorerSettings(),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
-        callback_settings: Optional[List[CallbackSettings]] = None,
+        callback_settings: Optional[List[Settings]] = None,
         logger_settings: LoggerSettings = LoggerSettings(),
-        device: Union[str, T.device] = "auto",
-        render: bool = False,
-        seed: Optional[int] = None,
+        misc_settings: MiscellaneousSettings = MiscellaneousSettings(),
     ) -> None:
         self.env = env
         self.model = model
-        self.render = render
+        self.render = misc_settings.render
         explorer_settings = explorer_settings.filter_none()
         self.action_explorer = action_explorer_class(
             action_space=env.action_space, **explorer_settings
         )
         buffer_settings = buffer_settings.filter_none()
-        self.buffer = buffer_class(env=env, device=device, **buffer_settings)
+        self.buffer = buffer_class(
+            env=env, device=misc_settings.device, **buffer_settings
+        )
         self.step = 0
         self.episode = 0
         self.done = False  # Flag terminate training
@@ -97,12 +96,12 @@ class BaseAgent(ABC):
         else:
             self.callbacks = None
 
-        device = get_device(device)
+        device = get_device(misc_settings.device)
         self.logger.info(f"Using device {device}")
 
-        if seed is not None:
-            self.logger.info(f"Using seed {seed}")
-            set_seed(seed, self.env)
+        if misc_settings.seed is not None:
+            self.logger.info(f"Using seed {misc_settings.seed}")
+            set_seed(misc_settings.seed, self.env)
 
     def predict(self, observations: Union[Tensor, Dict[str, Tensor]]) -> T.Tensor:
         """Run the agent actor model"""

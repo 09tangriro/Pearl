@@ -1,6 +1,5 @@
-from typing import List, Optional, Type, Union
+from typing import List, Optional, Type
 
-import torch as T
 from gym import Env
 
 from pearll.agents.base_agents import BaseAgent
@@ -11,9 +10,10 @@ from pearll.explorers.base_explorer import BaseExplorer
 from pearll.models.actor_critics import ActorCritic
 from pearll.settings import (
     BufferSettings,
-    CallbackSettings,
     ExplorerSettings,
     LoggerSettings,
+    MiscellaneousSettings,
+    Settings,
 )
 
 
@@ -44,9 +44,7 @@ class YourRLAgent(BaseAgent):
     :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
     :param callback_settings: settings for callbacks
     :param logger_settings: settings for the logger
-    :param device: device to run on, accepts "auto", "cuda" or "cpu"
-    :param render: whether to render the environment or not
-    :param seed: optional seed for the random number generator
+    :param misc_settings: settings for miscellaneous parameters
     """
 
     def __init__(
@@ -58,11 +56,9 @@ class YourRLAgent(BaseAgent):
         action_explorer_class: Type[BaseExplorer] = ...,
         explorer_settings: ExplorerSettings = ...,
         callbacks: Optional[List[Type[BaseCallback]]] = None,
-        callback_settings: Optional[List[CallbackSettings]] = None,
+        callback_settings: Optional[List[Settings]] = None,
         logger_settings: LoggerSettings = ...,
-        device: Union[str, T.device] = "auto",
-        render: bool = False,
-        seed: Optional[int] = None,
+        misc_settings: MiscellaneousSettings = ...,
     ) -> None:
         super().__init__(
             env,
@@ -74,9 +70,7 @@ class YourRLAgent(BaseAgent):
             logger_settings=logger_settings,
             callbacks=callbacks,
             callback_settings=callback_settings,
-            device=device,
-            render=render,
-            seed=seed,
+            misc_settings=misc_settings,
         )
 
     def _fit(
