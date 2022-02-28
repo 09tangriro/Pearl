@@ -28,7 +28,6 @@ class FlattenEncoder(T.nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.flatten = T.nn.Flatten()
 
     def forward(
         self, observations: Tensor, actions: Optional[Tensor] = None
@@ -36,7 +35,7 @@ class FlattenEncoder(T.nn.Module):
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
         # Make sure observations is a torch tensor, get error if numpy for some reason??
         observations = concat_obs_actions(observations, actions)
-        return self.flatten(observations)
+        return T.flatten(observations)
 
 
 class MLPEncoder(T.nn.Module):

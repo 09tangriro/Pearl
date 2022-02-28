@@ -46,6 +46,8 @@ def test_encoder(encoder_class):
     output = encoder(input)
     if isinstance(encoder, (IdentityEncoder)):
         assert T.equal(input, output)
+    elif isinstance(encoder, (FlattenEncoder)):
+        assert T.equal(output, T.Tensor([2, 2, 1, 1]))
     else:
         assert len(output.shape) == 2
 
