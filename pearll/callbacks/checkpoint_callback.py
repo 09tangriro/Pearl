@@ -11,9 +11,9 @@ class CheckpointCallback(BaseCallback):
     def __init__(
         self,
         logger: Logger,
+        model: ActorCritic,
         save_freq: int,
         save_path: str,
-        model: ActorCritic,
         name_prefix: str = "agent",
     ) -> None:
         super().__init__(logger, model)

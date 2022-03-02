@@ -90,7 +90,7 @@ class BaseAgent(ABC):
             ), "There should be a CallbackSetting object for each callback"
             callback_settings = [setting.filter_none() for setting in callback_settings]
             self.callbacks = [
-                callback(self.logger, self.model, **settings)
+                callback(logger=self.logger, model=self.model, **settings)
                 for callback, settings in zip(callbacks, callback_settings)
             ]
         else:
