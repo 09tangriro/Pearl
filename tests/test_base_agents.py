@@ -49,7 +49,7 @@ vec_deep_agent = MockRLAgent(
 def test_deep_step_env():
     set_seed(0, env)
     observation = env.reset()
-    action = model(observation).detach().numpy()
+    action = model(observation).detach().cpu().numpy()
     expected_next_obs, _, _, _ = env.step(action)
     set_seed(0, env)
     observation = env.reset()
@@ -68,7 +68,7 @@ def test_deep_step_env():
 
     set_seed(0, envs)
     observation = envs.reset()
-    action = model(observation).detach().numpy()
+    action = model(observation).detach().cpu().numpy()
     expected_next_obs, _, _, _ = envs.step(action)
     set_seed(0, envs)
     observation = envs.reset()
