@@ -490,13 +490,13 @@ class ActorCritic(T.nn.Module):
         elif actions is None:
             return T.stack(
                 [
-                    critic.forward_target(obs)
+                    critic.forward_target(obs).to(critic.device)
                     for critic, obs in zip(self.critics, observations)
                 ]
             )
         return T.stack(
             [
-                critic.forward_target(obs, action)
+                critic.forward_target(obs, action).to(critic.device)
                 for critic, obs, action in zip(self.critics, observations, actions)
             ]
         )
@@ -506,7 +506,10 @@ class ActorCritic(T.nn.Module):
         if self.num_actors == 1:
             return self.actors[0].forward_target(observations)
         return T.stack(
-            [actor.forward_target(obs) for actor, obs in zip(self.actors, observations)]
+            [
+                actor.forward_target(obs).to(actor.device)
+                for actor, obs in zip(self.actors, observations)
+            ]
         )
 
     def forward_critics(
@@ -517,11 +520,14 @@ class ActorCritic(T.nn.Module):
             return self.critics[0](observations, actions)
         elif actions is None:
             return T.stack(
-                [critic(obs) for critic, obs in zip(self.critics, observations)]
+                [
+                    critic(obs).to(critic.device)
+                    for critic, obs in zip(self.critics, observations)
+                ]
             )
         return T.stack(
             [
-                critic(obs, action)
+                critic(obs, action).to(critic.device)
                 for critic, obs, action in zip(self.critics, observations, actions)
             ]
         )
@@ -530,7 +536,12 @@ class ActorCritic(T.nn.Module):
         """The default forward pass retrieves the population online actor outputs"""
         if self.num_actors == 1:
             return self.actors[0](observations)
-        return T.stack([actor(obs) for actor, obs in zip(self.actors, observations)])
+        return T.stack(
+            [
+                actor(obs).to(actor.device)
+                for actor, obs in zip(self.actors, observations)
+            ]
+        )
 
     def predict_distribution(
         self, observations: Tensor
