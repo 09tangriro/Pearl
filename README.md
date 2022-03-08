@@ -6,7 +6,7 @@
 
 
 # Pearl
-The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (Pearl) is a pytorch based package with the goal of being excellent for rapid prototyping of new adaptive decision making algorithms in the intersection between reinforcement learning (RL) and evolutionary computation (EC). As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. A technical report can be found [here](https://arxiv.org/abs/2201.09568) and a separate tutorial repo using Google Collab can be found [here](https://github.com/LondonNode/Pearl-tutorials).
+The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ibrary (Pearl) is a pytorch based package with the goal of being excellent for rapid prototyping of new adaptive decision making algorithms in the intersection between reinforcement learning (RL) and evolutionary computation (EC). As such, this is **not** intended to provide template pre-built algorithms as a baseline, but rather flexible tools to allow the user to quickly build and test their own implementations and ideas. A [technical report](https://arxiv.org/abs/2201.09568) and separate [tutorial repo](https://github.com/LondonNode/Pearl-tutorials) using Google Collab are also included to introduce users to the library.
 
 ## Main Features
 | **Features**                      | **Pearl** |
