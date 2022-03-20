@@ -43,7 +43,14 @@ class BaseCriticHead(T.nn.Module):
 
 
 class BaseActorHead(T.nn.Module, ABC):
-    """The base class for the actor head network"""
+    """
+    The base class for the actor head network
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param output_shape: the output shape of the network, can be the tuple shape or simplified integer output size
+    :param network_type: the type of network used
+    :param activation_fn: the activation function after each layer
+    """
 
     def __init__(
         self,
@@ -82,7 +89,15 @@ class BaseActorHead(T.nn.Module, ABC):
 
 
 class BaseEnvHead(T.nn.Module):
-    """The base class for the environment head network"""
+    """
+    The base class for the environment head network
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param output_shape: the output shape of the network, can be the tuple shape or simplified integer output size
+    :param network_type: the type of network used
+    :param activation_fn: the activation function after each layer
+    :param output_map: optional map for network output to space
+    """
 
     def __init__(
         self,
@@ -311,6 +326,16 @@ class DiagGaussianHead(BaseActorHead):
 
 
 class BoxHead(BaseEnvHead):
+    """
+    Use this head to model a Box gym environment.
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param space_shape: the output shape of the network, can be the tuple shape or simplified integer output size
+    :param network_type: the type of network used
+    :param activation_fn: the activation function after each layer
+    :param output_map: optional map for network output to space
+    """
+
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
@@ -329,6 +354,15 @@ class BoxHead(BaseEnvHead):
 
 
 class DiscreteHead(BaseEnvHead):
+    """
+    Use this head to model a Discrete gym environment.
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param network_type: the type of network used
+    :param activation_fn: the activation function after each layer
+    :param output_map: optional map for network output to space
+    """
+
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
@@ -352,6 +386,16 @@ class DiscreteHead(BaseEnvHead):
 
 
 class MultiDiscreteHead(BaseEnvHead):
+    """
+    Use this head to model a MultiDiscrete gym environment.
+
+    :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param space_shape: the output shape of the network, can be the tuple shape or simplified integer output size
+    :param network_type: the type of network used
+    :param activation_fn: the activation function after each layer
+    :param output_map: optional map for network output to space
+    """
+
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
