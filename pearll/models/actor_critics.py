@@ -25,12 +25,12 @@ from pearll.models.heads import (
 from pearll.settings import PopulationSettings
 
 
-class _Model(T.nn.Module):
+class Model(T.nn.Module):
     def __init__(
         self,
         encoder: T.nn.Module,
         torso: T.nn.Module,
-        head: Union[BaseActorHead, BaseCriticHead],
+        head: T.nn.Module,
     ) -> None:
         super().__init__()
         self.encoder = encoder
@@ -69,7 +69,7 @@ class Critic(T.nn.Module):
         super().__init__()
         self.polyak_coeff = polyak_coeff
         self.device = get_device(device)
-        self.model = _Model(encoder, torso, head).to(self.device)
+        self.model = Model(encoder, torso, head).to(self.device)
         self.state_info = {}
         self.make_state_info()
         self.state = np.concatenate(
