@@ -1,11 +1,16 @@
 from dataclasses import dataclass
-from typing import Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 import numpy as np
 import torch as T
+from gym import Space
 
 Tensor = Union[np.ndarray, T.Tensor]
 Observation = Union[np.ndarray, Dict[str, np.ndarray]]
+
+SelectionFunc = Callable[[np.ndarray, np.ndarray], np.ndarray]
+CrossoverFunc = Callable[[np.ndarray], np.ndarray]
+MutationFunc = Callable[[np.ndarray, Space], np.ndarray]
 
 
 @dataclass

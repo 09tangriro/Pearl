@@ -1,11 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional
+from typing import Optional
 
 import numpy as np
 from gym.spaces import Discrete, MultiDiscrete
 from torch.distributions import Normal, kl_divergence
 
-from pearll.common.type_aliases import UpdaterLog
+from pearll.common.type_aliases import (
+    CrossoverFunc,
+    MutationFunc,
+    SelectionFunc,
+    UpdaterLog,
+)
 from pearll.common.utils import to_torch
 from pearll.models.actor_critics import ActorCritic
 
@@ -69,8 +74,7 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         self,
         learning_rate: float,
         optimization_direction: np.ndarray,
-        mutation_operator: Optional[Callable] = None,
-        mutation_settings: Dict[str, Any] = {},
+        mutation_operator: Optional[MutationFunc] = None,
     ) -> UpdaterLog:
         """
         Perform an optimization step
@@ -78,7 +82,6 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         :param learning_rate: the learning rate
         :param optimization_direction: the optimization direction
         :param mutation_operator: the mutation operator
-        :param mutation_settings: the mutation settings
         :return: the updater log
         """
         # Snapshot current population dist for kl divergence
@@ -92,7 +95,7 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         self.normal_dist = np.random.randn(self.population_size, *self.space_shape)
         population = self.mean + (self.std * self.normal_dist)
         if mutation_operator is not None:
-            population = mutation_operator(population, self.space, **mutation_settings)
+            population = mutation_operator(population, self.space)
 
         # Discretize and clip population as needed
         if isinstance(self.space, (Discrete, MultiDiscrete)):
@@ -122,12 +125,9 @@ class GeneticUpdater(BaseEvolutionUpdater):
     def __call__(
         self,
         rewards: np.ndarray,
-        selection_operator: Optional[Callable] = None,
-        crossover_operator: Optional[Callable] = None,
-        mutation_operator: Optional[Callable] = None,
-        selection_settings: Dict[str, Any] = {},
-        crossover_settings: Dict[str, Any] = {},
-        mutation_settings: Dict[str, Any] = {},
+        selection_operator: Optional[SelectionFunc] = None,
+        crossover_operator: Optional[CrossoverFunc] = None,
+        mutation_operator: Optional[MutationFunc] = None,
         elitism: float = 0.1,
     ) -> UpdaterLog:
         """
@@ -137,9 +137,6 @@ class GeneticUpdater(BaseEvolutionUpdater):
         :param selection_operator: the selection operator function
         :param crossover_operator: the crossover operator function
         :param mutation_operator: the mutation operator function
-        :param selection_settings: the selection operator settings
-        :param crossover_settings: the crossover operator settings
-        :param mutation_settings: the mutation operator settings
         :param elitism: fraction of the population to keep as elite
         :return: the updater log
         """
@@ -155,15 +152,11 @@ class GeneticUpdater(BaseEvolutionUpdater):
 
         # Main update
         if selection_operator is not None:
-            new_population = selection_operator(
-                old_population, rewards, **selection_settings
-            )
+            new_population = selection_operator(old_population, rewards)
         if crossover_operator is not None:
-            new_population = crossover_operator(new_population, **crossover_settings)
+            new_population = crossover_operator(new_population)
         if mutation_operator is not None:
-            new_population = mutation_operator(
-                new_population, self.space, **mutation_settings
-            )
+            new_population = mutation_operator(new_population, self.space)
         if elitism > 0:
             new_population[elite_indices] = elite_population
         self.update_networks(new_population)
