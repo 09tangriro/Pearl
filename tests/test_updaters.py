@@ -327,7 +327,7 @@ def test_continuous_q_regression(model: Union[Critic, ActorCritic]):
         assert same_distribution(actor_before, actor_after)
 
 
-############################### TEST RANDOM SEARCH UPDATERS ###############################
+############################### TEST EVOLUTION UPDATERS ###############################
 
 
 class Sphere(gym.Env):
