@@ -11,6 +11,7 @@ from pearll.models import (
     EpsilonGreedyActor,
     ModelEnv,
 )
+from pearll.models.actor_critics import Model
 from pearll.models.encoders import (
     CNNEncoder,
     DictEncoder,
@@ -591,101 +592,63 @@ def test_dummy():
     np.testing.assert_array_almost_equal(actual_state, expected_state)
 
 
-# def test_model_env():
-#    # Test 1: Continuous observation and action spaces.
-#    observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
-#    action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
-#    reward_space = gym.spaces.Box(low=0, high=1, shape=(1,))
-#
-#    encoder = IdentityEncoder()
-#    torso = MLP([3, 4])
-#    reward_head = ValueHead(
-#        input_shape=4, activation_fn=T.nn.Sigmoid
-#    )  # Squish output between 0 and 1
-#    observation_head = DeterministicHead(
-#        input_shape=4, action_shape=2, activation_fn=T.nn.Tanh
-#    )  # Squish output between -1 and 1
-#
-#    reward_model = Critic(encoder, torso, reward_head)
-#    observation_model = Actor(encoder, torso, observation_head)
-#
-#    env_model = ModelEnv(
-#        reward_model=reward_model,
-#        observation_model=observation_model,
-#        observation_space=observation_space,
-#        reward_space=reward_space,
-#    )
-#
-#    obs = env_model.reset()
-#    next_obs, reward, _, _ = env_model.step(
-#        observation=obs, action=action_space.sample()
-#    )
-#
-#    assert observation_space.contains(next_obs)
-#    assert reward_space.contains(reward)
-#
-#    # Test 2: Multi discrete observation space.
-#    observation_space = gym.spaces.MultiDiscrete([2, 3])
-#    observation_map = {0: [0, 0], 1: [0, 1], 2: [0, 2], 3: [1, 0], 4: [1, 1], 5: [1, 2]}
-#    action_space = gym.spaces.Discrete(2)
-#    reward_space = gym.spaces.Discrete(2)
-#
-#    encoder = IdentityEncoder()
-#    torso = MLP([3, 4])
-#    reward_head = DiscreteQHead(
-#        input_shape=4, output_shape=2, activation_fn=T.nn.Softmax
-#    )  # Squish output between 0 and 1
-#    observation_head = DeterministicHead(
-#        input_shape=4, action_shape=6, activation_fn=T.nn.Softmax
-#    )  # Squish output between -1 and 1
-#
-#    reward_model = Critic(encoder, torso, reward_head)
-#    observation_model = Actor(encoder, torso, observation_head)
-#
-#    env_model = ModelEnv(
-#        reward_model=reward_model,
-#        observation_model=observation_model,
-#        observation_space=observation_space,
-#        reward_space=reward_space,
-#        observation_map=observation_map,
-#    )
-#
-#    obs = env_model.reset()
-#    next_obs, reward, _, _ = env_model.step(
-#        observation=obs, action=np.array([action_space.sample()])
-#    )
-#    assert observation_space.contains(next_obs)
-#    assert reward_space.contains(reward)
-#
-#    # Test 3: Discrete observation space.
-#    observation_space = gym.spaces.Discrete(4)
-#    action_space = gym.spaces.Discrete(2)
-#    reward_space = gym.spaces.Discrete(2)
-#    reward_map = {0: 0, 1: 1}
-#
-#    encoder = IdentityEncoder()
-#    torso = MLP([2, 4])
-#    reward_head = DiscreteQHead(
-#        input_shape=4, output_shape=2, activation_fn=T.nn.Softmax
-#    )  # Squish output between 0 and 1
-#    observation_head = DeterministicHead(
-#        input_shape=4, action_shape=4, activation_fn=T.nn.Softmax
-#    )  # Squish output between -1 and 1
-#
-#    reward_model = Critic(encoder, torso, reward_head)
-#    observation_model = Actor(encoder, torso, observation_head)
-#
-#    env_model = ModelEnv(
-#        reward_model=reward_model,
-#        observation_model=observation_model,
-#        observation_space=observation_space,
-#        reward_space=reward_space,
-#        reward_map=reward_map,
-#    )
-#
-#    obs = env_model.reset()
-#    next_obs, reward, _, _ = env_model.step(
-#        observation=np.array([obs]), action=np.array([action_space.sample()])
-#    )
-#    assert observation_space.contains(next_obs)
-#    assert reward_space.contains(reward)
+def test_model_env():
+    # Test 1: Continuous observation and action spaces.
+    observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
+    action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
+    reward_space = gym.spaces.Box(low=0, high=1, shape=(1,))
+    encoder = IdentityEncoder()
+    torso = MLP([3, 4])
+    reward_head = BoxHead(
+        input_shape=4, space_shape=1, activation_fn=T.nn.Sigmoid
+    )  # Squish output between 0 and 1
+    observation_head = BoxHead(
+        input_shape=4, space_shape=2, activation_fn=T.nn.Tanh
+    )  # Squish output between -1 and 1
+    reward_model = Model(encoder, torso, reward_head)
+    observation_model = Model(encoder, torso, observation_head)
+    env_model = ModelEnv(
+        reward_fn=reward_model,
+        observation_fn=observation_model,
+        done_fn=None,
+        observation_space=observation_space,
+    )
+    obs = env_model.reset()
+    next_obs, reward, done, _ = env_model.step(
+        observation=obs, action=action_space.sample()
+    )
+    assert not done
+    assert observation_space.contains(next_obs)
+    assert reward_space.contains(reward)
+
+    # Test 2: Multi discrete observation space.
+    observation_space = gym.spaces.MultiDiscrete([2, 3])
+    observation_map = {0: [0, 0], 1: [0, 1], 2: [0, 2], 3: [1, 0], 4: [1, 1], 5: [1, 2]}
+    action_space = gym.spaces.Discrete(2)
+    reward_space = gym.spaces.Discrete(2)
+    encoder = IdentityEncoder()
+    torso = MLP([3, 4])
+    reward_head = DiscreteHead(
+        input_shape=4, activation_fn=T.nn.Softmax
+    )  # Squish output between 0 and 1
+    observation_head = MultiDiscreteHead(
+        input_shape=4,
+        space_shape=6,
+        output_map=observation_map,
+        activation_fn=T.nn.Softmax,
+    )  # Squish output between -1 and 1
+    reward_model = Model(encoder, torso, reward_head)
+    observation_model = Model(encoder, torso, observation_head)
+    env_model = ModelEnv(
+        reward_fn=reward_model,
+        observation_fn=observation_model,
+        done_fn=None,
+        observation_space=observation_space,
+    )
+    obs = env_model.reset()
+    next_obs, reward, done, _ = env_model.step(
+        observation=obs, action=np.array([action_space.sample()])
+    )
+    assert not done
+    assert observation_space.contains(next_obs)
+    assert reward_space.contains(reward)
