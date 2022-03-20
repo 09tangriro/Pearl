@@ -11,6 +11,9 @@ Observation = Union[np.ndarray, Dict[str, np.ndarray]]
 SelectionFunc = Callable[[np.ndarray, np.ndarray], np.ndarray]
 CrossoverFunc = Callable[[np.ndarray], np.ndarray]
 MutationFunc = Callable[[np.ndarray, Space], np.ndarray]
+ObservationFunc = Callable[[Any, Any], Any]
+RewardFunc = Callable[[Any, Any], float]
+DoneFunc = Callable[[Any, Any], bool]
 
 
 @dataclass
