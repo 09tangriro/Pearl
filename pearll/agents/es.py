@@ -1,4 +1,5 @@
 import warnings
+from functools import partial
 from typing import Callable, List, Optional, Type
 
 import numpy as np
@@ -96,8 +97,11 @@ class ES(BaseAgent):
 
         self.learning_rate = learning_rate
         self.updater = updater_class(model=self.model)
-        self.mutation_operator = mutation_operator
-        self.mutation_settings = mutation_settings.filter_none()
+        self.mutation_operator = (
+            None
+            if mutation_operator is None
+            else partial(mutation_operator, **mutation_settings.filter_none())
+        )
 
     def _fit(
         self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1
@@ -119,7 +123,6 @@ class ES(BaseAgent):
                 learning_rate=self.learning_rate,
                 optimization_direction=optimization_direction,
                 mutation_operator=self.mutation_operator,
-                mutation_settings=self.mutation_settings,
             )
             divergences[i] = log.divergence
             entropies[i] = log.entropy

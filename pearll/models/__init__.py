@@ -5,6 +5,7 @@ from pearll.models.actor_critics import (
     Dummy,
     EpsilonGreedyActor,
 )
+from pearll.models.environment import ModelEnv
 
 __all__ = [
     "Critic",
@@ -12,4 +13,5 @@ __all__ = [
     "Dummy",
     "ActorCritic",
     "EpsilonGreedyActor",
+    "ModelEnv",
 ]

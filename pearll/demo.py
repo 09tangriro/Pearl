@@ -216,7 +216,7 @@ def ga_demo():
             tensorboard_log_path="runs/GA-demo", log_frequency=("step", 1)
         ),
     )
-    agent.fit(num_steps=30, batch_size=1)
+    agent.fit(num_steps=50, batch_size=1)
 
 
 def her_demo():

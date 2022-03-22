@@ -3,7 +3,15 @@ import numpy as np
 import pytest
 import torch as T
 
-from pearll.models import Actor, ActorCritic, Critic, Dummy, EpsilonGreedyActor
+from pearll.models import (
+    Actor,
+    ActorCritic,
+    Critic,
+    Dummy,
+    EpsilonGreedyActor,
+    ModelEnv,
+)
+from pearll.models.actor_critics import Model
 from pearll.models.encoders import (
     CNNEncoder,
     DictEncoder,
@@ -12,11 +20,14 @@ from pearll.models.encoders import (
     MLPEncoder,
 )
 from pearll.models.heads import (
+    BoxHead,
     CategoricalHead,
     ContinuousQHead,
     DeterministicHead,
     DiagGaussianHead,
+    DiscreteHead,
     DiscreteQHead,
+    MultiDiscreteHead,
     ValueHead,
 )
 from pearll.models.torsos import MLP
@@ -107,6 +118,39 @@ def test_actor_head(head_class, input_shape):
         assert output.shape == T.Size([])
     else:
         assert output.shape == (2,)
+
+
+@pytest.mark.parametrize("head_class", [BoxHead, DiscreteHead, MultiDiscreteHead])
+def test_env_head(head_class):
+    input = T.Tensor([1, 1, 1, 1, 1])
+
+    # Test 1: BoxHead
+    if head_class == BoxHead:
+        head = head_class(input_shape=5, space_shape=2)
+        out = head(input)
+        assert out.shape == (2,)
+
+    # Test 2: DiscreteHead
+    elif head_class == DiscreteHead:
+        head = head_class(input_shape=5)
+        out = head(input)
+        assert isinstance(out, int)
+
+        output_map = {0: "0", 1: "1"}
+        head = head_class(input_shape=5, output_map=output_map)
+        out = head(input)
+        assert isinstance(out, str)
+
+    # Test 3: MultiDiscreteHead
+    elif head_class == MultiDiscreteHead:
+        head = head_class(input_shape=5, space_shape=(2, 2))
+        out = head(input)
+        assert isinstance(out, int)
+
+        output_map = {0: [0, 0], 1: [0, 1], 2: [1, 0], 3: [1, 1]}
+        head = head_class(input_shape=5, space_shape=(2, 2), output_map=output_map)
+        out = head(input)
+        assert isinstance(out, list)
 
 
 def test_critic():
@@ -546,3 +590,65 @@ def test_dummy():
 
     actual_state = model(env.observation_space.sample())
     np.testing.assert_array_almost_equal(actual_state, expected_state)
+
+
+def test_model_env():
+    # Test 1: Continuous observation and action spaces.
+    observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
+    action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
+    reward_space = gym.spaces.Box(low=0, high=1, shape=(1,))
+    encoder = IdentityEncoder()
+    torso = MLP([3, 4])
+    reward_head = BoxHead(
+        input_shape=4, space_shape=1, activation_fn=T.nn.Sigmoid
+    )  # Squish output between 0 and 1
+    observation_head = BoxHead(
+        input_shape=4, space_shape=2, activation_fn=T.nn.Tanh
+    )  # Squish output between -1 and 1
+    reward_model = Model(encoder, torso, reward_head)
+    observation_model = Model(encoder, torso, observation_head)
+    env_model = ModelEnv(
+        reward_fn=reward_model,
+        observation_fn=observation_model,
+        done_fn=None,
+        observation_space=observation_space,
+    )
+    obs = env_model.reset()
+    next_obs, reward, done, _ = env_model.step(
+        observation=obs, action=action_space.sample()
+    )
+    assert not done
+    assert observation_space.contains(next_obs)
+    assert reward_space.contains(reward)
+
+    # Test 2: Multi discrete observation space.
+    observation_space = gym.spaces.MultiDiscrete([2, 3])
+    observation_map = {0: [0, 0], 1: [0, 1], 2: [0, 2], 3: [1, 0], 4: [1, 1], 5: [1, 2]}
+    action_space = gym.spaces.Discrete(2)
+    reward_space = gym.spaces.Discrete(2)
+    encoder = IdentityEncoder()
+    torso = MLP([3, 4])
+    reward_head = DiscreteHead(
+        input_shape=4, activation_fn=T.nn.Softmax
+    )  # Squish output between 0 and 1
+    observation_head = MultiDiscreteHead(
+        input_shape=4,
+        space_shape=6,
+        output_map=observation_map,
+        activation_fn=T.nn.Softmax,
+    )  # Squish output between -1 and 1
+    reward_model = Model(encoder, torso, reward_head)
+    observation_model = Model(encoder, torso, observation_head)
+    env_model = ModelEnv(
+        reward_fn=reward_model,
+        observation_fn=observation_model,
+        done_fn=None,
+        observation_space=observation_space,
+    )
+    obs = env_model.reset()
+    next_obs, reward, done, _ = env_model.step(
+        observation=obs, action=np.array([action_space.sample()])
+    )
+    assert not done
+    assert observation_space.contains(next_obs)
+    assert reward_space.contains(reward)
