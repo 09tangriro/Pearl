@@ -24,9 +24,8 @@ echo A python virtual environment has been created at:
 poetry config --local virtualenvs.path
 
 echo ""
-echo To run unit tests locally, run:
-echo ""
-echo    poetry run pytest OR poetry run scripts/run_tests.sh
+echo To run unit tests locally:
+echo    poetry run pytest
 
 echo ""
 echo =================================================================================
