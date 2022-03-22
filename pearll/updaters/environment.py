@@ -66,23 +66,21 @@ class DeepRegression(BaseDeepUpdater):
     def __call__(
         self,
         model: Model,
-        observations: Tensor,
-        actions: Tensor,
-        targets: Tensor,
+        predictions: T.Tensor,
+        targets: T.Tensor,
         learning_rate: float = 0.001,
     ) -> UpdaterLog:
         """
         Run an optimization step
 
         :param model: The model to update (observation, reward or done models)
-        :param observations: The observations as input to the model
-        :param actions: The actions as input to the model
+        :param predictions: The predictions to update
         :param targets: The targets to regress against
         :param learning_rate: The learning rate to use
         """
         params = model.parameters()
         optimizer = self.optimizer_class(params, lr=learning_rate)
-        loss = self.loss_class(model(observations, actions), targets)
+        loss = self.loss_class(predictions, targets)
         self.run_optimizer(optimizer, loss, params)
 
         return UpdaterLog(loss=loss.detach().item())

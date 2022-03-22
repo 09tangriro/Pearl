@@ -549,5 +549,6 @@ def test_deep_env_updater():
     observations = T.Tensor([[1], [3]])
     actions = T.Tensor([[1], [2]])
     targets = T.Tensor([[1], [2]])
-    log = updater(deep_model, observations, actions, targets)
+    predictions = deep_model(observations, actions)
+    log = updater(deep_model, predictions, targets)
     assert log.loss == 1.8426234722137451
