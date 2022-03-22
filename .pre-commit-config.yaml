@@ -1,6 +1,7 @@
 repos:
   - repo: local
     hooks:
+
     - id: black
       name: black
       entry: poetry run black .
@@ -10,12 +11,11 @@ repos:
         - file
         - python
 
-  - repo: local
-    hooks:
     - id: isort
       name: isort
       entry: poetry run isort --profile=black .
       language: system
+      pass_filenames: false
       types:
         - file
         - python
