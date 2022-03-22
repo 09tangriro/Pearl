@@ -7,8 +7,9 @@ import pytest
 import torch as T
 
 from pearll.models import Actor, ActorCritic, Critic, Dummy
+from pearll.models.actor_critics import Model
 from pearll.models.encoders import IdentityEncoder, MLPEncoder
-from pearll.models.heads import DiagGaussianHead, ValueHead
+from pearll.models.heads import BoxHead, DiagGaussianHead, ValueHead
 from pearll.models.torsos import MLP
 from pearll.settings import PopulationSettings
 from pearll.signal_processing import (
@@ -27,6 +28,7 @@ from pearll.updaters.critics import (
     DiscreteQRegression,
     ValueRegression,
 )
+from pearll.updaters.environment import DeepRegression
 from pearll.updaters.evolution import GeneticUpdater, NoisyGradientAscent
 
 ############################### SET UP MODELS ###############################
@@ -530,3 +532,22 @@ def test_genetic_updater_discrete():
     assert model_discrete != old_model
     assert np.not_equal(old_population, new_population).any()
     np.testing.assert_array_less(np.min(new_population, axis=0), np.array([5]))
+
+
+############################### TEST ENVIRONMENT UPDATERS ###############################
+
+
+def test_deep_env_updater():
+    T.manual_seed(0)
+    np.random.seed(0)
+    encoder = IdentityEncoder()
+    torso = MLP(layer_sizes=[2, 1, 1])
+    head = BoxHead(input_shape=1, space_shape=2)
+    deep_model = Model(encoder=encoder, torso=torso, head=head)
+    updater = DeepRegression()
+
+    observations = T.Tensor([[1], [3]])
+    actions = T.Tensor([[1], [2]])
+    targets = T.Tensor([[1], [2]])
+    log = updater(deep_model, observations, actions, targets)
+    assert log.loss == 1.8426234722137451
