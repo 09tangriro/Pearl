@@ -120,6 +120,10 @@ class BaseEnvHead(T.nn.Module):
         else:
             raise NotImplementedError(f"{network_type} hasn't been implemented yet.")
 
+    def network(self, input: T.Tensor) -> T.Tensor:
+        """Get raw model output"""
+        return self.model(input)
+
     def forward(self, input: T.Tensor) -> Any:
         out = self.model(input)
         if self.output_map is None:

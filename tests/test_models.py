@@ -136,6 +136,9 @@ def test_env_head(head_class):
         out = head(input)
         assert isinstance(out, int)
 
+        network_output = head.network(input)
+        assert isinstance(network_output, T.Tensor)
+
         output_map = {0: "0", 1: "1"}
         head = head_class(input_shape=5, output_map=output_map)
         out = head(input)
