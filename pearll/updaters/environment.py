@@ -37,12 +37,18 @@ class BaseDeepUpdater(ABC):
     def __call__(
         self,
         model: Model,
-        observations: Tensor,
-        actions: Tensor,
-        targets: Tensor,
+        predictions: T.Tensor,
+        targets: T.Tensor,
         learning_rate: float = 0.001,
     ) -> UpdaterLog:
-        """Run an optimization step"""
+        """
+        Run an optimization step
+
+        :param model: The model to update (observation, reward or done models)
+        :param predictions: The predictions to update
+        :param targets: The targets to regress against
+        :param learning_rate: The learning rate to use
+        """
 
 
 class DeepRegression(BaseDeepUpdater):
