@@ -20,3 +20,4 @@ omit =
     pearll/settings.py
     pearll/plot.py
     pearll/agents/cem_rl.py
+    pearll/agents/dyna.py
