@@ -139,10 +139,9 @@ def test_env_head(head_class):
         network_output = super(head_class, head).forward(input)
         assert isinstance(network_output, T.Tensor)
 
-        output_map = {0: "0", 1: "1"}
-        head = head_class(input_shape=5, output_map=output_map)
+        head = head_class(input_shape=5, dtype="bool")
         out = head(input)
-        assert isinstance(out, str)
+        assert isinstance(out, bool)
 
     # Test 3: MultiDiscreteHead
     elif head_class == MultiDiscreteHead:
@@ -153,7 +152,7 @@ def test_env_head(head_class):
         output_map = {0: [0, 0], 1: [0, 1], 2: [1, 0], 3: [1, 1]}
         head = head_class(input_shape=5, space_shape=(2, 2), output_map=output_map)
         out = head(input)
-        assert isinstance(out, list)
+        assert len(out.shape) == 1
 
 
 def test_critic():
@@ -599,7 +598,7 @@ def test_model_env():
     # Test 1: Continuous observation and action spaces.
     observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,))
     action_space = gym.spaces.Box(low=-1, high=1, shape=(1,))
-    reward_space = gym.spaces.Box(low=0, high=1, shape=(1,))
+    reward_space = gym.spaces.Box(low=0, high=1, shape=())
     encoder = IdentityEncoder()
     torso = MLP([3, 4])
     reward_head = BoxHead(

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from mimetypes import types_map
 from typing import Any, Optional, Tuple, Type, Union
 
 import torch as T
@@ -96,7 +97,7 @@ class BaseEnvHead(T.nn.Module):
     :param output_shape: the output shape of the network, can be the tuple shape or simplified integer output size
     :param network_type: the type of network used
     :param activation_fn: the activation function after each layer
-    :param output_map: optional map for network output to space
+    :param dtype: optional conversion of network output to dtype
     """
 
     def __init__(
@@ -105,10 +106,17 @@ class BaseEnvHead(T.nn.Module):
         output_shape: Union[int, Tuple[int]],
         network_type: str = "mlp",
         activation_fn: Optional[Type[T.nn.Module]] = None,
-        output_map: Optional[dict] = None,
+        dtype: Optional[str] = None,
     ):
         super().__init__()
-        self.output_map = output_map
+        self.type_map = {
+            "bool": "torch.BoolTensor",
+            "int": "torch.IntTensor",
+            "float": "torch.FloatTensor",
+            "long": "torch.LongTensor",
+            "double": "torch.DoubleTensor",
+        }
+        self.dtype = self.type_map[dtype] if dtype is not None else None
 
         network_type = NetworkType(network_type.lower())
         if network_type == NetworkType.MLP:
@@ -120,7 +128,7 @@ class BaseEnvHead(T.nn.Module):
         else:
             raise NotImplementedError(f"{network_type} hasn't been implemented yet.")
 
-    def forward(self, input: T.Tensor) -> Any:
+    def forward(self, input: T.Tensor) -> T.Tensor:
         return self.model(input)
 
 
@@ -330,7 +338,7 @@ class BoxHead(BaseEnvHead):
     :param space_shape: the output shape of the network, can be the tuple shape or simplified integer output size
     :param network_type: the type of network used
     :param activation_fn: the activation function after each layer
-    :param output_map: optional map for network output to space
+    :param dtype: optional conversion of network output to dtype
     """
 
     def __init__(
@@ -339,21 +347,21 @@ class BoxHead(BaseEnvHead):
         space_shape: Union[int, Tuple[int]],
         network_type: str = "mlp",
         activation_fn: Optional[Type[T.nn.Module]] = None,
-        output_map: Optional[dict] = None,
+        dtype: Optional[dict] = None,
     ) -> None:
         super().__init__(
             input_shape=input_shape,
             output_shape=space_shape,
             network_type=network_type,
             activation_fn=activation_fn,
-            output_map=output_map,
+            dtype=dtype,
         )
 
-    def forward(self, input: T.Tensor) -> T.Tensor:
+    def forward(self, input: T.Tensor) -> Any:
         out = self.model(input)
-        if self.output_map is None:
-            return out
-        return self.output_map[out]
+        if self.dtype is not None:
+            out = out.type(self.dtype)
+        return out.squeeze()
 
 
 class DiscreteHead(BaseEnvHead):
@@ -363,7 +371,7 @@ class DiscreteHead(BaseEnvHead):
     :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
     :param network_type: the type of network used
     :param activation_fn: the activation function after each layer
-    :param output_map: optional map for network output to space
+    :param dtype: optional conversion of network output to dtype
     """
 
     def __init__(
@@ -371,21 +379,23 @@ class DiscreteHead(BaseEnvHead):
         input_shape: Union[int, Tuple[int]],
         network_type: str = "mlp",
         activation_fn: Optional[Type[T.nn.Module]] = T.nn.Softmax,
-        output_map: Optional[dict] = None,
+        dtype: Optional[dict] = None,
     ) -> None:
         super().__init__(
             input_shape=input_shape,
             output_shape=2,
             network_type=network_type,
             activation_fn=activation_fn,
-            output_map=output_map,
+            dtype=dtype,
         )
 
     def forward(self, input: T.Tensor) -> Any:
-        out = T.argmax(self.model(input), dim=-1).item()
-        if self.output_map is None:
-            return out
-        return self.output_map[out]
+        out = T.argmax(self.model(input), dim=-1)
+        if self.dtype is not None:
+            out = out.type(self.dtype)
+        if out.squeeze().dim() == 0:
+            return out.squeeze().item()
+        return out.squeeze()
 
 
 class MultiDiscreteHead(BaseEnvHead):
@@ -396,7 +406,7 @@ class MultiDiscreteHead(BaseEnvHead):
     :param space_shape: the output shape of the network, can be the tuple shape or simplified integer output size
     :param network_type: the type of network used
     :param activation_fn: the activation function after each layer
-    :param output_map: optional map for network output to space
+    :param dtype: optional conversion of network output to dtype
     """
 
     def __init__(
@@ -406,17 +416,23 @@ class MultiDiscreteHead(BaseEnvHead):
         network_type: str = "mlp",
         activation_fn: Optional[Type[T.nn.Module]] = None,
         output_map: Optional[dict] = None,
+        dtype: Optional[dict] = None,
     ):
         super().__init__(
             input_shape=input_shape,
             output_shape=space_shape,
             network_type=network_type,
             activation_fn=activation_fn,
-            output_map=output_map,
+            dtype=dtype,
         )
+        self.output_map = output_map
 
     def forward(self, input: T.Tensor) -> Any:
-        out = T.argmax(self.model(input), dim=-1).item()
-        if self.output_map is None:
-            return out
-        return self.output_map[out]
+        out = T.argmax(self.model(input), dim=-1, keepdim=True)
+        if self.dtype is not None:
+            out = out.type(self.dtype)
+        if self.output_map is not None:
+            out = T.Tensor([self.output_map[x.item()] for x in out])
+        if out.squeeze().dim() == 0:
+            return out.squeeze().item()
+        return out.squeeze()
