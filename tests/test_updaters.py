@@ -537,18 +537,24 @@ def test_genetic_updater_discrete():
 ############################### TEST ENVIRONMENT UPDATERS ###############################
 
 
-def test_deep_env_updater():
+@pytest.mark.parametrize("loss_class", [T.nn.MSELoss(), T.nn.BCELoss()])
+def test_deep_env_updater(loss_class):
     T.manual_seed(0)
     np.random.seed(0)
     encoder = IdentityEncoder()
-    torso = MLP(layer_sizes=[2, 1, 1])
-    head = BoxHead(input_shape=1, space_shape=2)
+    torso = MLP(layer_sizes=[3, 1, 1])
+    head = BoxHead(input_shape=1, space_shape=2, activation_fn=T.nn.Softmax)
     deep_model = Model(encoder=encoder, torso=torso, head=head)
-    updater = DeepRegression()
+    updater = DeepRegression(loss_class=loss_class)
 
-    observations = T.Tensor([[1], [3]])
-    actions = T.Tensor([[1], [2]])
-    targets = T.Tensor([[1], [2]])
-    predictions = deep_model(observations, actions)
-    log = updater(deep_model, predictions, targets)
-    assert log.loss == 1.8426234722137451
+    observations = T.Tensor([1, 1])
+    actions = T.Tensor([1])
+    targets = T.Tensor([1, 1])
+    if isinstance(loss_class, T.nn.BCELoss):
+        targets = T.Tensor([False])
+    log = updater(deep_model, observations, actions, targets)
+
+    if isinstance(loss_class, T.nn.MSELoss):
+        assert log.loss == 0.2826874256134033
+    elif isinstance(loss_class, T.nn.BCELoss):
+        assert log.loss == 1.141926884651184
