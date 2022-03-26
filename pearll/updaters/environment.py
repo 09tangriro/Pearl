@@ -54,7 +54,7 @@ class BaseDeepUpdater(ABC):
 
 class DeepRegression(BaseDeepUpdater):
     """
-    Update a deep environment model using a deep regression algorithm.
+    Update a deep model using a deep regression algorithm.
 
     :param loss_class: The loss class to use e.g. MSE
     :param optimizer_class: the type of optimizer to use, defaults to Adam

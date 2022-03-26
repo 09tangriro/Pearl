@@ -613,7 +613,7 @@ def test_model_env():
         reward_fn=reward_model,
         observation_fn=observation_model,
         done_fn=None,
-        observation_space=observation_space,
+        reset_space=observation_space,
     )
     obs = env_model.reset()
     next_obs, reward, done, _ = env_model.step(
@@ -645,7 +645,7 @@ def test_model_env():
         reward_fn=reward_model,
         observation_fn=observation_model,
         done_fn=None,
-        observation_space=observation_space,
+        reset_space=observation_space,
     )
     obs = env_model.reset()
     next_obs, reward, done, _ = env_model.step(

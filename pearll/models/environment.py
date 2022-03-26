@@ -13,7 +13,7 @@ class ModelEnv(Env):
     :param reward_fn: reward_fn(S, A) -> R
     :param observation_fn: observation_fn(S, A) -> S'
     :param done_fn: optional done_fn(S, A) -> done
-    :param observation_space: observation space sampled to reset the environment
+    :param reset_space: observation space sampled to reset the environment
     """
 
     def __init__(
@@ -21,12 +21,12 @@ class ModelEnv(Env):
         reward_fn: RewardFunc,
         observation_fn: ObservationFunc,
         done_fn: Optional[DoneFunc],
-        observation_space: Space,
+        reset_space: Space,
     ) -> None:
         self.reward_fn = reward_fn
         self.observation_fn = observation_fn
         self.done_fn = done_fn
-        self.observation_space = observation_space
+        self.reset_space = reset_space
 
     def step(self, observation: Any, action: Any) -> Tuple[Any, float, bool, dict]:
         """
@@ -48,4 +48,4 @@ class ModelEnv(Env):
 
         :return: observation
         """
-        return self.observation_space.sample()
+        return self.reset_space.sample()
