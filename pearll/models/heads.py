@@ -120,15 +120,8 @@ class BaseEnvHead(T.nn.Module):
         else:
             raise NotImplementedError(f"{network_type} hasn't been implemented yet.")
 
-    def network(self, input: T.Tensor) -> T.Tensor:
-        """Get raw model output"""
-        return self.model(input)
-
     def forward(self, input: T.Tensor) -> Any:
-        out = self.model(input)
-        if self.output_map is None:
-            return out
-        return self.output_map[out]
+        return self.model(input)
 
 
 class DummyHead(T.nn.Module):
@@ -355,6 +348,12 @@ class BoxHead(BaseEnvHead):
             activation_fn=activation_fn,
             output_map=output_map,
         )
+
+    def forward(self, input: T.Tensor) -> T.Tensor:
+        out = self.model(input)
+        if self.output_map is None:
+            return out
+        return self.output_map[out]
 
 
 class DiscreteHead(BaseEnvHead):
