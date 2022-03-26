@@ -5,7 +5,7 @@ import torch as T
 from gym import Env
 
 from pearll.agents import BaseAgent
-from pearll.buffers.base_buffer import BaseBuffer
+from pearll.buffers import BaseBuffer, ReplayBuffer
 from pearll.callbacks.base_callback import BaseCallback
 from pearll.common import utils
 from pearll.common.enumerations import FrequencyType
@@ -40,8 +40,10 @@ class DynaQ(BaseAgent):
         reward_updater_class: Type[BaseDeepUpdater] = DeepRegression,
         reward_optimizer_settings: OptimizerSettings = OptimizerSettings(),
         done_updater_class: Optional[Type[BaseDeepUpdater]] = None,
-        done_optimizer_settings: OptimizerSettings = OptimizerSettings(),
-        buffer_class: Type[BaseBuffer] = BaseBuffer,
+        done_optimizer_settings: OptimizerSettings = OptimizerSettings(
+            loss_class=T.nn.BCELoss()
+        ),
+        buffer_class: Type[BaseBuffer] = ReplayBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         action_explorer_class: Type[BaseExplorer] = BaseExplorer,
         explorer_settings: ExplorerSettings = ExplorerSettings(),
@@ -119,38 +121,32 @@ class DynaQ(BaseAgent):
 
     def _fit_model_env(self, batch_size: int, epochs: int = 1) -> None:
         for _ in range(epochs):
-            trajectories = self.buffer.sample(batch_size)
-            predictions = self.env_model.observation_fn(
-                trajectories.observations, trajectories.actions
-            )
+            trajectories = self.buffer.sample(batch_size, dtype="torch")
             obs_update_log = self.obs_updater(
                 model=self.env_model.observation_fn,
-                predictions=predictions,
+                observations=trajectories.observations,
+                actions=trajectories.actions,
                 targets=trajectories.next_observations,
                 learning_rate=self.learning_rate,
             )
-            predictions = self.env_model.reward_fn(
-                trajectories.observations, trajectories.actions
-            )
+            self.logger.debug(f"Observation update log: {obs_update_log}")
             reward_update_log = self.reward_updater(
                 model=self.env_model.reward_fn,
-                predictions=predictions,
+                observations=trajectories.observations,
+                actions=trajectories.actions,
                 targets=trajectories.rewards,
                 learning_rate=self.learning_rate,
             )
+            self.logger.debug(f"Reward update log: {reward_update_log}")
             if self.env_model.done_fn is not None:
-                predictions = T.nn.functional.one_hot(
-                    self.env_model.done_fn(
-                        trajectories.observations, trajectories.actions
-                    ),
-                    2,
-                )
                 done_update_log = self.done_updater(
                     model=self.env_model.done_fn,
-                    predictions=predictions,
-                    targets=T.nn.functional.one_hot(trajectories.dones, 2),
+                    observations=trajectories.observations,
+                    actions=trajectories.actions,
+                    targets=trajectories.dones,
                     learning_rate=self.learning_rate,
                 )
+                self.logger.debug(f"Done update log: {done_update_log}")
 
     def _fit(
         self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1

@@ -5,20 +5,23 @@ import gym
 import numpy as np
 import torch as T
 
-from pearll.agents import A2C, CEM_RL, DDPG, DQN, ES, GA, PPO, AdamES
+from pearll.agents import A2C, CEM_RL, DDPG, DQN, ES, GA, PPO, AdamES, DynaQ
 from pearll.buffers import HERBuffer
 from pearll.common.utils import get_space_shape
 from pearll.models import ActorCritic, Critic, Dummy, EpsilonGreedyActor
-from pearll.models.actor_critics import Actor
+from pearll.models.actor_critics import Actor, Model
 from pearll.models.encoders import DictEncoder, IdentityEncoder
-from pearll.models.heads import CategoricalHead, DiscreteQHead
+from pearll.models.environment import ModelEnv
+from pearll.models.heads import BoxHead, CategoricalHead, DiscreteHead, DiscreteQHead
 from pearll.models.torsos import MLP
 from pearll.settings import (
     BufferSettings,
     ExplorerSettings,
     LoggerSettings,
+    OptimizerSettings,
     PopulationSettings,
 )
+from pearll.updaters.environment import DeepRegression
 
 
 class Sphere(gym.Env):
@@ -551,7 +554,64 @@ def adames_demo():
             tensorboard_log_path="runs/AdamES-demo", log_frequency=("step", 1)
         ),
     )
-    agent.fit(num_steps=20, batch_size=1)
+    agent.fit(num_steps=50, batch_size=1)
+
+
+def dynaq_demo():
+    env = gym.make("CartPole-v0")
+
+    encoder = IdentityEncoder()
+    torso = MLP(layer_sizes=[4, 64, 32], activation_fn=T.nn.ReLU)
+    head = DiscreteQHead(input_shape=32, output_shape=2)
+
+    actor = EpsilonGreedyActor(
+        critic_encoder=encoder, critic_torso=torso, critic_head=head
+    )
+    critic = Critic(encoder=encoder, torso=torso, head=head, create_target=True)
+    agent_model = ActorCritic(actor=actor, critic=critic)
+
+    encoder = IdentityEncoder()
+
+    obs_torso = MLP(layer_sizes=[5, 64, 32], activation_fn=T.nn.ReLU)
+    obs_head = BoxHead(input_shape=32, space_shape=4)
+    obs_model = Model(encoder, obs_torso, obs_head)
+
+    reward_torso = MLP(layer_sizes=[5, 64, 32], activation_fn=T.nn.ReLU)
+    reward_head = DiscreteHead(input_shape=32)
+    reward_model = Model(encoder, reward_torso, reward_head)
+
+    done_torso = MLP(layer_sizes=[5, 64, 32], activation_fn=T.nn.ReLU)
+    done_head = DiscreteHead(input_shape=32, dtype="bool")
+    done_model = Model(encoder, done_torso, done_head)
+
+    reset_space = gym.spaces.Box(low=-0.05, high=0.05, shape=(4,))
+    env_model = ModelEnv(
+        reward_fn=reward_model,
+        observation_fn=obs_model,
+        done_fn=done_model,
+        reset_space=reset_space,
+    )
+
+    agent = DynaQ(
+        env=env,
+        agent_model=agent_model,
+        env_model=env_model,
+        done_updater_class=DeepRegression,
+        reward_optimizer_settings=OptimizerSettings(loss_class=T.nn.BCELoss()),
+        logger_settings=LoggerSettings(
+            tensorboard_log_path="runs/DynaQ-demo", verbose=True
+        ),
+        explorer_settings=ExplorerSettings(start_steps=1000),
+    )
+    agent.fit(
+        env_steps=5000,
+        plan_steps=2000,
+        env_batch_size=32,
+        plan_batch_size=32,
+        critic_epochs=16,
+        env_train_frequency=("episode", 1),
+        plan_train_frequency=("step", 200),
+    )
 
 
 if __name__ == "__main__":
@@ -581,5 +641,7 @@ if __name__ == "__main__":
         cem_ddpg_demo()
     elif kwargs.agent.lower() == "adames":
         adames_demo()
+    elif kwargs.agent.lower() == "dynaq":
+        dynaq_demo()
     else:
         raise ValueError(f"Agent {kwargs.agent} not found")

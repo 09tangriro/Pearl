@@ -34,5 +34,9 @@ def get_mlp_size(data_shape: Union[int, Tuple[int]]) -> int:
 def concat_obs_actions(observations: Tensor, actions: Optional[Tensor]) -> T.Tensor:
     if actions is not None:
         observations, actions = to_torch(observations, actions)
+        if observations.dim() == 0:
+            observations = observations.unsqueeze(0)
+        if actions.dim() == 0:
+            actions = actions.unsqueeze(0)
         return T.cat([observations, actions], dim=-1)
     return to_torch(observations)
