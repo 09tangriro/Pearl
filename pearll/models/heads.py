@@ -408,6 +408,7 @@ class MultiDiscreteHead(BaseEnvHead):
     :param space_shape: the output shape of the network, can be the tuple shape or simplified integer output size
     :param network_type: the type of network used
     :param activation_fn: the activation function after each layer
+    :param output_map: optional mapping of the network output to a different output space
     :param dtype: optional conversion of network output to dtype
     """
 
