@@ -18,5 +18,5 @@ class MLP(T.nn.Module):
                 layers += [activation_fn()]
         self.model = T.nn.Sequential(*layers)
 
-    def forward(self, inputs: Tensor):
+    def forward(self, inputs: Tensor) -> T.Tensor:
         return self.model(inputs)

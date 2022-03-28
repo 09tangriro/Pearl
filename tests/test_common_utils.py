@@ -22,6 +22,8 @@ mixed_data = (np.zeros(shape=(2, 2)), T.zeros(3, 3))
 one_numpy = np.zeros(shape=(2, 2))
 one_torch = T.zeros(2, 2)
 zero_dim_numpy = np.array(1)
+int_number = 1
+float_number = 1.0
 
 
 @pytest.mark.parametrize("input", [numpy_data, torch_data, mixed_data])
@@ -34,6 +36,13 @@ def test_to_torch(input):
 def test_zero_dim_to_torch():
     actual_output = to_torch(zero_dim_numpy)
     expected_output = T.tensor(1)
+    assert T.equal(actual_output, expected_output)
+
+
+@pytest.mark.parametrize("input", [int_number, float_number])
+def test_number_to_torch(input):
+    actual_output = to_torch(input)
+    expected_output = T.tensor(input)
     assert T.equal(actual_output, expected_output)
 
 

@@ -1,6 +1,7 @@
 import copy
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Type, Union
+from functools import partial
+from typing import Callable, List, Optional, Type
 
 import numpy as np
 import torch as T
@@ -146,10 +147,12 @@ class CEM_RL(BaseAgent):
         self.critic_optimizer_settings = critic_optimizer_settings
         self.value_coeff = value_coeff
         self.td_gamma = td_gamma
-        self.selection_operator = selection_operator
-        self.selection_settings = selection_settings.filter_none()
-        self.crossover_operator = crossover_operator
-        self.crossover_settings = {"population_shape": self.model.numpy_actors().shape}
+        self.selection_operator = partial(
+            selection_operator, **selection_settings.filter_none()
+        )
+        self.crossover_operator = partial(
+            crossover_operator, population_shape=self.model.numpy_actors().shape
+        )
 
     def _fit(self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1):
         critic_losses = np.zeros(critic_epochs)
@@ -217,8 +220,6 @@ class CEM_RL(BaseAgent):
                 rewards=rewards,
                 selection_operator=self.selection_operator,
                 crossover_operator=self.crossover_operator,
-                selection_settings=self.selection_settings,
-                crossover_settings=self.crossover_settings,
                 elitism=0,
             )
             divergences[i] = actor_log.divergence

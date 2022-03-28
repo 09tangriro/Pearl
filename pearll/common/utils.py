@@ -47,7 +47,7 @@ def to_torch(*data, **kwargs) -> Union[Tuple[T.Tensor], T.Tensor]:
             else:
                 result[i] = T.Tensor(el).to(device)
         else:
-            return T.Tensor(el).to(device)
+            result[i] = T.tensor(el, device=device)
     if len(data) == 1:
         return result[0]
     else:

@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Callable, List, Optional, Type
 
 import numpy as np
@@ -107,12 +108,15 @@ class GA(BaseAgent):
 
         self.updater = updater_class(self.model)
 
-        self.selection_operator = selection_operator
-        self.selection_settings = selection_settings.filter_none()
-        self.crossover_operator = crossover_operator
-        self.crossover_settings = crossover_settings.filter_none()
-        self.mutation_operator = mutation_operator
-        self.mutation_settings = mutation_settings.filter_none()
+        self.selection_operator = partial(
+            selection_operator, **selection_settings.filter_none()
+        )
+        self.crossover_operator = partial(
+            crossover_operator, **crossover_settings.filter_none()
+        )
+        self.mutation_operator = partial(
+            mutation_operator, **mutation_settings.filter_none()
+        )
         self.elitism = elitism
 
     def _fit(
@@ -132,9 +136,6 @@ class GA(BaseAgent):
                 selection_operator=self.selection_operator,
                 crossover_operator=self.crossover_operator,
                 mutation_operator=self.mutation_operator,
-                selection_settings=self.selection_settings,
-                crossover_settings=self.crossover_settings,
-                mutation_settings=self.mutation_settings,
                 elitism=self.elitism,
             )
             divergences[i] = log.divergence

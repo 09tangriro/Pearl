@@ -5,7 +5,7 @@ from typing import Optional, Tuple
 import numpy as np
 
 
-def fit_gaussian(parents: np.ndarray, population_shape: Tuple[int, ...]):
+def fit_gaussian(parents: np.ndarray, population_shape: Tuple[int, ...]) -> np.ndarray:
     """
     Generates a new population given selected parents fitted to a Gaussian distribution.
 

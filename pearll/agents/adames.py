@@ -1,8 +1,8 @@
 import warnings
-from typing import Callable, List, Optional, Type, Union
+from functools import partial
+from typing import Callable, List, Optional, Type
 
 import numpy as np
-import torch as T
 from gym.vector.vector_env import VectorEnv
 from sklearn.preprocessing import scale
 
@@ -105,8 +105,11 @@ class AdamES(BaseAgent):
         self.momentum_weight = momentum_weight
         self.damping_weight = damping_weight
         self.updater = updater_class(model=self.model)
-        self.mutation_operator = mutation_operator
-        self.mutation_settings = mutation_settings.filter_none()
+        self.mutation_operator = (
+            None
+            if mutation_operator is None
+            else partial(mutation_operator, **mutation_settings.filter_none())
+        )
         self.m = 0
         self.v = 0
         self.adam_step = 1
@@ -143,7 +146,6 @@ class AdamES(BaseAgent):
                 learning_rate=self.learning_rate,
                 optimization_direction=optimization_direction,
                 mutation_operator=self.mutation_operator,
-                mutation_settings=self.mutation_settings,
             )
             divergences[i] = log.divergence
             entropies[i] = log.entropy

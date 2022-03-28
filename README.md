@@ -11,7 +11,8 @@ The **P**arallel **E**volutionary **a**nd **R**einforcement **L**earning **L**ib
 ## Main Features
 | **Features**                      | **Pearl** |
 | ---------------------------       | ----------------------|
-| RL algorithms (e.g. Actor Critic) | :heavy_check_mark: |
+| Model Free RL algorithms (e.g. Actor Critic) | :heavy_check_mark: |
+| Model Based RL algorithms (e.g. Dyna-Q) | :heavy_check_mark: |
 | EC algorithms (e.g. Genetic Algorithm)   | :heavy_check_mark: |
 | Hybrid algorithms (e.g. CEM-DDPG) | :heavy_check_mark: |
 | Multi-agent suppport              | :heavy_check_mark: |
