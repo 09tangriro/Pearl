@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from mimetypes import types_map
 from typing import Any, Optional, Tuple, Type, Union
 
 import torch as T
