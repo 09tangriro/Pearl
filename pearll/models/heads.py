@@ -361,6 +361,8 @@ class BoxHead(BaseEnvHead):
         out = self.model(input)
         if self.dtype is not None:
             out = out.type(self.dtype)
+        if out.squeeze().dim() == 0:
+            return out.squeeze().item()
         return out.squeeze()
 
 

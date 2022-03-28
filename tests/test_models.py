@@ -621,7 +621,7 @@ def test_model_env():
     )
     assert not done
     assert observation_space.contains(next_obs)
-    assert reward_space.contains(reward)
+    assert reward_space.contains(np.array(reward))
 
     # Test 2: Multi discrete observation space.
     observation_space = gym.spaces.MultiDiscrete([2, 3])

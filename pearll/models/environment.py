@@ -39,8 +39,7 @@ class ModelEnv(Env):
         next_observation = self.observation_fn(observation, action)
         reward = self.reward_fn(observation, action)
         done = False if self.done_fn is None else self.done_fn(observation, action)
-        next_observation, reward, done = utils.to_numpy(next_observation, reward, done)
-        return next_observation, reward, done, {}
+        return utils.to_numpy(next_observation), reward, done, {}
 
     def reset(self) -> Any:
         """
