@@ -9,7 +9,7 @@ from pearll.buffers import BaseBuffer, ReplayBuffer
 from pearll.callbacks.base_callback import BaseCallback
 from pearll.common import utils
 from pearll.common.enumerations import FrequencyType
-from pearll.common.type_aliases import Log, Observation
+from pearll.common.type_aliases import Log, Observation, Trajectories
 from pearll.explorers.base_explorer import BaseExplorer
 from pearll.models import ModelEnv
 from pearll.models.actor_critics import ActorCritic
@@ -27,6 +27,32 @@ from pearll.updaters.environment import BaseDeepUpdater, DeepRegression
 
 
 class DynaQ(BaseAgent):
+    """
+    Dyna-Q model based RL algorithm.
+
+    :param env: the gym-like environment to be used
+    :param agent_model: the agent model to be used
+    :param env_model: the environment model to be used
+    :param td_gamma: trajectory discount factor
+    :param agent_updater_class: the updater class for the agent critic
+    :param agent_optimizer_settings: the settings for the agent updater
+    :param obs_updater_class: the updater class for the observation function in the environment model
+    :param obs_optimizer_settings: the settings for the observation updater
+    :param reward_updater_class: the updater class for the reward function in the environment model
+    :param reward_optimizer_settings: the settings for the reward updater
+    :param done_updater_class: the updater class for the done function in the environment model
+    :param done_optimizer_settings: the settings for the done updater
+    :param buffer_class: the buffer class for storing and sampling trajectories
+    :param buffer_settings: settings for the buffer
+    :param action_explorer_class: the explorer class for random search at beginning of training and
+        adding noise to actions
+    :param explorer settings: settings for the action explorer
+    :param callbacks: an optional list of callbacks (e.g. if you want to save the model)
+    :param callback_settings: settings for callbacks
+    :param logger_settings: settings for the logger
+    :param misc_settings: settings for miscellaneous parameters
+    """
+
     def __init__(
         self,
         env: Env,
@@ -46,7 +72,7 @@ class DynaQ(BaseAgent):
         buffer_class: Type[BaseBuffer] = ReplayBuffer,
         buffer_settings: BufferSettings = BufferSettings(),
         action_explorer_class: Type[BaseExplorer] = BaseExplorer,
-        explorer_settings: ExplorerSettings = ExplorerSettings(),
+        explorer_settings: ExplorerSettings = ExplorerSettings(start_steps=100),
         callbacks: Optional[List[Type[BaseCallback]]] = None,
         callback_settings: Optional[List[Settings]] = None,
         logger_settings: LoggerSettings = LoggerSettings(),
@@ -109,10 +135,12 @@ class DynaQ(BaseAgent):
             self.buffer.add_trajectory(
                 observation, action, reward, next_observation, done
             )
+            self.logger.debug(
+                Trajectories(observation, action, reward, next_observation, done)
+            )
             observation = next_observation
 
-            # If all environment episodes are done, reset and check if we should dump the log
-            if self.logger.check_episode_done(done):
+            if done:
                 observation = self.env_model.reset()
                 self.model_episode += 1
             self.model_step += 1
@@ -120,7 +148,16 @@ class DynaQ(BaseAgent):
         return observation
 
     def _fit_model_env(self, batch_size: int, epochs: int = 1) -> None:
-        for _ in range(epochs):
+        """
+        Fit the model environment
+
+        :param batch_size: the batch size to use
+        :param epochs: how many epochs to fit for
+        """
+        obs_loss = np.zeros(epochs)
+        reward_loss = np.zeros(epochs)
+        done_loss = np.zeros(epochs)
+        for i in range(epochs):
             trajectories = self.buffer.sample(batch_size, dtype="torch")
             obs_update_log = self.obs_updater(
                 model=self.env_model.observation_fn,
@@ -129,7 +166,7 @@ class DynaQ(BaseAgent):
                 targets=trajectories.next_observations,
                 learning_rate=self.learning_rate,
             )
-            self.logger.debug(f"Observation update log: {obs_update_log}")
+            obs_loss[i] = obs_update_log.loss
             reward_update_log = self.reward_updater(
                 model=self.env_model.reward_fn,
                 observations=trajectories.observations,
@@ -137,7 +174,7 @@ class DynaQ(BaseAgent):
                 targets=trajectories.rewards,
                 learning_rate=self.learning_rate,
             )
-            self.logger.debug(f"Reward update log: {reward_update_log}")
+            reward_loss[i] = reward_update_log.loss
             if self.env_model.done_fn is not None:
                 done_update_log = self.done_updater(
                     model=self.env_model.done_fn,
@@ -146,7 +183,12 @@ class DynaQ(BaseAgent):
                     targets=trajectories.dones,
                     learning_rate=self.learning_rate,
                 )
-                self.logger.debug(f"Done update log: {done_update_log}")
+                done_loss[i] = done_update_log.loss
+
+        self.logger.debug(f"obs_loss: {obs_loss.mean()}")
+        self.logger.debug(f"reward_loss: {reward_loss.mean()}")
+        if self.env_model.done_fn is not None:
+            self.logger.debug(f"done_loss: {done_loss.mean()}")
 
     def _fit(
         self, batch_size: int, actor_epochs: int = 1, critic_epochs: int = 1
@@ -192,7 +234,31 @@ class DynaQ(BaseAgent):
         env_epochs: int = 1,
         env_train_frequency: Tuple[str, int] = ("step", 1),
         plan_train_frequency: Tuple[str, int] = ("step", 1),
+        no_model_steps: int = 0,
     ) -> None:
+        """
+        Train the agent in the environment
+
+        1. Collect samples in the real environment.
+        2. Train the model environment on samples collected.
+        3. Collect samples in the model environment.
+        4. Train the agent on samples collected in both environments.
+
+        :param env_steps: total number of real environment steps to train over
+        :param plan_steps: number of model environment steps to run each planning phase
+        :param env_batch_size: minibatch size for the model environment to make a single gradient descent step on
+        :param plan_batch_size: minibatch size for the agent to make a single gradient descent step on
+        :param actor_epochs: how many times to update the actor network in each training step
+        :param critic_epochs: how many times to update the critic network in each training step
+        :param env_epochs: how many times to update the model environment in each training step
+        :param env_train_frequency: the number of steps or episodes to run in the real environment before running a model environment training step.
+            To run every n episodes, use `("episode", n)`.
+            To run every n steps, use `("step", n)`.
+        :param plan_train_frequency: the number of steps or episodes to run in the model environment before running an agent training step.
+            To run every n episodes, use `("episode", n)`.
+            To run every n steps, use `("step", n)`.
+        :param no_model_steps: number of steps to run without collecting trajectories from the model environment.
+        """
         env_train_frequency = (
             FrequencyType(env_train_frequency[0].lower()),
             env_train_frequency[1],
@@ -210,6 +276,7 @@ class DynaQ(BaseAgent):
 
         observation = self.env.reset()
         for _ in range(env_steps):
+            self.logger.debug("REAL ENVIRONMENT")
             # Step for number of steps specified
             if env_train_frequency[0] == FrequencyType.STEP:
                 observation = self.step_env(
@@ -230,23 +297,7 @@ class DynaQ(BaseAgent):
             # Update the environment model
             self._fit_model_env(batch_size=env_batch_size, epochs=env_epochs)
 
-            # Plan for number of steps specified
-            model_obs = self.env_model.reset()
-            for _ in range(plan_steps):
-                # Step for number of steps specified
-                if plan_train_frequency[0] == FrequencyType.STEP:
-                    model_obs = self.step_model_env(
-                        observation=model_obs, num_steps=plan_train_frequency[1]
-                    )
-                # Step for number of episodes specified
-                elif plan_train_frequency[0] == FrequencyType.EPISODE:
-                    start_episode = self.model_episode
-                    end_episode = start_episode + plan_train_frequency[1]
-                    while self.model_episode != end_episode:
-                        observation = self.step_model_env(observation=observation)
-                    if self.model_step >= plan_steps:
-                        break
-
+            if self.step < no_model_steps:
                 # Update the agent model
                 self.model.train()
                 train_log = self._fit(
@@ -256,5 +307,33 @@ class DynaQ(BaseAgent):
                 )
                 self.model.update_global()
                 self.logger.add_train_log(train_log)
+            else:
+                self.logger.debug("MODEL ENVIRONMENT")
+                # Plan for number of steps specified
+                model_obs = self.env_model.reset()
+                for _ in range(plan_steps):
+                    # Step for number of steps specified
+                    if plan_train_frequency[0] == FrequencyType.STEP:
+                        model_obs = self.step_model_env(
+                            observation=model_obs, num_steps=plan_train_frequency[1]
+                        )
+                    # Step for number of episodes specified
+                    elif plan_train_frequency[0] == FrequencyType.EPISODE:
+                        start_episode = self.model_episode
+                        end_episode = start_episode + plan_train_frequency[1]
+                        while self.model_episode != end_episode:
+                            observation = self.step_model_env(observation=observation)
+                        if self.model_step >= plan_steps:
+                            break
 
-            self.buffer.reset()
+                    # Update the agent model
+                    self.model.train()
+                    train_log = self._fit(
+                        batch_size=plan_batch_size,
+                        actor_epochs=actor_epochs,
+                        critic_epochs=critic_epochs,
+                    )
+                    self.model.update_global()
+                    self.logger.add_train_log(train_log)
+
+                self.buffer.reset()

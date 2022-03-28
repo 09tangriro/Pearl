@@ -570,10 +570,20 @@ def dynaq_demo():
     critic = Critic(encoder=encoder, torso=torso, head=head, create_target=True)
     agent_model = ActorCritic(actor=actor, critic=critic)
 
+    class CartPoleObsActivation(T.nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.tanh = T.nn.Tanh()
+
+        def forward(self, input: T.Tensor) -> T.Tensor:
+            return 4 * self.tanh(input)
+
     encoder = IdentityEncoder()
 
     obs_torso = MLP(layer_sizes=[5, 64, 32], activation_fn=T.nn.ReLU)
-    obs_head = BoxHead(input_shape=32, space_shape=4)
+    obs_head = BoxHead(
+        input_shape=32, space_shape=4, activation_fn=CartPoleObsActivation
+    )
     obs_model = Model(encoder, obs_torso, obs_head)
 
     reward_torso = MLP(layer_sizes=[5, 64, 32], activation_fn=T.nn.ReLU)
@@ -601,16 +611,17 @@ def dynaq_demo():
         logger_settings=LoggerSettings(
             tensorboard_log_path="runs/DynaQ-demo", verbose=True
         ),
-        explorer_settings=ExplorerSettings(start_steps=1000),
     )
     agent.fit(
         env_steps=5000,
         plan_steps=2000,
-        env_batch_size=32,
+        env_batch_size=16,
         plan_batch_size=32,
         critic_epochs=16,
+        env_epochs=32,
         env_train_frequency=("episode", 1),
         plan_train_frequency=("step", 200),
+        no_model_steps=0,
     )
 
 
