@@ -132,14 +132,14 @@ def test_env_head(head_class):
 
     # Test 2: DiscreteHead
     elif head_class == DiscreteHead:
-        head = head_class(input_shape=5)
+        head = head_class(input_shape=5, space_size=2)
         out = head(input)
         assert isinstance(out, int)
 
         network_output = super(head_class, head).forward(input)
         assert isinstance(network_output, T.Tensor)
 
-        head = head_class(input_shape=5, dtype="bool")
+        head = head_class(input_shape=5, space_size=2, dtype="bool")
         out = head(input)
         assert isinstance(out, bool)
 
@@ -631,7 +631,7 @@ def test_model_env():
     encoder = IdentityEncoder()
     torso = MLP([3, 4])
     reward_head = DiscreteHead(
-        input_shape=4, activation_fn=T.nn.Softmax
+        input_shape=4, space_size=2, activation_fn=T.nn.Softmax
     )  # Squish output between 0 and 1
     observation_head = MultiDiscreteHead(
         input_shape=4,

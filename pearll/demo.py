@@ -587,11 +587,11 @@ def dynaq_demo():
     obs_model = Model(encoder, obs_torso, obs_head)
 
     reward_torso = MLP(layer_sizes=[5, 64, 32], activation_fn=T.nn.ReLU)
-    reward_head = DiscreteHead(input_shape=32)
+    reward_head = DiscreteHead(input_shape=32, space_size=2)
     reward_model = Model(encoder, reward_torso, reward_head)
 
     done_torso = MLP(layer_sizes=[5, 64, 32], activation_fn=T.nn.ReLU)
-    done_head = DiscreteHead(input_shape=32, dtype="bool")
+    done_head = DiscreteHead(input_shape=32, space_size=2, dtype="bool")
     done_model = Model(encoder, done_torso, done_head)
 
     reset_space = gym.spaces.Box(low=-0.05, high=0.05, shape=(4,))

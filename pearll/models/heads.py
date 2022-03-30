@@ -370,6 +370,7 @@ class DiscreteHead(BaseEnvHead):
     Use this head to model a Discrete gym environment.
 
     :param input_shape: the input shape to the head network, can be the tuple shape or simplified integer input size
+    :param space_size: the output size of the network
     :param network_type: the type of network used
     :param activation_fn: the activation function after each layer
     :param dtype: optional conversion of network output to dtype
@@ -378,13 +379,14 @@ class DiscreteHead(BaseEnvHead):
     def __init__(
         self,
         input_shape: Union[int, Tuple[int]],
+        space_size: int,
         network_type: str = "mlp",
         activation_fn: Optional[Type[T.nn.Module]] = T.nn.Softmax,
         dtype: Optional[dict] = None,
     ) -> None:
         super().__init__(
             input_shape=input_shape,
-            output_shape=2,
+            output_shape=space_size,
             network_type=network_type,
             activation_fn=activation_fn,
             dtype=dtype,
