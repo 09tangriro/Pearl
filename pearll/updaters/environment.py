@@ -38,7 +38,8 @@ class BaseDeepUpdater(ABC):
     def __call__(
         self,
         model: Model,
-        predictions: T.Tensor,
+        observations: Tensor,
+        actions: Tensor,
         targets: T.Tensor,
         learning_rate: float = 0.001,
     ) -> UpdaterLog:
@@ -46,7 +47,8 @@ class BaseDeepUpdater(ABC):
         Run an optimization step
 
         :param model: The model to update (observation, reward or done models)
-        :param predictions: The predictions to update
+        :param observations: The input observations
+        :param actions: The input actions
         :param targets: The targets to regress against
         :param learning_rate: The learning rate to use
         """
@@ -83,7 +85,8 @@ class DeepRegression(BaseDeepUpdater):
         Run an optimization step
 
         :param model: The model to update (observation, reward or done models)
-        :param predictions: The predictions to update
+        :param observations: The input observations
+        :param actions: The input actions
         :param targets: The targets to regress against
         :param learning_rate: The learning rate to use
         :param mode: The mode to use, defaults to auto. If set to anything else, no processing
