@@ -5,7 +5,7 @@ import torch as T
 from torch.distributions import kl_divergence
 from torch.nn.parameter import Parameter
 
-from pearll.common.type_aliases import Tensor, UpdaterLog
+from pearll.common.type_aliases import UpdaterLog
 from pearll.models.actor_critics import Actor, ActorCritic
 
 
@@ -44,7 +44,7 @@ class BaseActorUpdater(ABC):
         actor_parameters: Iterator[Parameter],
     ) -> None:
         """Run an optimization step"""
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
         loss.backward()
         if self.max_grad > 0:
             T.nn.utils.clip_grad_norm_(actor_parameters, self.max_grad)
@@ -74,7 +74,7 @@ class PolicyGradient(BaseActorUpdater):
     def __call__(
         self,
         model: Union[ActorCritic, Actor],
-        observations: Tensor,
+        observations: T.Tensor,
         actions: T.Tensor,
         advantages: T.Tensor,
         learning_rate: float = 1e-3,
@@ -132,7 +132,7 @@ class ProximalPolicyClip(BaseActorUpdater):
     def __call__(
         self,
         model: Union[ActorCritic, Actor],
-        observations: Tensor,
+        observations: T.Tensor,
         actions: T.Tensor,
         advantages: T.Tensor,
         old_log_probs: T.Tensor,
@@ -199,7 +199,7 @@ class DeterministicPolicyGradient(BaseActorUpdater):
     def __call__(
         self,
         model: ActorCritic,
-        observations: Tensor,
+        observations: T.Tensor,
         learning_rate: float = 1e-3,
     ) -> UpdaterLog:
         """
@@ -243,7 +243,7 @@ class SoftPolicyGradient(BaseActorUpdater):
     def __call__(
         self,
         model: ActorCritic,
-        observations: Tensor,
+        observations: T.Tensor,
         learning_rate: float = 1e-3,
         entropy_coeff: float = 0.01,
     ) -> UpdaterLog:
