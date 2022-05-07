@@ -173,7 +173,7 @@ class CEM_RL(BaseAgent):
                 )
                 target_q_values = return_estimators.TD_zero(
                     trajectories.rewards,
-                    to_numpy(next_q_values),
+                    next_q_values,
                     trajectories.dones,
                     gamma=self.td_gamma,
                 )

@@ -7,7 +7,6 @@ from gym import Env
 from pearll.agents import BaseAgent
 from pearll.buffers import BaseBuffer, ReplayBuffer
 from pearll.callbacks.base_callback import BaseCallback
-from pearll.common import utils
 from pearll.common.enumerations import FrequencyType
 from pearll.common.type_aliases import Log, Observation, Trajectories
 from pearll.explorers.base_explorer import BaseExplorer
@@ -158,7 +157,7 @@ class DynaQ(BaseAgent):
         reward_loss = np.zeros(epochs)
         done_loss = np.zeros(epochs)
         for i in range(epochs):
-            trajectories = self.buffer.sample(batch_size, dtype="torch")
+            trajectories = self.buffer.sample(batch_size)
             obs_update_log = self.obs_updater(
                 model=self.env_model.observation_fn,
                 observations=trajectories.observations,
@@ -201,8 +200,7 @@ class DynaQ(BaseAgent):
                 next_q_values = self.model.forward_target_critics(
                     trajectories.next_observations
                 )
-                next_q_values = utils.to_numpy(next_q_values.max(dim=-1)[0])
-                next_q_values = next_q_values[..., np.newaxis]
+                next_q_values = T.unsqueeze(next_q_values.max(dim=-1)[0], dim=-1)
                 target_q_values = return_estimators.TD_zero(
                     trajectories.rewards,
                     next_q_values,

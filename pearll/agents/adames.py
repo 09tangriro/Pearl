@@ -131,7 +131,7 @@ class AdamES(BaseAgent):
         divergences = np.zeros(actor_epochs)
         entropies = np.zeros(actor_epochs)
 
-        trajectories = self.buffer.all(flatten_env=False)
+        trajectories = self.buffer.all(dtype="numpy")
         rewards = trajectories.rewards.squeeze()
         rewards = filter_rewards(rewards, trajectories.dones.squeeze())
         if rewards.ndim > 1:
