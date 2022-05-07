@@ -4,8 +4,7 @@ from typing import Iterator, Type, Union
 import torch as T
 from torch.nn.parameter import Parameter
 
-from pearll.common.type_aliases import Tensor, UpdaterLog
-from pearll.common.utils import to_torch
+from pearll.common.type_aliases import UpdaterLog
 from pearll.models.actor_critics import ActorCritic, Critic
 
 
@@ -47,7 +46,7 @@ class BaseCriticUpdater(ABC):
         critic_parameters: Iterator[Parameter],
     ) -> None:
         """Run an optimization step"""
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
         loss.backward()
         if self.max_grad > 0:
             T.nn.utils.clip_grad_norm_(critic_parameters, self.max_grad)
@@ -80,7 +79,7 @@ class ValueRegression(BaseCriticUpdater):
     def __call__(
         self,
         model: Union[Critic, ActorCritic],
-        observations: Tensor,
+        observations: T.Tensor,
         returns: T.Tensor,
         learning_rate: float = 0.001,
         loss_coeff: float = 1,
@@ -106,7 +105,7 @@ class ValueRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return UpdaterLog(loss=loss.detach().item())
+        return UpdaterLog(loss=loss.detach())
 
 
 class ContinuousQRegression(BaseCriticUpdater):
@@ -131,8 +130,8 @@ class ContinuousQRegression(BaseCriticUpdater):
     def __call__(
         self,
         model: Union[Critic, ActorCritic],
-        observations: Tensor,
-        actions: Tensor,
+        observations: T.Tensor,
+        actions: T.Tensor,
         returns: T.Tensor,
         learning_rate: float = 0.001,
         loss_coeff: float = 1,
@@ -159,7 +158,7 @@ class ContinuousQRegression(BaseCriticUpdater):
 
         self.run_optimizer(optimizer, loss, critic_parameters)
 
-        return UpdaterLog(loss=loss.detach().item())
+        return UpdaterLog(loss=loss.detach())
 
 
 class DiscreteQRegression(BaseCriticUpdater):
@@ -184,9 +183,9 @@ class DiscreteQRegression(BaseCriticUpdater):
     def __call__(
         self,
         model: Union[Critic, ActorCritic],
-        observations: Tensor,
+        observations: T.Tensor,
         returns: T.Tensor,
-        actions_index: Tensor,
+        actions_index: T.Tensor,
         learning_rate: float = 0.001,
         loss_coeff: float = 1,
     ) -> UpdaterLog:
@@ -208,7 +207,6 @@ class DiscreteQRegression(BaseCriticUpdater):
             q_values = model(observations)
         else:
             q_values = model.forward_critics(observations)
-        actions_index = to_torch(actions_index)
         q_values = T.gather(q_values, dim=-1, index=actions_index.long())
 
         loss = loss_coeff * self.loss_class(q_values, returns)
