@@ -37,17 +37,11 @@ def to_torch(*data, **kwargs) -> Union[Tuple[T.Tensor], T.Tensor]:
     device = get_device(kwargs.pop("device", "auto"))
     result = [None] * len(data)
     for i, el in enumerate(data):
-        if isinstance(el, T.Tensor):
-            result[i] = el.to(device)
-        elif isinstance(el, np.ndarray):
-            # For some reason T.Tensor(el) changes the value if array has 0 dimension??
-            # e.g. if el = np.array(4)
-            if el.ndim == 0:
-                result[i] = T.tensor(el, device=device)
-            else:
-                result[i] = T.Tensor(el).to(device)
+        if isinstance(el, np.ndarray):
+            result[i] = T.from_numpy(el).to(device, non_blocking=True)
         else:
-            result[i] = T.tensor(el, device=device)
+            result[i] = T.as_tensor(el).to(device, non_blocking=True)
+
     if len(data) == 1:
         return result[0]
     else:
