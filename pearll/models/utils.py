@@ -38,5 +38,5 @@ def concat_obs_actions(observations: Tensor, actions: Optional[Tensor]) -> T.Ten
             observations = observations.unsqueeze(0)
         if actions.dim() == 0:
             actions = actions.unsqueeze(0)
-        return T.cat([observations, actions], dim=-1)
-    return to_torch(observations)
+        return T.cat([observations, actions], dim=-1).float()
+    return to_torch(observations).float()
