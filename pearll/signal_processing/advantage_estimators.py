@@ -2,11 +2,9 @@
 
 from typing import Tuple
 
-import numpy as np
+import torch as T
 
-from pearll.common.enumerations import TrajectoryType
 from pearll.common.type_aliases import Tensor
-from pearll.common.utils import to_numpy, to_torch
 
 
 def generalized_advantage_estimate(
@@ -16,7 +14,6 @@ def generalized_advantage_estimate(
     dones: Tensor,
     gamma: float = 0.99,
     gae_lambda: float = 0.95,
-    dtype: str = "torch",
 ) -> Tuple[Tensor, Tensor]:
     """
     Generalized advantage estimate of a trajectory: https://towardsdatascience.com/generalized-advantage-estimate-maths-and-code-b5d5bd3ce737
@@ -30,14 +27,11 @@ def generalized_advantage_estimate(
     :return advantage: the advantage of taking actions in the environment
     :return value: the value of taking actions in the environment
     """
-    rewards, old_values, new_values, dones = to_numpy(
-        rewards, old_values, new_values, dones
-    )
     dones = 1 - dones
     batch_size = rewards.shape[0]
 
     advantage = (
-        np.zeros(batch_size + 1) if rewards.ndim == 1 else np.zeros((batch_size + 1, 1))
+        T.zeros(batch_size + 1) if rewards.ndim == 1 else T.zeros((batch_size + 1, 1))
     )
 
     for t in reversed(range(batch_size)):
@@ -53,11 +47,4 @@ def generalized_advantage_estimate(
         value_target.shape == old_values.shape
     ), f"The returns' shape should be {old_values.shape}, instead it is {value_target.shape}."
 
-    if TrajectoryType(dtype.lower()) == TrajectoryType.TORCH:
-        return to_torch(advantage[:batch_size], value_target)
-    elif TrajectoryType(dtype.lower()) == TrajectoryType.NUMPY:
-        return advantage[:batch_size], value_target
-    else:
-        raise ValueError(
-            f"`dtype` flag should be 'torch' or 'numpy', but received {dtype}"
-        )
+    return advantage[:batch_size], value_target

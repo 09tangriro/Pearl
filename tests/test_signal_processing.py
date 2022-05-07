@@ -52,60 +52,56 @@ def test_kl_divergence(kl_divergence, dtype):
     assert T.allclose(full_kl_div, mean_approx_kl_div, rtol=5e-3)
 
 
-@pytest.mark.parametrize("dtype", ["torch", "numpy"])
-def test_TD_lambda(dtype):
-    rewards = np.ones(shape=(2, 3))
-    last_values = np.ones(shape=(2,))
-    last_dones = np.zeros(shape=(2,))
+def test_TD_lambda():
+    rewards = T.ones(size=(2, 3))
+    last_values = T.ones(size=(2,))
+    last_dones = T.zeros(size=(2,))
 
-    actual_returns = TD_lambda(rewards, last_values, last_dones, gamma=1, dtype=dtype)
-    expected_returns = np.array([4, 4], dtype=np.float32)
+    actual_returns = TD_lambda(rewards, last_values, last_dones, gamma=1)
+    expected_returns = T.tensor([4, 4], dtype=T.float32)
 
-    np.equal(actual_returns, expected_returns)
-
-
-@pytest.mark.parametrize("dtype", ["torch", "numpy"])
-def test_TD_zero(dtype):
-    rewards = np.ones(shape=(3,))
-    next_values = np.ones(shape=(3,))
-    dones = np.zeros(shape=(3,))
-
-    actual_returns = TD_zero(rewards, next_values, dones, gamma=1, dtype=dtype)
-    expected_returns = np.array([2, 2, 2], dtype=np.float32)
-
-    np.equal(actual_returns, expected_returns)
+    T.equal(actual_returns, expected_returns)
 
 
-@pytest.mark.parametrize("dtype", ["torch", "numpy"])
-def test_generalized_advantage_estimate(dtype):
-    rewards = np.ones(shape=(3,))
-    old_values = np.ones(shape=(3,))
-    new_values = np.ones(shape=(3,))
-    dones = np.zeros(shape=(3,))
+def test_TD_zero():
+    rewards = T.ones(size=(3,))
+    next_values = T.ones(size=(3,))
+    dones = T.zeros(size=(3,))
+
+    actual_returns = TD_zero(rewards, next_values, dones, gamma=1)
+    expected_returns = T.tensor([2, 2, 2], dtype=T.float32)
+
+    T.equal(actual_returns, expected_returns)
+
+
+def test_generalized_advantage_estimate():
+    rewards = T.ones(size=(3,))
+    old_values = T.ones(size=(3,))
+    new_values = T.ones(size=(3,))
+    dones = T.zeros(size=(3,))
 
     actual_advantages, actual_returns = generalized_advantage_estimate(
-        rewards, old_values, new_values, dones, gamma=1, gae_lambda=1, dtype=dtype
+        rewards, old_values, new_values, dones, gamma=1, gae_lambda=1
     )
     expected_advantages, expected_returns = (
-        np.array([3, 2, 1], dtype=np.float32),
-        np.array([4, 3, 2], dtype=np.float32),
+        T.tensor([3, 2, 1], dtype=T.float32),
+        T.tensor([4, 3, 2], dtype=T.float32),
     )
 
-    np.equal(actual_advantages, expected_advantages)
-    np.equal(actual_returns, expected_returns)
+    T.equal(actual_advantages, expected_advantages)
+    T.equal(actual_returns, expected_returns)
 
 
-@pytest.mark.parametrize("dtype", ["torch", "numpy"])
-def test_soft_q_target(dtype):
-    rewards = np.ones(shape=(3,))
-    dones = np.zeros(shape=(3,))
-    q_values = np.ones(shape=(3,))
-    log_probs = np.array([-1, -1, -1], dtype=np.float32)
+def test_soft_q_target():
+    rewards = T.ones(size=(3,))
+    dones = T.zeros(size=(3,))
+    q_values = T.ones(size=(3,))
+    log_probs = T.tensor([-1, -1, -1], dtype=T.float32)
 
-    actual_target = soft_q_target(rewards, dones, q_values, log_probs, 1, 1, dtype)
-    expected_target = np.array([3, 3, 3], dtype=np.float32)
+    actual_target = soft_q_target(rewards, dones, q_values, log_probs, 1, 1)
+    expected_target = T.tensor([3, 3, 3], dtype=T.float32)
 
-    np.equal(actual_target, expected_target)
+    T.equal(actual_target, expected_target)
 
 
 def test_naive_selection():
