@@ -103,11 +103,13 @@ class BaseAgent(ABC):
             self.logger.info(f"Using seed {misc_settings.seed}")
             set_seed(misc_settings.seed, self.env)
 
+    @T.no_grad()
     def predict(self, observations: Union[Tensor, Dict[str, Tensor]]) -> T.Tensor:
         """Run the agent actor model"""
         self.model.eval()
         return self.model.predict(observations)
 
+    @T.no_grad()
     def action_distribution(
         self, observations: Union[Tensor, Dict[str, Tensor]]
     ) -> T.distributions.Distribution:
@@ -115,6 +117,7 @@ class BaseAgent(ABC):
         self.model.eval()
         return self.model.predict_distribution(observations)
 
+    @T.no_grad()
     def critic(
         self,
         observations: Union[Tensor, Dict[str, Tensor]],
