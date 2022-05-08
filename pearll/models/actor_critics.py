@@ -5,9 +5,10 @@ import numpy as np
 import torch as T
 from gym.spaces import Box, Discrete, MultiDiscrete, Space
 
+from pearll import settings
 from pearll.common.enumerations import Distribution
 from pearll.common.type_aliases import Tensor
-from pearll.common.utils import get_space_range, get_space_shape, to_numpy, to_torch
+from pearll.common.utils import get_space_range, get_space_shape, to_numpy
 from pearll.models.encoders import IdentityEncoder, MLPEncoder
 from pearll.models.heads import (
     BaseActorHead,
@@ -30,6 +31,7 @@ class Model(T.nn.Module):
         self.encoder = encoder
         self.torso = torso
         self.head = head
+        self.to(settings.DEVICE)
 
     def forward(
         self, observations: Tensor, actions: Optional[Tensor] = None
@@ -93,7 +95,7 @@ class Critic(T.nn.Module):
         :return: self
         """
         self.state = state
-        state = to_torch(state)
+        state = T.from_numpy(state)
         state_dict = {
             k: state[v[1][0] : v[1][1]].reshape(v[0])
             for k, v in zip(self.state_info.keys(), self.state_info.values())
@@ -253,7 +255,7 @@ class Dummy(Actor):
         return self.state
 
     def forward(self, observation: Tensor) -> T.Tensor:
-        return to_torch(self.state)
+        return T.from_numpy(self.state)
 
 
 class ActorCritic(T.nn.Module):

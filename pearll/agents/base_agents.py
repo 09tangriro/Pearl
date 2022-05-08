@@ -67,11 +67,15 @@ class BaseAgent(ABC):
             verbose=logger_settings.verbose,
             num_envs=env.num_envs if isinstance(env, VectorEnv) else 1,
         )
-        settings.create_globals()
-        settings.DEVICE = get_device(misc_settings.device)
-        self.logger.info(f"Using device {settings.DEVICE}")
+        settings.DEVICE = get_device(settings.DEVICE)
+        self.logger.info(
+            f"Using device {settings.DEVICE}, can be set to 'auto', 'cpu' or 'cuda'"
+        )
+        self.logger.info(
+            f"To change device, assign a new device to pearll.settings.DEVICE"
+        )
         self.env = env
-        self.model = model.to(settings.DEVICE)
+        self.model = model
         self.render = misc_settings.render
         explorer_settings = explorer_settings.filter_none()
         self.action_explorer = action_explorer_class(

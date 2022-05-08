@@ -9,12 +9,9 @@ import torch as T
 from torch.optim.optimizer import Optimizer
 
 from pearll.common.enumerations import Distribution
+from pearll.common.utils import get_device
 
-
-def create_globals():
-    """Create global variables"""
-    global DEVICE
-    DEVICE = None
+DEVICE = get_device("auto")
 
 
 @dataclass
@@ -31,11 +28,9 @@ class MiscellaneousSettings(Settings):
     Miscellaneous settings for base agent
 
     :param seed: random seed
-    :param device: device to use for computations
     :param render: whether to render the environment
     """
 
-    device: str = "auto"
     render: bool = False
     seed: Optional[int] = None
 
