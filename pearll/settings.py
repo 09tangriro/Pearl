@@ -11,6 +11,12 @@ from torch.optim.optimizer import Optimizer
 from pearll.common.enumerations import Distribution
 
 
+def create_globals():
+    """Create global variables"""
+    global DEVICE
+    DEVICE = None
+
+
 @dataclass
 class Settings:
     """Base class for settings objects"""

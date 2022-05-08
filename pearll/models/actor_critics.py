@@ -7,13 +7,7 @@ from gym.spaces import Box, Discrete, MultiDiscrete, Space
 
 from pearll.common.enumerations import Distribution
 from pearll.common.type_aliases import Tensor
-from pearll.common.utils import (
-    get_device,
-    get_space_range,
-    get_space_shape,
-    to_numpy,
-    to_torch,
-)
+from pearll.common.utils import get_space_range, get_space_shape, to_numpy, to_torch
 from pearll.models.encoders import IdentityEncoder, MLPEncoder
 from pearll.models.heads import (
     BaseActorHead,
@@ -54,7 +48,6 @@ class Critic(T.nn.Module):
     :param head: the head network
     :param create_target: whether to create a target network
     :param polyak_coeff: the polyak coefficient for the target network
-    :param device: the device to use
     """
 
     def __init__(
@@ -64,12 +57,10 @@ class Critic(T.nn.Module):
         head: BaseCriticHead,
         create_target: bool = False,
         polyak_coeff: float = 0.995,
-        device: Union[T.device, str] = "auto",
     ):
         super().__init__()
         self.polyak_coeff = polyak_coeff
-        self.device = get_device(device)
-        self.model = Model(encoder, torso, head).to(self.device)
+        self.model = Model(encoder, torso, head)
         self.state_info = {}
         self.make_state_info()
         self.state = np.concatenate(
@@ -102,7 +93,7 @@ class Critic(T.nn.Module):
         :return: self
         """
         self.state = state
-        state = to_torch(state, device=self.device)
+        state = to_torch(state)
         state_dict = {
             k: state[v[1][0] : v[1][1]].reshape(v[0])
             for k, v in zip(self.state_info.keys(), self.state_info.values())
@@ -151,7 +142,6 @@ class Actor(Critic):
     :param head: the head network
     :param create_target: whether to create a target network
     :param polyak_coeff: the polyak coefficient for the target network
-    :param device: the device to use
     """
 
     def __init__(
@@ -161,7 +151,6 @@ class Actor(Critic):
         head: BaseActorHead,
         create_target: bool = False,
         polyak_coeff: float = 0.995,
-        device: Union[T.device, str] = "auto",
     ):
         super().__init__(
             encoder=encoder,
@@ -169,7 +158,6 @@ class Actor(Critic):
             head=head,
             create_target=create_target,
             polyak_coeff=polyak_coeff,
-            device=device,
         )
 
     def action_distribution(
@@ -193,7 +181,6 @@ class EpsilonGreedyActor(Actor):
     :param min_epsilon: the minimum epsilon value allowed
     :param create_target: whether to create a target network
     :param polyak_coeff: the polyak coefficient for the target network
-    :param device: the device to use
     """
 
     def __init__(
@@ -206,7 +193,6 @@ class EpsilonGreedyActor(Actor):
         min_epsilon: float = 0,
         create_target: bool = False,
         polyak_coeff: float = 0.995,
-        device: Union[T.device, str] = "auto",
     ):
         super().__init__(
             critic_encoder,
@@ -214,7 +200,6 @@ class EpsilonGreedyActor(Actor):
             critic_head,
             create_target=create_target,
             polyak_coeff=polyak_coeff,
-            device=device,
         )
         self.epsilon = start_epsilon
         self.epsilon_decay = epsilon_decay
@@ -267,7 +252,7 @@ class Dummy(Actor):
         """Get the numpy representation of the individual"""
         return self.state
 
-    def forward(self, observation: Tensor) -> np.ndarray:
+    def forward(self, observation: Tensor) -> T.Tensor:
         return to_torch(self.state)
 
 
@@ -490,13 +475,13 @@ class ActorCritic(T.nn.Module):
         elif actions is None:
             return T.stack(
                 [
-                    critic.forward_target(obs).to(critic.device)
+                    critic.forward_target(obs)
                     for critic, obs in zip(self.critics, observations)
                 ]
             )
         return T.stack(
             [
-                critic.forward_target(obs, action).to(critic.device)
+                critic.forward_target(obs, action)
                 for critic, obs, action in zip(self.critics, observations, actions)
             ]
         )
@@ -506,10 +491,7 @@ class ActorCritic(T.nn.Module):
         if self.num_actors == 1:
             return self.actors[0].forward_target(observations)
         return T.stack(
-            [
-                actor.forward_target(obs).to(actor.device)
-                for actor, obs in zip(self.actors, observations)
-            ]
+            [actor.forward_target(obs) for actor, obs in zip(self.actors, observations)]
         )
 
     def forward_critics(
@@ -520,14 +502,11 @@ class ActorCritic(T.nn.Module):
             return self.critics[0](observations, actions)
         elif actions is None:
             return T.stack(
-                [
-                    critic(obs).to(critic.device)
-                    for critic, obs in zip(self.critics, observations)
-                ]
+                [critic(obs) for critic, obs in zip(self.critics, observations)]
             )
         return T.stack(
             [
-                critic(obs, action).to(critic.device)
+                critic(obs, action)
                 for critic, obs, action in zip(self.critics, observations, actions)
             ]
         )
@@ -536,12 +515,7 @@ class ActorCritic(T.nn.Module):
         """The default forward pass retrieves the population online actor outputs"""
         if self.num_actors == 1:
             return self.actors[0](observations)
-        return T.stack(
-            [
-                actor(obs).to(actor.device)
-                for actor, obs in zip(self.actors, observations)
-            ]
-        )
+        return T.stack([actor(obs) for actor, obs in zip(self.actors, observations)])
 
     def predict_distribution(
         self, observations: Tensor

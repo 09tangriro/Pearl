@@ -6,6 +6,8 @@ import numpy as np
 import torch as T
 from gym import Env, spaces
 
+from pearll import settings
+
 
 def get_device(device: Union[T.device, str]) -> T.device:
     """
@@ -32,15 +34,14 @@ def get_device(device: Union[T.device, str]) -> T.device:
     return device
 
 
-def to_torch(*data, **kwargs) -> Union[Tuple[T.Tensor], T.Tensor]:
+def to_torch(*data) -> Union[Tuple[T.Tensor], T.Tensor]:
     """Convert to torch tensors"""
-    device = get_device(kwargs.pop("device", "auto"))
     result = [None] * len(data)
     for i, el in enumerate(data):
         if isinstance(el, np.ndarray):
-            result[i] = T.from_numpy(el).to(device, non_blocking=True)
+            result[i] = T.from_numpy(el).to(settings.DEVICE, non_blocking=True)
         else:
-            result[i] = T.as_tensor(el).to(device, non_blocking=True)
+            result[i] = T.as_tensor(el).to(settings.DEVICE, non_blocking=True)
 
     if len(data) == 1:
         return result[0]

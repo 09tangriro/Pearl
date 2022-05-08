@@ -4,13 +4,12 @@ from typing import Union
 
 import numpy as np
 import psutil
-import torch as T
 from gym import Env
 from gym.vector import VectorEnv
 
 from pearll.common.enumerations import TrajectoryType
 from pearll.common.type_aliases import Observation, Trajectories
-from pearll.common.utils import get_device, get_space_shape, to_torch
+from pearll.common.utils import get_space_shape, to_torch
 
 
 class BaseBuffer(ABC):
@@ -19,18 +18,15 @@ class BaseBuffer(ABC):
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param device: if return torch tensors on sampling, the device to attach to
     """
 
     def __init__(
         self,
         env: Env,
         buffer_size: int,
-        device: Union[str, T.device] = "auto",
     ) -> None:
         self.env = env
         self.buffer_size = buffer_size
-        self.device = get_device(device)
         self.full = False
         self.pos = 0
 
@@ -138,7 +134,6 @@ class BaseBuffer(ABC):
                 rewards,
                 next_observations,
                 dones,
-                device=self.device,
             )
 
         return Trajectories(

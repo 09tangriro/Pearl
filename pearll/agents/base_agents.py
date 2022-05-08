@@ -6,6 +6,7 @@ import torch as T
 from gym import Env
 from gym.vector import VectorEnv
 
+from pearll import settings
 from pearll.buffers.base_buffer import BaseBuffer
 from pearll.callbacks.base_callback import BaseCallback
 from pearll.common.enumerations import FrequencyType
@@ -59,20 +60,6 @@ class BaseAgent(ABC):
         logger_settings: LoggerSettings = LoggerSettings(),
         misc_settings: MiscellaneousSettings = MiscellaneousSettings(),
     ) -> None:
-        self.env = env
-        self.model = model
-        self.render = misc_settings.render
-        explorer_settings = explorer_settings.filter_none()
-        self.action_explorer = action_explorer_class(
-            action_space=env.action_space, **explorer_settings
-        )
-        buffer_settings = buffer_settings.filter_none()
-        self.buffer = buffer_class(
-            env=env, device=misc_settings.device, **buffer_settings
-        )
-        self.step = 0
-        self.episode = 0
-        self.done = False  # Flag terminate training
         self.logger = Logger(
             tensorboard_log_path=logger_settings.tensorboard_log_path,
             file_handler_level=logger_settings.file_handler_level,
@@ -80,6 +67,21 @@ class BaseAgent(ABC):
             verbose=logger_settings.verbose,
             num_envs=env.num_envs if isinstance(env, VectorEnv) else 1,
         )
+        settings.create_globals()
+        settings.DEVICE = get_device(misc_settings.device)
+        self.logger.info(f"Using device {settings.DEVICE}")
+        self.env = env
+        self.model = model.to(settings.DEVICE)
+        self.render = misc_settings.render
+        explorer_settings = explorer_settings.filter_none()
+        self.action_explorer = action_explorer_class(
+            action_space=env.action_space, **explorer_settings
+        )
+        buffer_settings = buffer_settings.filter_none()
+        self.buffer = buffer_class(env=env, **buffer_settings)
+        self.step = 0
+        self.episode = 0
+        self.done = False  # Flag terminate training
         self.log_frequency = (
             FrequencyType(logger_settings.log_frequency[0].lower()),
             logger_settings.log_frequency[1],
@@ -95,9 +97,6 @@ class BaseAgent(ABC):
             ]
         else:
             self.callbacks = None
-
-        device = get_device(misc_settings.device)
-        self.logger.info(f"Using device {device}")
 
         if misc_settings.seed is not None:
             self.logger.info(f"Using seed {misc_settings.seed}")

@@ -21,12 +21,10 @@ class RolloutBuffer(BaseBuffer):
         self,
         env: Env,
         buffer_size: int,
-        device: Union[str, T.device] = "auto",
     ) -> None:
         super().__init__(
             env,
             buffer_size,
-            device,
         )
         self.next_observations = np.zeros(
             (self.buffer_size,) + self.obs_shape,

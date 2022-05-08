@@ -1,7 +1,6 @@
 from typing import Union
 
 import numpy as np
-import torch as T
 from gym import Env
 
 from pearll.buffers.base_buffer import BaseBuffer
@@ -26,12 +25,10 @@ class ReplayBuffer(BaseBuffer):
         self,
         env: Env,
         buffer_size: int,
-        device: Union[str, T.device] = "auto",
     ) -> None:
         super().__init__(
             env,
             buffer_size,
-            device,
         )
         self._check_system_memory(
             self.observations, self.actions, self.rewards, self.dones
