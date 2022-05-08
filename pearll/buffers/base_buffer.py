@@ -132,11 +132,14 @@ class BaseBuffer(ABC):
 
         # return torch tensors instead of numpy arrays
         if dtype == TrajectoryType.TORCH:
-            observations = to_torch(observations, device=self.device)
-            actions = to_torch(actions, device=self.device)
-            rewards = to_torch(rewards, device=self.device)
-            next_observations = to_torch(next_observations, device=self.device)
-            dones = to_torch(dones, device=self.device)
+            observations, actions, rewards, next_observations, dones = to_torch(
+                observations,
+                actions,
+                rewards,
+                next_observations,
+                dones,
+                device=self.device,
+            )
 
         return Trajectories(
             observations=observations,
