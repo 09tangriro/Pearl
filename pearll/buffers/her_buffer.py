@@ -1,7 +1,6 @@
 from typing import Dict, Tuple, Union
 
 import numpy as np
-import torch as T
 from gym.core import GoalEnv
 
 from pearll.buffers.base_buffer import BaseBuffer
@@ -25,7 +24,6 @@ class HERBuffer(BaseBuffer):
     :param buffer_size: max number of elements in the buffer
     :param goal_selection_strategy: the goal selection strategy to be used, defaults to future
     :param n_sampled_goal: ratio of HER data to data coming from normal experience replay
-    :param device: if return torch tensors on sampling, the device to attach to
     """
 
     def __init__(
@@ -34,9 +32,8 @@ class HERBuffer(BaseBuffer):
         buffer_size: int,
         goal_selection_strategy: Union[str, GoalSelectionStrategy] = "future",
         n_sampled_goal: int = 4,
-        device: Union[str, T.device] = "auto",
     ) -> None:
-        super().__init__(env, buffer_size, device=device)
+        super().__init__(env, buffer_size)
         self.env = env
         self.desired_goals = np.zeros(
             (self.buffer_size,) + self.obs_shape,
@@ -208,7 +205,7 @@ class HERBuffer(BaseBuffer):
         self,
         batch_size: int,
         flatten_env: bool = False,
-        dtype: Union[str, TrajectoryType] = "numpy",
+        dtype: Union[str, TrajectoryType] = "torch",
     ) -> DictTrajectories:
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
@@ -235,7 +232,7 @@ class HERBuffer(BaseBuffer):
         self,
         batch_size: int,
         flatten_env: bool = False,
-        dtype: Union[str, TrajectoryType] = "numpy",
+        dtype: Union[str, TrajectoryType] = "torch",
     ) -> DictTrajectories:
         if isinstance(dtype, str):
             dtype = TrajectoryType(dtype.lower())
@@ -263,7 +260,7 @@ class HERBuffer(BaseBuffer):
         )
 
     def all(
-        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "numpy"
+        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "torch"
     ) -> DictTrajectories:
         return DictTrajectories(
             observations={

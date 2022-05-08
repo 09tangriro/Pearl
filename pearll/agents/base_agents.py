@@ -6,6 +6,7 @@ import torch as T
 from gym import Env
 from gym.vector import VectorEnv
 
+from pearll import settings
 from pearll.buffers.base_buffer import BaseBuffer
 from pearll.callbacks.base_callback import BaseCallback
 from pearll.common.enumerations import FrequencyType
@@ -59,6 +60,18 @@ class BaseAgent(ABC):
         logger_settings: LoggerSettings = LoggerSettings(),
         misc_settings: MiscellaneousSettings = MiscellaneousSettings(),
     ) -> None:
+        self.logger = Logger(
+            tensorboard_log_path=logger_settings.tensorboard_log_path,
+            file_handler_level=logger_settings.file_handler_level,
+            stream_handler_level=logger_settings.stream_handler_level,
+            verbose=logger_settings.verbose,
+            num_envs=env.num_envs if isinstance(env, VectorEnv) else 1,
+        )
+        settings.DEVICE = get_device(settings.DEVICE)
+        self.logger.info(f"Using device {settings.DEVICE}")
+        self.logger.info(
+            f"To change device, change pearll.settings.DEVICE to 'cpu' or 'cuda'"
+        )
         self.env = env
         self.model = model
         self.render = misc_settings.render
@@ -67,19 +80,10 @@ class BaseAgent(ABC):
             action_space=env.action_space, **explorer_settings
         )
         buffer_settings = buffer_settings.filter_none()
-        self.buffer = buffer_class(
-            env=env, device=misc_settings.device, **buffer_settings
-        )
+        self.buffer = buffer_class(env=env, **buffer_settings)
         self.step = 0
         self.episode = 0
         self.done = False  # Flag terminate training
-        self.logger = Logger(
-            tensorboard_log_path=logger_settings.tensorboard_log_path,
-            file_handler_level=logger_settings.file_handler_level,
-            stream_handler_level=logger_settings.stream_handler_level,
-            verbose=logger_settings.verbose,
-            num_envs=env.num_envs if isinstance(env, VectorEnv) else 1,
-        )
         self.log_frequency = (
             FrequencyType(logger_settings.log_frequency[0].lower()),
             logger_settings.log_frequency[1],
@@ -96,18 +100,17 @@ class BaseAgent(ABC):
         else:
             self.callbacks = None
 
-        device = get_device(misc_settings.device)
-        self.logger.info(f"Using device {device}")
-
         if misc_settings.seed is not None:
             self.logger.info(f"Using seed {misc_settings.seed}")
             set_seed(misc_settings.seed, self.env)
 
+    @T.no_grad()
     def predict(self, observations: Union[Tensor, Dict[str, Tensor]]) -> T.Tensor:
         """Run the agent actor model"""
         self.model.eval()
         return self.model.predict(observations)
 
+    @T.no_grad()
     def action_distribution(
         self, observations: Union[Tensor, Dict[str, Tensor]]
     ) -> T.distributions.Distribution:
@@ -115,6 +118,7 @@ class BaseAgent(ABC):
         self.model.eval()
         return self.model.predict_distribution(observations)
 
+    @T.no_grad()
     def critic(
         self,
         observations: Union[Tensor, Dict[str, Tensor]],

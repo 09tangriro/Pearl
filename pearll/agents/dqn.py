@@ -9,7 +9,7 @@ from pearll.buffers.base_buffer import BaseBuffer
 from pearll.buffers.replay_buffer import ReplayBuffer
 from pearll.callbacks.base_callback import BaseCallback
 from pearll.common.type_aliases import Log
-from pearll.common.utils import get_space_shape, to_numpy
+from pearll.common.utils import get_space_shape
 from pearll.explorers.base_explorer import BaseExplorer
 from pearll.models.actor_critics import ActorCritic, Critic, EpsilonGreedyActor
 from pearll.models.encoders import IdentityEncoder
@@ -114,8 +114,7 @@ class DQN(BaseAgent):
                 next_q_values = self.model.forward_target_critics(
                     trajectories.next_observations
                 )
-                next_q_values = to_numpy(next_q_values.max(dim=-1)[0])
-                next_q_values = next_q_values[..., np.newaxis]
+                next_q_values = T.unsqueeze(next_q_values.max(dim=-1)[0], dim=-1)
                 target_q_values = TD_zero(
                     trajectories.rewards,
                     next_q_values,
@@ -134,4 +133,4 @@ class DQN(BaseAgent):
 
         self.model.assign_targets()
 
-        return Log(critic_loss=np.mean(critic_losses))
+        return Log(critic_loss=critic_losses.mean())

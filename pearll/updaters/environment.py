@@ -4,7 +4,7 @@ from typing import Iterator, Type
 import torch as T
 from torch.nn import functional as F
 
-from pearll.common.type_aliases import Tensor, UpdaterLog
+from pearll.common.type_aliases import UpdaterLog
 from pearll.models.actor_critics import Model
 
 
@@ -28,7 +28,7 @@ class BaseDeepUpdater(ABC):
         model_parameters: Iterator[T.nn.Parameter],
     ) -> None:
         """Run an optimization step"""
-        optimizer.zero_grad()
+        optimizer.zero_grad(set_to_none=True)
         loss.backward()
         if self.max_grad > 0:
             T.nn.utils.clip_grad_norm_(model_parameters, self.max_grad)
@@ -38,8 +38,8 @@ class BaseDeepUpdater(ABC):
     def __call__(
         self,
         model: Model,
-        observations: Tensor,
-        actions: Tensor,
+        observations: T.Tensor,
+        actions: T.Tensor,
         targets: T.Tensor,
         learning_rate: float = 0.001,
     ) -> UpdaterLog:
@@ -75,8 +75,8 @@ class DeepRegression(BaseDeepUpdater):
     def __call__(
         self,
         model: Model,
-        observations: Tensor,
-        actions: Tensor,
+        observations: T.Tensor,
+        actions: T.Tensor,
         targets: T.Tensor,
         learning_rate: float = 0.001,
         mode: str = "auto",

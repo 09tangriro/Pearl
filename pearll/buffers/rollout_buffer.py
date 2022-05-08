@@ -21,12 +21,10 @@ class RolloutBuffer(BaseBuffer):
         self,
         env: Env,
         buffer_size: int,
-        device: Union[str, T.device] = "auto",
     ) -> None:
         super().__init__(
             env,
             buffer_size,
-            device,
         )
         self.next_observations = np.zeros(
             (self.buffer_size,) + self.obs_shape,
@@ -70,7 +68,7 @@ class RolloutBuffer(BaseBuffer):
         self,
         batch_size: int,
         flatten_env: bool = False,
-        dtype: Union[str, TrajectoryType] = "numpy",
+        dtype: Union[str, TrajectoryType] = "torch",
     ) -> Trajectories:
         if self.full:
             assert (
@@ -99,7 +97,7 @@ class RolloutBuffer(BaseBuffer):
         self,
         batch_size: int,
         flatten_env: bool = False,
-        dtype: Union[str, TrajectoryType] = "numpy",
+        dtype: Union[str, TrajectoryType] = "torch",
     ) -> Trajectories:
         assert batch_size <= self.buffer_size
 
@@ -120,7 +118,7 @@ class RolloutBuffer(BaseBuffer):
         )
 
     def all(
-        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "numpy"
+        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "torch"
     ) -> Trajectories:
         return self._transform_samples(
             flatten_env=flatten_env,

@@ -125,7 +125,7 @@ class GA(BaseAgent):
         divergences = np.zeros(actor_epochs)
         entropies = np.zeros(actor_epochs)
 
-        trajectories = self.buffer.sample(batch_size, flatten_env=False)
+        trajectories = self.buffer.sample(batch_size, dtype="numpy")
         rewards = trajectories.rewards.squeeze()
         rewards = filter_rewards(rewards, trajectories.dones.squeeze())
         if rewards.ndim > 1:

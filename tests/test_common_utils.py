@@ -17,10 +17,10 @@ from pearll.common.utils import (
 from pearll.settings import ExplorerSettings
 
 numpy_data = (np.zeros(shape=(2, 2)), np.zeros(shape=(3, 3)))
-torch_data = (T.zeros(2, 2), T.zeros(3, 3))
-mixed_data = (np.zeros(shape=(2, 2)), T.zeros(3, 3))
+torch_data = (T.zeros(2, 2, dtype=T.float64), T.zeros(3, 3, dtype=T.float64))
+mixed_data = (np.zeros(shape=(2, 2)), T.zeros(3, 3, dtype=T.float64))
 one_numpy = np.zeros(shape=(2, 2))
-one_torch = T.zeros(2, 2)
+one_torch = T.zeros(2, 2, dtype=T.float64)
 zero_dim_numpy = np.array(1)
 int_number = 1
 float_number = 1.0

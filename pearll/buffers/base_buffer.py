@@ -4,13 +4,12 @@ from typing import Union
 
 import numpy as np
 import psutil
-import torch as T
 from gym import Env
 from gym.vector import VectorEnv
 
 from pearll.common.enumerations import TrajectoryType
 from pearll.common.type_aliases import Observation, Trajectories
-from pearll.common.utils import get_device, get_space_shape
+from pearll.common.utils import get_space_shape, to_torch
 
 
 class BaseBuffer(ABC):
@@ -19,18 +18,15 @@ class BaseBuffer(ABC):
 
     :param env: the environment
     :param buffer_size: max number of elements in the buffer
-    :param device: if return torch tensors on sampling, the device to attach to
     """
 
     def __init__(
         self,
         env: Env,
         buffer_size: int,
-        device: Union[str, T.device] = "auto",
     ) -> None:
         self.env = env
         self.buffer_size = buffer_size
-        self.device = get_device(device)
         self.full = False
         self.pos = 0
 
@@ -132,11 +128,13 @@ class BaseBuffer(ABC):
 
         # return torch tensors instead of numpy arrays
         if dtype == TrajectoryType.TORCH:
-            observations = T.tensor(observations).to(self.device)
-            actions = T.tensor(actions).to(self.device)
-            rewards = T.tensor(rewards).to(self.device)
-            next_observations = T.tensor(next_observations).to(self.device)
-            dones = T.tensor(dones).to(self.device)
+            observations, actions, rewards, next_observations, dones = to_torch(
+                observations,
+                actions,
+                rewards,
+                next_observations,
+                dones,
+            )
 
         return Trajectories(
             observations=observations,
@@ -208,14 +206,14 @@ class BaseBuffer(ABC):
         self,
         batch_size: int,
         flatten_env: bool = False,
-        dtype: Union[str, TrajectoryType] = "numpy",
+        dtype: Union[str, TrajectoryType] = "torch",
     ) -> Trajectories:
         """
         Sample a batch of trajectories
 
         :param batch_size: the batch size
         :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
-        :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
+        :param dtype: whether to return the trajectories as "numpy" or "torch", default torch
         :return: the sampled trajectories
         """
 
@@ -224,25 +222,25 @@ class BaseBuffer(ABC):
         self,
         batch_size: int,
         flatten_env: bool = False,
-        dtype: Union[str, TrajectoryType] = "numpy",
+        dtype: Union[str, TrajectoryType] = "torch",
     ) -> Trajectories:
         """
         Get the most recent batch of trajectories stored
 
         :param batch_size: the batch size
         :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
-        :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
+        :param dtype: whether to return the trajectories as "numpy" or "torch", default torch
         :return: the most recent trajectories
         """
 
     @abstractmethod
     def all(
-        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "numpy"
+        self, flatten_env: bool = False, dtype: Union[str, TrajectoryType] = "torch"
     ) -> Trajectories:
         """
         Get all stored trajectories
 
         :param flatten_env: useful for multiple environments, whether to sample with the num_envs axis
-        :param dtype: whether to return the trajectories as "numpy" or "torch", default numpy
+        :param dtype: whether to return the trajectories as "numpy" or "torch", default torch
         :return: stored trajectories
         """

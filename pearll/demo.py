@@ -626,6 +626,19 @@ def dynaq_demo():
 
 
 if __name__ == "__main__":
+    agents = [
+        "a2c",
+        "ppo",
+        "cem-ddpg",
+        "adames",
+        "dynaq",
+        "ddpg",
+        "dqn",
+        "es",
+        "es-deep",
+        "ga",
+        "her",
+    ]
     parser = ArgumentParser(description="pearll demo with preloaded hyperparameters")
     parser.add_argument("--agent", help="Agent to demo")
     kwargs = parser.parse_args()
@@ -655,4 +668,6 @@ if __name__ == "__main__":
     elif kwargs.agent.lower() == "dynaq":
         dynaq_demo()
     else:
-        raise ValueError(f"Agent {kwargs.agent} not found")
+        raise ValueError(
+            f"Agent {kwargs.agent} not found, valid arguments are {agents}"
+        )

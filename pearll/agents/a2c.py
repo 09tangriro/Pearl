@@ -133,7 +133,7 @@ class A2C(BaseAgent):
         entropies = np.zeros(shape=(actor_epochs))
 
         # Sample rollout and compute advantages/returns
-        trajectories = self.buffer.sample(batch_size, dtype="torch")
+        trajectories = self.buffer.sample(batch_size)
         with T.no_grad():
             old_values = self.model.forward_critics(trajectories.observations)
             next_values = self.model.forward_critics(trajectories.next_observations)
