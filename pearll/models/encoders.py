@@ -6,7 +6,7 @@ from gym import spaces
 
 from pearll.common.type_aliases import Tensor
 from pearll.common.utils import to_numpy
-from pearll.models.utils import concat_obs_actions
+from pearll.models.utils import preprocess_inputs
 
 
 class IdentityEncoder(T.nn.Module):
@@ -19,8 +19,8 @@ class IdentityEncoder(T.nn.Module):
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
-        observations = concat_obs_actions(observations, actions)
-        return observations
+        input = preprocess_inputs(observations, actions)
+        return input
 
 
 class FlattenEncoder(T.nn.Module):
@@ -34,8 +34,8 @@ class FlattenEncoder(T.nn.Module):
     ) -> T.Tensor:
         # Some algorithms use both the observations and actions as input (e.g. DDPG for conitnuous Q function)
         # Make sure observations is a torch tensor, get error if numpy for some reason??
-        observations = concat_obs_actions(observations, actions)
-        return T.flatten(observations)
+        input = preprocess_inputs(observations, actions)
+        return T.flatten(input)
 
 
 class MLPEncoder(T.nn.Module):
@@ -48,8 +48,8 @@ class MLPEncoder(T.nn.Module):
     def forward(
         self, observations: Tensor, actions: Optional[Tensor] = None
     ) -> T.Tensor:
-        observations = concat_obs_actions(observations, actions)
-        return self.model(observations)
+        input = preprocess_inputs(observations, actions)
+        return self.model(input)
 
 
 class CNNEncoder(T.nn.Module):

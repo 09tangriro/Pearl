@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import numpy as np
+import torch as T
 from gym.spaces import Discrete, MultiDiscrete
 from torch.distributions import Normal, kl_divergence
 
@@ -11,7 +12,6 @@ from pearll.common.type_aliases import (
     SelectionFunc,
     UpdaterLog,
 )
-from pearll.common.utils import to_torch
 from pearll.models.actor_critics import ActorCritic
 
 
@@ -86,7 +86,7 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         """
         # Snapshot current population dist for kl divergence
         # use copy() to avoid modifying the original
-        old_dist = Normal(to_torch(self.mean.copy()), self.std)
+        old_dist = Normal(T.from_numpy(self.mean.copy()), self.std)
 
         # Main update
         self.mean += learning_rate * optimization_direction
@@ -104,7 +104,7 @@ class NoisyGradientAscent(BaseEvolutionUpdater):
         self.update_networks(population)
 
         # Calculate Log metrics
-        new_dist = Normal(to_torch(self.mean), self.std)
+        new_dist = Normal(T.from_numpy(self.mean), self.std)
         population_entropy = new_dist.entropy().mean()
         population_kl = kl_divergence(old_dist, new_dist).mean()
 

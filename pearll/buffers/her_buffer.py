@@ -1,8 +1,10 @@
 from typing import Dict, Tuple, Union
 
 import numpy as np
+import torch as T
 from gym.core import GoalEnv
 
+from pearll import settings
 from pearll.buffers.base_buffer import BaseBuffer
 from pearll.common.enumerations import GoalSelectionStrategy, TrajectoryType
 from pearll.common.type_aliases import DictTrajectories, Tensor
@@ -219,7 +221,31 @@ class HERBuffer(BaseBuffer):
         else:
             batch_inds = np.random.randint(0, end_idx, size=batch_size)
 
-        trajectories = self._sample_trajectories(batch_inds)
+        trajectories = list(self._sample_trajectories(batch_inds))
+
+        if dtype == TrajectoryType.TORCH:
+            trajectories[0]["observation"] = T.from_numpy(
+                trajectories[0]["observation"]
+            ).to(settings.DEVICE, non_blocking=True)
+            trajectories[0]["desired_goal"] = T.from_numpy(
+                trajectories[0]["desired_goal"]
+            ).to(settings.DEVICE, non_blocking=True)
+            trajectories[1] = T.from_numpy(trajectories[1]).to(
+                settings.DEVICE, non_blocking=True
+            )
+            trajectories[2] = T.from_numpy(trajectories[2]).to(
+                settings.DEVICE, non_blocking=True
+            )
+            trajectories[3]["observation"] = T.from_numpy(
+                trajectories[3]["observation"]
+            ).to(settings.DEVICE, non_blocking=True)
+            trajectories[3]["desired_goal"] = T.from_numpy(
+                trajectories[3]["desired_goal"]
+            ).to(settings.DEVICE, non_blocking=True)
+            trajectories[4] = T.from_numpy(trajectories[4]).to(
+                settings.DEVICE, non_blocking=True
+            )
+
         return DictTrajectories(
             observations=trajectories[0],
             actions=trajectories[1],

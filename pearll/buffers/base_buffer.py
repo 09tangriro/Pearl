@@ -4,12 +4,14 @@ from typing import Union
 
 import numpy as np
 import psutil
+import torch as T
 from gym import Env
 from gym.vector import VectorEnv
 
+from pearll import settings
 from pearll.common.enumerations import TrajectoryType
 from pearll.common.type_aliases import Observation, Trajectories
-from pearll.common.utils import get_space_shape, to_torch
+from pearll.common.utils import get_space_shape
 
 
 class BaseBuffer(ABC):
@@ -128,13 +130,15 @@ class BaseBuffer(ABC):
 
         # return torch tensors instead of numpy arrays
         if dtype == TrajectoryType.TORCH:
-            observations, actions, rewards, next_observations, dones = to_torch(
-                observations,
-                actions,
-                rewards,
-                next_observations,
-                dones,
+            observations = T.from_numpy(observations).to(
+                settings.DEVICE, non_blocking=True
             )
+            actions = T.from_numpy(actions).to(settings.DEVICE, non_blocking=True)
+            rewards = T.from_numpy(rewards).to(settings.DEVICE, non_blocking=True)
+            next_observations = T.from_numpy(next_observations).to(
+                settings.DEVICE, non_blocking=True
+            )
+            dones = T.from_numpy(dones).to(settings.DEVICE, non_blocking=True)
 
         return Trajectories(
             observations=observations,

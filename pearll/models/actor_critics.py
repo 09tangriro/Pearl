@@ -8,7 +8,7 @@ from gym.spaces import Box, Discrete, MultiDiscrete, Space
 from pearll import settings
 from pearll.common.enumerations import Distribution
 from pearll.common.type_aliases import Tensor
-from pearll.common.utils import get_space_range, get_space_shape, to_numpy
+from pearll.common.utils import get_space_range, get_space_shape
 from pearll.models.encoders import IdentityEncoder, MLPEncoder
 from pearll.models.heads import (
     BaseActorHead,
@@ -66,7 +66,10 @@ class Critic(T.nn.Module):
         self.state_info = {}
         self.make_state_info()
         self.state = np.concatenate(
-            [to_numpy(d.flatten()) for d in self.model.state_dict().values()]
+            [
+                d.flatten().detach().cpu().numpy()
+                for d in self.model.state_dict().values()
+            ]
         )
         self.space = Box(low=-1e6, high=1e6, shape=self.state.shape)
         self.space_shape = get_space_shape(self.space)
@@ -217,7 +220,12 @@ class EpsilonGreedyActor(Actor):
         trigger = T.rand(1).item()
 
         if trigger <= self.epsilon:
-            actions = T.randint(low=0, high=action_size, size=q_values.shape[:-1])
+            actions = T.randint(
+                low=0,
+                high=action_size,
+                size=q_values.shape[:-1],
+                device=settings.DEVICE,
+            )
         else:
             _, actions = T.max(q_values, dim=-1)
 

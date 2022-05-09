@@ -291,9 +291,11 @@ def test_her_sample(goal_selection_strategy, buffer_size):
     observations[pos] = next_observations[pos - 1]
 
     trajectories = buffer.sample(4)
-    sampled_observations = trajectories.observations["observation"]
-    sampled_next_observations = trajectories.next_observations["observation"]
-    her_sampled_goals = trajectories.observations["desired_goal"]
+    sampled_observations = np.asarray(trajectories.observations["observation"])
+    sampled_next_observations = np.asarray(
+        trajectories.next_observations["observation"]
+    )
+    her_sampled_goals = np.asarray(trajectories.observations["desired_goal"])
     # Check if sampled next observations are actually the next observations
     for i, obs in enumerate(sampled_observations):
         array_idx = np.where(observations == obs)[0]
