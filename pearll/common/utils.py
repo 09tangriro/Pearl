@@ -56,7 +56,7 @@ def to_numpy(*data) -> Union[Tuple[np.ndarray], np.ndarray]:
         if isinstance(el, T.Tensor):
             result[i] = el.detach().cpu().numpy()
         else:
-            result[i] = np.array(el)
+            result[i] = np.asarray(el)
 
     if len(data) == 1:
         return result[0]
