@@ -2,8 +2,8 @@ from typing import Optional, Tuple, Union
 
 import torch as T
 
+from pearll import settings
 from pearll.common.type_aliases import Tensor
-from pearll.common.utils import to_torch
 
 
 def trainable_parameters(model: T.nn.Module) -> list:
@@ -31,12 +31,13 @@ def get_mlp_size(data_shape: Union[int, Tuple[int]]) -> int:
     return data_shape
 
 
-def concat_obs_actions(observations: Tensor, actions: Optional[Tensor]) -> T.Tensor:
+def preprocess_inputs(observations: Tensor, actions: Optional[Tensor]) -> T.Tensor:
+    input = T.as_tensor(observations)
+    if input.dim() == 0:
+        input = input.unsqueeze(0)
     if actions is not None:
-        observations, actions = to_torch(observations, actions)
-        if observations.dim() == 0:
-            observations = observations.unsqueeze(0)
+        actions = T.as_tensor(actions)
         if actions.dim() == 0:
             actions = actions.unsqueeze(0)
-        return T.cat([observations, actions], dim=-1).float()
-    return to_torch(observations).float()
+        input = T.cat([input, actions], dim=-1)
+    return input.float().to(settings.DEVICE, non_blocking=True)
